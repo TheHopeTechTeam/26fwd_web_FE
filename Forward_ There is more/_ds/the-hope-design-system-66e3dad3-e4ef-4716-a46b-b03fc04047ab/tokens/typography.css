@@ -1,0 +1,35 @@
+@font-face{font-family:'Montserrat';font-style:normal;font-weight:400;font-display:swap;src:url('../assets/fonts/montserrat-400.woff2') format('woff2');}
+@font-face{font-family:'Montserrat';font-style:normal;font-weight:600;font-display:swap;src:url('../assets/fonts/montserrat-600.woff2') format('woff2');}
+@font-face{font-family:'Montserrat';font-style:normal;font-weight:700;font-display:swap;src:url('../assets/fonts/montserrat-700.woff2') format('woff2');}
+@font-face{font-family:'Montserrat';font-style:normal;font-weight:800;font-display:swap;src:url('../assets/fonts/montserrat-800.woff2') format('woff2');}
+@font-face{font-family:'Noto Sans';font-style:normal;font-weight:400;font-display:swap;src:url('../assets/fonts/noto-sans-en-400.woff2') format('woff2');}
+@font-face{font-family:'Noto Sans';font-style:normal;font-weight:500;font-display:swap;src:url('../assets/fonts/noto-sans-en-500.woff2') format('woff2');}
+@font-face{font-family:'Noto Sans';font-style:normal;font-weight:600;font-display:swap;src:url('../assets/fonts/noto-sans-en-600.woff2') format('woff2');}
+@font-face{font-family:'Noto Sans';font-style:normal;font-weight:700;font-display:swap;src:url('../assets/fonts/noto-sans-en-700.woff2') format('woff2');}
+@font-face{font-family:'Noto Sans TC';font-style:normal;font-weight:100;font-display:swap;src:url('../assets/fonts/noto-sans-tc-100.otf') format('opentype');}
+@font-face{font-family:'Noto Sans TC';font-style:normal;font-weight:400;font-display:swap;src:url('../assets/fonts/noto-sans-tc-400.otf') format('opentype');}
+@font-face{font-family:'Noto Sans Mono TC';font-style:normal;font-weight:400;font-display:swap;src:url('../assets/fonts/noto-sans-mono-tc-400.otf') format('opentype');}
+@font-face{font-family:'Noto Sans Mono TC';font-style:normal;font-weight:700;font-display:swap;src:url('../assets/fonts/noto-sans-mono-tc-700.otf') format('opentype');}
+:root{
+--font-display:'Montserrat',sans-serif;
+--font-sans:'Noto Sans',sans-serif;
+--font-zh:'Noto Sans TC','Noto Sans',sans-serif;
+--font-zh-mono:'Noto Sans Mono TC',monospace;
+--text-display-1:clamp(3rem,7vw,6.5rem);
+--text-display-2:clamp(2.25rem,5vw,4rem);
+--text-h1:clamp(1.75rem,3.4vw,2.75rem);
+--text-h2:clamp(1.4rem,2.4vw,2rem);
+--text-h3:1.375rem;
+--text-body-lg:1.125rem;
+--text-body:1rem;
+--text-small:.875rem;
+--text-label:.8125rem;
+--tracking-tight:-.02em;
+--tracking-normal:0em;
+--tracking-wide:.08em;
+--tracking-widest:.16em;
+--leading-tight:1.02;
+--leading-snug:1.25;
+--leading-normal:1.5;
+--leading-relaxed:1.7;
+}
