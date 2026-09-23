@@ -1,0 +1,129 @@
+.journey-rail {
+  position: fixed;
+  top: 50%;
+  right: max(6px, env(safe-area-inset-right, 0px));
+  z-index: 40;
+  transform: translateY(-50%);
+}
+
+.journey-rail__list {
+  list-style: none;
+  margin: 0;
+  padding: 6px 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-full);
+  background: rgba(20, 28, 31, 0.72);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--line);
+}
+
+.journey-rail__item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 40px;
+  min-height: 44px;
+  padding: 10px 0;
+  color: var(--text-3);
+  text-decoration: none;
+  transition: color 0.25s var(--ease-standard);
+}
+
+.journey-rail__item:hover {
+  color: var(--text);
+}
+
+.journey-rail__item.is-active {
+  color: var(--gold);
+}
+
+/* Phones: the English label runs vertically inside a slim capsule. */
+.journey-rail__label {
+  writing-mode: vertical-rl;
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.journey-rail__index,
+.journey-rail__zh {
+  display: none;
+}
+
+.journey-rail__dot {
+  order: -1;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.55;
+  transition:
+    transform 0.3s var(--ease-out),
+    opacity 0.3s var(--ease-standard);
+}
+
+.journey-rail__item.is-active .journey-rail__dot {
+  opacity: 1;
+  transform: scale(1.5);
+  box-shadow: 0 0 0 4px rgba(255, 201, 70, 0.18);
+}
+
+@media (max-height: 560px) and (max-width: 1099px) {
+  .journey-rail__label {
+    display: none;
+  }
+}
+
+@media (min-width: 1100px) {
+  .journey-rail {
+    right: max(24px, env(safe-area-inset-right, 0px));
+  }
+  .journey-rail__list {
+    padding: 10px 0;
+    border-radius: var(--radius-md);
+    background: rgba(20, 28, 31, 0.6);
+  }
+  .journey-rail__item {
+    flex-direction: row;
+    justify-content: flex-end;
+    gap: 12px;
+    width: auto;
+    padding: 8px 16px 8px 18px;
+  }
+  .journey-rail__label {
+    writing-mode: horizontal-tb;
+    display: grid;
+    grid-template-columns: auto auto;
+    align-items: baseline;
+    column-gap: 8px;
+    text-align: right;
+  }
+  .journey-rail__index {
+    display: inline;
+    font-weight: 700;
+    opacity: 0.8;
+  }
+  .journey-rail__en {
+    font-size: 0.6875rem;
+  }
+  .journey-rail__zh {
+    display: block;
+    grid-column: 1 / -1;
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: none;
+    margin-top: 4px;
+    opacity: 0.85;
+  }
+  .journey-rail__dot {
+    order: 0;
+  }
+}

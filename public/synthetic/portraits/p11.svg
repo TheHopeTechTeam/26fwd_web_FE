@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="Synthetic illustrated portrait 11">
+<title>Synthetic portrait 11 — illustration for layout testing, not a real person</title>
+<rect width="240" height="240" fill="#efe1d6"/>
+<circle cx="120" cy="104" r="84" fill="#ffffff" opacity=".35"/>
+
+<path d="M34 240c4-44 40-66 86-66s82 22 86 66z" fill="#8e5b4f"/>
+<path d="M98 176c6 14 38 14 44 0" fill="none" stroke="#744b41" stroke-width="4" stroke-linecap="round"/>
+<rect x="106" y="140" width="28" height="40" rx="12" fill="#d5b495"/>
+<ellipse cx="82" cy="112" rx="7" ry="10" fill="#d5b495"/>
+<ellipse cx="158" cy="112" rx="7" ry="10" fill="#d5b495"/>
+<ellipse cx="120" cy="108" rx="38" ry="46" fill="#f2cda9"/>
+
+<path d="M80 112c-6-42 20-58 44-57 28 1 44 22 36 55-10-22-30-32-52-30-14 2-24 14-28 32z" fill="#5a3b28"/>
+<path d="M100 100q6-4 12 0M128 100q6-4 12 0" fill="none" stroke="#5a3b28" stroke-width="3" stroke-linecap="round"/>
+<ellipse cx="106" cy="112" rx="3.2" ry="3.8" fill="#2a2320"/>
+<ellipse cx="134" cy="112" rx="3.2" ry="3.8" fill="#2a2320"/>
+<g fill="none" stroke="#2a2320" stroke-width="2.4"><circle cx="106" cy="112" r="11"/><circle cx="134" cy="112" r="11"/><path d="M117 111h6"/></g>
+
+<path d="M120 116q-4 11 1 13" fill="none" stroke="#bda084" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M110 137q10 8 20 0" fill="none" stroke="#8a4b43" stroke-width="3" stroke-linecap="round"/>
+</svg>
