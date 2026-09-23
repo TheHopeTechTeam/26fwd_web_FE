@@ -1,0 +1,97 @@
+.fcard {
+  display: grid;
+  gap: 6px;
+  padding: 22px 22px 18px;
+  border-radius: var(--radius-md);
+  color: var(--ink);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.25);
+  overflow-wrap: anywhere;
+  animation: fcard-in 0.5s var(--ease-out) both;
+}
+
+.fcard--gold {
+  background: var(--gold);
+}
+.fcard--paper {
+  background: var(--paper);
+}
+.fcard--mist {
+  background: #e4ebe8;
+}
+.fcard--sand {
+  background: #efe3d3;
+}
+
+.fcard__prompt {
+  font-family: var(--font-heading-zh);
+  font-size: 0.8125rem;
+  letter-spacing: 0.06em;
+  color: rgba(28, 39, 43, 0.62);
+}
+
+.fcard__prompt:not(:first-child) {
+  margin-top: 10px;
+}
+
+.fcard__text {
+  font-size: 1rem;
+  line-height: 1.75;
+  white-space: pre-wrap;
+}
+
+.fcard__footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(28, 39, 43, 0.14);
+  font-size: 0.8125rem;
+  color: rgba(28, 39, 43, 0.7);
+}
+
+.fcard__name {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.fcard--skeleton {
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: none;
+  gap: 12px;
+  animation: none;
+}
+
+.fcard--skeleton span {
+  display: block;
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.06));
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+.fcard--skeleton span:nth-child(2) {
+  width: 82%;
+}
+.fcard--skeleton span:nth-child(3) {
+  width: 64%;
+  margin-top: 10px;
+}
+.fcard--skeleton span:nth-child(4) {
+  width: 40%;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes fcard-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}

@@ -1,0 +1,92 @@
+/*
+ * Design tokens. Colours come from The Hope design system (tokens/colors.css in the
+ * prototype folder). Swap values here when the official FORWARD KV / palette lands
+ * (Q-33); components should only reference these variables.
+ */
+@font-face {
+  font-family: 'Montserrat';
+  src: url('../assets/fonts/montserrat-var.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Noto Sans';
+  src: url('../assets/fonts/noto-sans-400.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Noto Sans';
+  src: url('../assets/fonts/noto-sans-600.woff2') format('woff2');
+  font-weight: 600 700;
+  font-display: swap;
+}
+/* Chinese headings only: a woff2 subset of Noto Sans CJK TC (scripts/subset-font.py). */
+@font-face {
+  font-family: 'FWD Heading TC';
+  src: url('../assets/fonts/fwd-heading-tc.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+  unicode-range: U+2E80-9FFF, U+F900-FAFF, U+FF00-FFEF, U+3000-303F, U+2014, U+2026, U+00B7;
+}
+
+:root {
+  --navy: #1c272b;
+  --navy-deep: #141c1f;
+  --navy-soft: #232f34;
+  --navy-raised: #2c3a40;
+  --blue: #315264;
+  --gold: #ffc946;
+  --gold-bright: #ffd873;
+  --gold-dim: #c99a2e;
+  --paper: #f4efe4;
+  --white: #ffffff;
+  --ink: #1c272b;
+
+  --text: #ffffff;
+  --text-2: #d4d2cd;
+  --text-3: #a9a7a1;
+  --text-on-gold: #1c272b;
+  --line: rgba(255, 255, 255, 0.12);
+  --line-strong: rgba(255, 255, 255, 0.22);
+  --focus: #ffd873;
+  --danger: #ff8a7a;
+  --danger-on-light: #b3261e;
+  --success: #8fd4a8;
+
+  /* Latin display face; Chinese inside buttons/labels falls through to bold system fonts. */
+  --font-display: 'Montserrat', -apple-system, 'PingFang TC', 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+  --font-heading-zh: 'FWD Heading TC', 'PingFang TC', 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+  --font-body: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'PingFang TC', 'Hiragino Sans TC', 'Noto Sans TC',
+    'Microsoft JhengHei', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-full: 999px;
+  --shadow-card: 0 18px 44px rgba(0, 0, 0, 0.34);
+
+  --header-h: 64px;
+  --pad-x: clamp(16px, 5vw, 64px);
+  /* Room kept clear on the right for the fixed journey rail (FEAT-01). */
+  --rail-space: 52px;
+  --content-max: 1200px;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --rail-space: 64px;
+  }
+}
+
+@media (min-width: 1100px) {
+  :root {
+    --rail-space: 200px;
+    --header-h: 72px;
+  }
+}

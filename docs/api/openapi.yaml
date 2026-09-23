@@ -1,0 +1,329 @@
+openapi: 3.0.3
+info:
+  title: FORWARD 2026 · Forward Card API
+  version: 0.1.0
+  description: |
+    Contract between the FORWARD 2026 front end and the Forward Card backend.
+    Human-readable notes (Traditional Chinese): docs/api/README.md.
+    TypeScript types: src/api/types.ts. The in-browser mock (src/api/mock/server.ts)
+    implements exactly this contract.
+servers:
+  - url: /
+    description: Same origin (default)
+tags:
+  - name: public
+  - name: admin
+paths:
+  /api/cards:
+    post:
+      tags: [public]
+      summary: Submit a Forward Card (stored as pending, never public until approved)
+      operationId: submitCard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitCardRequest'
+      responses:
+        '201':
+          description: Accepted and stored as pending. Honeypot hits also get 201 but are discarded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmitCardResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '413':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+    get:
+      tags: [public]
+      summary: List approved cards, newest first
+      operationId: listCards
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 12, default: 12 }
+      responses:
+        '200':
+          description: One page of approved cards
+          headers:
+            Cache-Control:
+              schema: { type: string, example: 'public, max-age=15' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListCardsResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /api/admin/cards:
+    get:
+      tags: [admin]
+      summary: List cards by status (max 100, newest first)
+      operationId: adminListCards
+      security: [{ adminToken: [] }]
+      parameters:
+        - name: status
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/CardStatus'
+      responses:
+        '200':
+          description: Cards with the requested status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/admin/cards/{id}/status:
+    patch:
+      tags: [admin]
+      summary: Approve or hide a card
+      operationId: adminSetStatus
+      security: [{ adminToken: [] }]
+      parameters:
+        - $ref: '#/components/parameters/CardId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [approved, hidden]
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminStatusResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/Error'
+  /api/admin/cards/{id}/hide:
+    patch:
+      tags: [admin]
+      summary: Emergency takedown (sets status to hidden; not a delete)
+      operationId: adminHide
+      security: [{ adminToken: [] }]
+      parameters:
+        - $ref: '#/components/parameters/CardId'
+      responses:
+        '200':
+          description: Hidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminStatusResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/Error'
+components:
+  securitySchemes:
+    adminToken:
+      type: http
+      scheme: bearer
+      description: Server-side secret, at least 32 characters. Never stored by the browser.
+  parameters:
+    CardId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^[A-Za-z0-9_-]{1,80}$'
+  schemas:
+    CardStatus:
+      type: string
+      enum: [pending, approved, hidden]
+    SubmitCardRequest:
+      type: object
+      required: [nickname, text_gratitude, text_anticipate, agreed_to_publish, honeypot]
+      properties:
+        nickname:
+          type: string
+          description: Trimmed length 1–20 Unicode code points; no control or bidi-control characters.
+          example: 小恩
+        text_gratitude:
+          type: string
+          description: Trimmed length 1–140 code points; tab and newline allowed.
+          example: 感謝神這一年的帶領
+        text_anticipate:
+          type: string
+          description: Trimmed length 1–140 code points; tab and newline allowed.
+          example: 期待 There is more！
+        agreed_to_publish:
+          type: boolean
+          enum: [true]
+        honeypot:
+          type: string
+          description: Always "" from real users. Non-empty → 201 but nothing is stored.
+          example: ''
+        turnstile_token:
+          type: string
+          description: Cloudflare Turnstile response; required when Turnstile is enabled.
+    SubmitCardResponse:
+      type: object
+      required: [success, card_id]
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+        card_id:
+          type: string
+          description: c_ + UUID v4 (38 characters)
+          example: c_7f3c2a9e-3b1d-4c55-9a0e-2f6f1d8b9c10
+    PublicCard:
+      type: object
+      additionalProperties: false
+      required: [id, nickname, text_gratitude, text_anticipate, created_at]
+      properties:
+        id: { type: string }
+        nickname: { type: string }
+        text_gratitude: { type: string }
+        text_anticipate: { type: string }
+        created_at:
+          type: string
+          format: date-time
+    AdminCard:
+      allOf:
+        - $ref: '#/components/schemas/PublicCard'
+        - type: object
+          required: [status]
+          properties:
+            status:
+              $ref: '#/components/schemas/CardStatus'
+    Pagination:
+      type: object
+      required: [page, limit, has_more, total_count]
+      properties:
+        page: { type: integer }
+        limit: { type: integer }
+        has_more: { type: boolean }
+        total_count: { type: integer }
+    ListCardsResponse:
+      type: object
+      required: [items, pagination]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicCard'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    AdminListResponse:
+      type: object
+      required: [items, has_more]
+      properties:
+        items:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/AdminCard'
+        has_more: { type: boolean }
+    AdminStatusResponse:
+      type: object
+      required: [success, card_id, status]
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+        card_id: { type: string }
+        status:
+          $ref: '#/components/schemas/CardStatus'
+    ApiError:
+      type: object
+      required: [success, error]
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              enum:
+                - VALIDATION_ERROR
+                - TURNSTILE_FAILED
+                - PAYLOAD_TOO_LARGE
+                - RATE_LIMITED
+                - UNAUTHORIZED
+                - NOT_FOUND
+                - METHOD_NOT_ALLOWED
+                - SERVICE_UNAVAILABLE
+                - INTERNAL_ERROR
+            message:
+              type: string
+              description: For engineers; never shown to visitors.
+            fields:
+              type: object
+              additionalProperties:
+                type: string
+                enum: [required, too_long, invalid_chars, must_be_true, invalid]
+            retry_after_seconds:
+              type: integer
+  responses:
+    Error:
+      description: Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    BadRequest:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            success: false
+            error:
+              code: VALIDATION_ERROR
+              message: One or more fields are invalid
+              fields:
+                nickname: required
+                text_gratitude: too_long
+    Unauthorized:
+      description: Missing or invalid admin token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    RateLimited:
+      description: Too many submissions (1/minute, 3/hour per IP)
+      headers:
+        Retry-After:
+          schema: { type: integer }
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            success: false
+            error:
+              code: RATE_LIMITED
+              message: Too many submissions
+              retry_after_seconds: 42

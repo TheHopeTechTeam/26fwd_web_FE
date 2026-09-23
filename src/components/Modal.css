@@ -1,0 +1,96 @@
+.modal {
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  max-height: 100%;
+  margin: 0;
+  padding: max(16px, env(safe-area-inset-top, 0px)) 16px max(16px, env(safe-area-inset-bottom, 0px));
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.modal:not([open]) {
+  display: none;
+}
+
+.modal::backdrop {
+  background: rgba(10, 15, 17, 0.84);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+.modal__panel {
+  position: relative;
+  width: min(960px, 100%);
+  border-radius: var(--radius-lg);
+  background: var(--navy-soft);
+  border: 1px solid var(--line);
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.5);
+  animation: modal-in 0.4s var(--ease-out) both;
+}
+
+.modal.is-closing .modal__panel {
+  animation: modal-out 0.22s var(--ease-standard) both;
+}
+
+.modal[open]::backdrop {
+  animation: backdrop-in 0.3s var(--ease-standard) both;
+}
+
+.modal.is-closing::backdrop {
+  animation: backdrop-out 0.22s var(--ease-standard) both;
+}
+
+.modal__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  background: rgba(20, 28, 31, 0.7);
+  color: var(--text);
+  transition:
+    background-color 0.2s var(--ease-standard),
+    color 0.2s var(--ease-standard);
+}
+
+.modal__close:hover {
+  background: var(--gold);
+  color: var(--ink);
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+}
+
+@keyframes modal-out {
+  to {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+}
+
+@keyframes backdrop-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes backdrop-out {
+  to {
+    opacity: 0;
+  }
+}
