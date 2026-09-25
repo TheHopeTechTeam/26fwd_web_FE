@@ -17,9 +17,9 @@ CREATE INDEX IF NOT EXISTS idx_forward_cards_status_created
   ON forward_cards(status, created_at DESC, id DESC);
 
 CREATE TABLE IF NOT EXISTS submission_rate_limits (
-  ip_hash TEXT NOT NULL,
-  window_type TEXT NOT NULL CHECK (window_type IN ('minute', 'hour')),
-  window_start TEXT NOT NULL,
-  count INTEGER NOT NULL DEFAULT 1,
-  PRIMARY KEY (ip_hash, window_type, window_start)
+  ip_hash TEXT PRIMARY KEY,
+  minute_bucket INTEGER NOT NULL,
+  minute_count INTEGER NOT NULL,
+  hour_bucket INTEGER NOT NULL,
+  hour_count INTEGER NOT NULL
 );
