@@ -78,7 +78,7 @@ export async function verifyTurnstile(token: string, request: Request, secret?: 
   const result = await response.json() as { success?: boolean; hostname?: string; action?: string }
   const requestHostname = new URL(request.url).hostname
   const expectedHostname = allowedHostname || requestHostname
-  if (!result.success || result.action !== 'forward-card' || result.hostname !== expectedHostname)
+  if (!result.success || result.action !== 'forward_card' || result.hostname !== expectedHostname)
     throw new ApiError(400, 'TURNSTILE_ERROR', '人機驗證失敗')
 }
 

@@ -54,8 +54,8 @@ npx wrangler d1 create forward_cards_staging
 npx wrangler d1 create forward_cards_prod
 
 # 執行 Schema 遷移
-npx wrangler d1 execute forward_cards_staging --file=./migrations/0001_initial.sql
-npx wrangler d1 execute forward_cards_prod --file=./migrations/0001_initial.sql
+npx wrangler d1 execute forward_cards_staging --remote --file=./migrations/0001_initial.sql
+npx wrangler d1 execute forward_cards_prod --remote --file=./migrations/0001_initial.sql
 ```
 
 ### 2. 環境變數綁定清單
@@ -63,7 +63,7 @@ npx wrangler d1 execute forward_cards_prod --file=./migrations/0001_initial.sql
 #### Staging (`26fwd-staging`)
 ```ini
 VITE_API_MODE=live
-TURNSTILE_SITE_KEY=1x00000000000000000000AA
+VITE_TURNSTILE_SITE_KEY=1x00000000000000000000AA
 TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
 TURNSTILE_ALLOWED_HOSTNAME=26fwd-staging.pages.dev
 ADMIN_API_TOKEN=<staging-secret-token-32-chars>
@@ -76,7 +76,7 @@ CARD_SUBMISSIONS_ENABLED=true
 #### Production (`26fwd-prod`)
 ```ini
 VITE_API_MODE=live
-TURNSTILE_SITE_KEY=<production-turnstile-site-key>
+VITE_TURNSTILE_SITE_KEY=<production-turnstile-site-key>
 TURNSTILE_SECRET_KEY=<production-turnstile-secret-key>
 TURNSTILE_ALLOWED_HOSTNAME=forward.thehope.co
 ADMIN_API_TOKEN=<production-high-entropy-token-32-chars>
