@@ -17,7 +17,7 @@
                               ▼
                     ┌───────────────────┐
                     │  Staging 測試環境 │ ◄── 26fwd-staging.pages.dev
-                    │  (D1: staging)    │     測試 Turnstile、noindex、測試 Give
+                    │  (D1: staging)    │     staging 專屬 Turnstile、noindex、測試 Give
                     └───────────────────┘
                               │ (手動發布 Release / Tag v1.0.x)
                               ▼ (需 PM/Lead 簽核批准: Environment Gate)
@@ -37,7 +37,7 @@
 | **自訂網域** | `26fwd-staging.pages.dev` | `forward.thehope.co` | 正式官方獨立網域，配置 SSL 與 CDN 快取 |
 | **GitHub 觸發條件** | `main` 分支自動部署；PR 產生 Preview | 打 Release Tag（如 `v1.0.0`）或推 `release` 分支 | 正式環境必須有人工審查簽核門檻（Approval Gate） |
 | **D1 資料庫** | `forward_cards_staging` | `forward_cards_prod` | **最核心隔離**：測試卡片隨時可清空重置，絕不污染正式牆 |
-| **Turnstile 防護** | Cloudflare 測試 Key（`1x000...AA`，Always Pass） | 正式專屬 Site Key / Secret Key | 測試環境自動化測試不卡關；正式環境嚴格阻擋機器人 |
+| **Turnstile 防護** | staging 專屬真實 widget（hostname 僅允許 `26fwd-staging.pages.dev`） | 正式專屬 widget（hostname 僅允許 `forward.thehope.co`） | 兩個環境都走真實 siteverify，後端 `action=forward_card`／hostname 檢查行為一致。官方測試金鑰（`1x000...AA`）的回應無法通過這兩項檢查，只用於本機，並搭配模擬 siteverify 回應的自動測試 |
 | **管理後台 Token** | 測試用 Token（僅工程團隊知悉） | 正式 Token（僅發給指定審核同工，長度 ≥32 字） | 權限完全隔離，防止以測試 Token 操作正式後台 |
 | **金流奉獻 (Give CTA)** | 測試金流網址（帶 `utm_campaign=staging_test`） | 正式 Forward 專案 Give URL | 防止測試產生真實款項扣繳 |
 | **數據分析 (GA4)** | 測試 GA4 ID（或留空不發送） | 正式 GA4 Measurement ID（`G-XXXXXXX`） | 避免內部測試稀釋並污染正式行銷指標與轉換率 |
@@ -63,8 +63,8 @@ npx wrangler d1 execute forward_cards_prod --remote --file=./migrations/0001_ini
 #### Staging (`26fwd-staging`)
 ```ini
 VITE_API_MODE=live
-VITE_TURNSTILE_SITE_KEY=1x00000000000000000000AA
-TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
+VITE_TURNSTILE_SITE_KEY=<staging-widget-site-key>
+TURNSTILE_SECRET_KEY=<staging-widget-secret-key>
 TURNSTILE_ALLOWED_HOSTNAME=26fwd-staging.pages.dev
 ADMIN_API_TOKEN=<staging-secret-token-32-chars>
 RATE_LIMIT_SALT=<staging-random-salt>
@@ -85,6 +85,11 @@ VITE_GIVE_URL=<official-forward-give-url-from-finance>
 VITE_GA4_MEASUREMENT_ID=<official-ga4-measurement-id>
 CARD_SUBMISSIONS_ENABLED=true
 ```
+
+> **設定注意事項**
+> - `TURNSTILE_SECRET_KEY`、`ADMIN_API_TOKEN`、`RATE_LIMIT_SALT` 在 Cloudflare Pages 要設為 **Secret（加密）**類型，不要用明文變數。
+> - `VITE_*` 在 build 時寫入前端 bundle，修改後需重新部署才會生效。
+> - Turnstile 的 hostname 檢查只接受主網址；Pages 每次部署的預覽網址（`<hash>.26fwd-staging.pages.dev`）會被拒絕，驗收請使用主網址。
 
 ---
 
