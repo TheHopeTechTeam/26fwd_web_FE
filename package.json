@@ -11,7 +11,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p functions/tsconfig.json",
     "test": "vitest run",
     "check": "npm run typecheck && npm run test && npm run build",
     "assets:portraits": "node scripts/gen-portraits.mjs",
@@ -24,6 +24,7 @@
     "react-dom": "^19.3.0"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261009.1",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",
