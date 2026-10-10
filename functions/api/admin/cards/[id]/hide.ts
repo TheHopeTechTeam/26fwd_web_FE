@@ -5,7 +5,7 @@ export async function onRequestPatch({ request, env, params }: Context): Promise
     authorize(request, env.ADMIN_API_TOKEN)
     const id = validateCardId(params.id)
     const result = await env.FORWARD_DB.prepare("UPDATE forward_cards SET status='hidden' WHERE id=?").bind(id).run()
-    if (!result.meta.changes) throw new ApiError(404, 'NOT_FOUND', '找不到卡片')
+    if (!result.meta.changes) throw new ApiError(404, 'NOT_FOUND', 'Card not found')
     return json({ success: true, card_id: id, status: 'hidden' })
   } catch (error) { return handleError(error) }
 }
