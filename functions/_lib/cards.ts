@@ -1,3 +1,6 @@
+import { ADMIN_TOKEN_MIN_LENGTH, MAX_BODY_BYTES, type ApiErrorBody, type ApiErrorCode } from '../../src/api/types'
+import { LIMITS, normalizeNewlines, validateField, type CardField } from '../../src/lib/text'
+
 export interface Env {
   FORWARD_DB: D1Database
   TURNSTILE_SECRET_KEY?: string
@@ -16,25 +19,22 @@ export type CardSubmission = {
   turnstile_token: string
 }
 
+type ErrorExtra = { fields?: Record<string, string>; retryAfterSeconds?: number }
+
 export class ApiError extends Error {
   status: number
-  code: string
+  code: ApiErrorCode
+  fields?: Record<string, string>
   retryAfterSeconds?: number
 
-  constructor(status: number, code: string, message: string, retryAfterSeconds?: number) {
+  constructor(status: number, code: ApiErrorCode, message: string, extra: ErrorExtra = {}) {
     super(message)
     this.status = status
     this.code = code
-    this.retryAfterSeconds = retryAfterSeconds
+    this.fields = extra.fields
+    this.retryAfterSeconds = extra.retryAfterSeconds
   }
 }
-const length = (value: string) => Array.from(value).length
-const hasControlCharacters = (value: string, allowTextWhitespace: boolean) => Array.from(value).some(character => {
-  const code = character.charCodeAt(0)
-  if (code === 127) return true
-  if (code > 31) return false
-  return !allowTextWhitespace || (code !== 9 && code !== 10 && code !== 13)
-})
 const jsonHeaders = {
   'Cache-Control': 'no-store',
   'Content-Security-Policy': "default-src 'none'; base-uri 'none'; frame-ancestors 'none'",
@@ -44,33 +44,60 @@ const jsonHeaders = {
 export const json = (data: unknown, status = 200, headers: HeadersInit = {}) =>
   new Response(JSON.stringify(data), { status, headers: { ...jsonHeaders, ...headers } })
 
+// Every non-2xx body follows docs/api/openapi.yaml: { success: false, error: { code, message, fields?, retry_after_seconds? } }.
+export function errorResponse(status: number, code: ApiErrorCode, message: string, extra: ErrorExtra = {}): Response {
+  const error: ApiErrorBody['error'] = { code, message }
+  if (extra.fields) error.fields = extra.fields
+  const headers: Record<string, string> = {}
+  if (extra.retryAfterSeconds !== undefined) {
+    error.retry_after_seconds = extra.retryAfterSeconds
+    headers['Retry-After'] = String(extra.retryAfterSeconds)
+  }
+  return json({ success: false, error } satisfies ApiErrorBody, status, headers)
+}
+
+// Field rules come from src/lib/text.ts, the same code the form and the mock API use,
+// so the browser, the mock and this backend cannot disagree on what is valid.
 export async function parseCardSubmission(request: Request): Promise<CardSubmission> {
   const mediaType = request.headers.get('content-type')?.split(';', 1)[0]?.trim().toLowerCase()
-  if (mediaType !== 'application/json')
-    throw new ApiError(400, 'VALIDATION_ERROR', '只接受 JSON 格式')
+  if (mediaType !== 'application/json') throw new ApiError(400, 'VALIDATION_ERROR', 'Content-Type must be application/json')
   const raw = await request.text()
-  if (new TextEncoder().encode(raw).byteLength > 4096)
-    throw new ApiError(400, 'VALIDATION_ERROR', '內容超過 4 KiB')
+  if (new TextEncoder().encode(raw).byteLength > MAX_BODY_BYTES) throw new ApiError(413, 'PAYLOAD_TOO_LARGE', 'Request body exceeds 4 KiB')
   let body: Record<string, unknown>
-  try { body = JSON.parse(raw) as Record<string, unknown> } catch { throw new ApiError(400, 'VALIDATION_ERROR', 'JSON 格式錯誤') }
-  const nickname = typeof body.nickname === 'string' ? body.nickname.trim() : ''
-  const gratitude = typeof body.text_gratitude === 'string' ? body.text_gratitude.trim() : ''
-  const anticipate = typeof body.text_anticipate === 'string' ? body.text_anticipate.trim() : ''
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('not an object')
+    body = parsed as Record<string, unknown>
+  } catch { throw new ApiError(400, 'VALIDATION_ERROR', 'Body must be a JSON object') }
+
+  const fields: Record<string, string> = {}
+  const clean: Partial<Record<CardField, string>> = {}
+  for (const field of Object.keys(LIMITS) as CardField[]) {
+    const value = body[field]
+    if (typeof value !== 'string') { fields[field] = 'required'; continue }
+    const problem = validateField(field, value)
+    if (problem) fields[field] = problem
+    else clean[field] = normalizeNewlines(value).trim()
+  }
+  if (body.agreed_to_publish !== true) fields.agreed_to_publish = 'must_be_true'
+  if (body.honeypot !== undefined && typeof body.honeypot !== 'string') fields.honeypot = 'invalid'
+  if (Object.keys(fields).length > 0) throw new ApiError(400, 'VALIDATION_ERROR', 'One or more fields are invalid', { fields })
+
   const honeypot = typeof body.honeypot === 'string' ? body.honeypot : ''
   const token = typeof body.turnstile_token === 'string' ? body.turnstile_token : ''
-  if (length(nickname) < 1 || length(nickname) > 20) throw new ApiError(400, 'VALIDATION_ERROR', '暱稱需為 1–20 字')
-  if (hasControlCharacters(nickname, false)) throw new ApiError(400, 'VALIDATION_ERROR', '暱稱不可包含控制字元')
-  if (hasControlCharacters(`${gratitude}${anticipate}`, true))
-    throw new ApiError(400, 'VALIDATION_ERROR', '內容包含不支援的控制字元')
-  if (length(gratitude) < 1 || length(gratitude) > 140 || length(anticipate) < 1 || length(anticipate) > 140)
-    throw new ApiError(400, 'VALIDATION_ERROR', '每題需為 1–140 字')
-  if (body.agreed_to_publish !== true) throw new ApiError(400, 'VALIDATION_ERROR', '請確認公開分享同意')
-  if (!honeypot && !token) throw new ApiError(400, 'VALIDATION_ERROR', '缺少 Turnstile 驗證')
-  return { nickname, text_gratitude: gratitude, text_anticipate: anticipate, agreed_to_publish: true, honeypot, turnstile_token: token }
+  if (!honeypot && !token) throw new ApiError(400, 'TURNSTILE_FAILED', 'Missing Turnstile token')
+  return {
+    nickname: clean.nickname ?? '',
+    text_gratitude: clean.text_gratitude ?? '',
+    text_anticipate: clean.text_anticipate ?? '',
+    agreed_to_publish: true,
+    honeypot,
+    turnstile_token: token,
+  }
 }
 
 export async function verifyTurnstile(token: string, request: Request, secret?: string, allowedHostname?: string): Promise<void> {
-  if (!secret) throw new ApiError(503, 'CONFIGURATION_ERROR', '驗證服務尚未設定')
+  if (!secret) throw new ApiError(503, 'SERVICE_UNAVAILABLE', 'Turnstile secret is not configured')
   const form = new FormData(); form.set('secret', secret); form.set('response', token)
   const ip = request.headers.get('CF-Connecting-IP'); if (ip) form.set('remoteip', ip)
   const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'POST', body: form })
@@ -79,13 +106,13 @@ export async function verifyTurnstile(token: string, request: Request, secret?: 
   const requestHostname = new URL(request.url).hostname
   const expectedHostname = allowedHostname || requestHostname
   if (!result.success || result.action !== 'forward_card' || result.hostname !== expectedHostname)
-    throw new ApiError(400, 'TURNSTILE_ERROR', '人機驗證失敗')
+    throw new ApiError(400, 'TURNSTILE_FAILED', 'Turnstile verification failed')
 }
 
 export async function hashClientIp(request: Request, salt?: string): Promise<string> {
-  if (!salt) throw new ApiError(503, 'CONFIGURATION_ERROR', '限流服務尚未設定')
+  if (!salt) throw new ApiError(503, 'SERVICE_UNAVAILABLE', 'Rate limit salt is not configured')
   const ip = request.headers.get('CF-Connecting-IP')
-  if (!ip) throw new ApiError(400, 'VALIDATION_ERROR', '無法辨識連線來源')
+  if (!ip) throw new ApiError(400, 'VALIDATION_ERROR', 'Client IP is unavailable')
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`${salt}:${ip}`))
   return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('')
 }
@@ -102,25 +129,25 @@ export async function consumeRateLimit(db: D1Database, ipHash: string, now: numb
     hour_bucket = excluded.hour_bucket`).bind(ipHash, minute, hour).run()
   const row = await db.prepare('SELECT minute_count, hour_count FROM submission_rate_limits WHERE ip_hash = ?').bind(ipHash).first<{ minute_count: number; hour_count: number }>()
   if (!row) throw new Error('Rate limit state unavailable')
-  if (row.hour_count > 3) throw new ApiError(429, 'RATE_LIMITED', '發送太頻繁，請稍後再試', Math.max(1, Math.ceil(((hour + 1) * 3600000 - now) / 1000)))
-  if (row.minute_count > 1) throw new ApiError(429, 'RATE_LIMITED', '發送太頻繁，請稍後再試', Math.max(1, Math.ceil(((minute + 1) * 60000 - now) / 1000)))
+  if (row.hour_count > 3) throw new ApiError(429, 'RATE_LIMITED', 'Too many submissions', { retryAfterSeconds: Math.max(1, Math.ceil(((hour + 1) * 3600000 - now) / 1000)) })
+  if (row.minute_count > 1) throw new ApiError(429, 'RATE_LIMITED', 'Too many submissions', { retryAfterSeconds: Math.max(1, Math.ceil(((minute + 1) * 60000 - now) / 1000)) })
 }
 
 export function authorize(request: Request, expected?: string): void {
   const value = request.headers.get('Authorization')?.replace(/^Bearer\s+/i, '') ?? ''
-  if (!expected || expected.length < 32) throw new ApiError(503, 'CONFIGURATION_ERROR', '管理驗證尚未安全設定')
-  if (value.length !== expected.length) throw new ApiError(401, 'UNAUTHORIZED', '未授權')
+  if (!expected || expected.length < ADMIN_TOKEN_MIN_LENGTH) throw new ApiError(503, 'SERVICE_UNAVAILABLE', 'Admin token is not securely configured')
+  if (value.length !== expected.length) throw new ApiError(401, 'UNAUTHORIZED', 'Missing or invalid admin token')
   let diff = 0; for (let i = 0; i < value.length; i++) diff |= value.charCodeAt(i) ^ expected.charCodeAt(i)
-  if (diff !== 0) throw new ApiError(401, 'UNAUTHORIZED', '未授權')
+  if (diff !== 0) throw new ApiError(401, 'UNAUTHORIZED', 'Missing or invalid admin token')
 }
 
 export function validateCardId(value: string): string {
-  if (!/^[A-Za-z0-9_-]{1,80}$/.test(value)) throw new ApiError(400, 'VALIDATION_ERROR', '無效卡片編號')
+  if (!/^[A-Za-z0-9_-]{1,80}$/.test(value)) throw new ApiError(400, 'VALIDATION_ERROR', 'Invalid card id')
   return value
 }
 
 export function handleError(error: unknown): Response {
-  if (error instanceof ApiError) return json({ error: error.code, message: error.message }, error.status, error.retryAfterSeconds ? { 'Retry-After': String(error.retryAfterSeconds) } : {})
+  if (error instanceof ApiError) return errorResponse(error.status, error.code, error.message, { fields: error.fields, retryAfterSeconds: error.retryAfterSeconds })
   console.error('Card API failure', error)
-  return json({ error: 'SERVER_ERROR', message: '系統暫時無法送出，請稍後再試' }, 500)
+  return errorResponse(500, 'INTERNAL_ERROR', 'Unexpected server error')
 }

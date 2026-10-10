@@ -15,5 +15,9 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["**/*.ts"]
+  "include": ["**/*.ts"],
+  // contract.test.ts imports the browser client (src/api/client.ts), which uses browser-only
+  // fetch options such as cache: 'default' that the Workers types reject. The browser code is
+  // typechecked by the root tsconfig; the test itself still runs under vitest.
+  "exclude": ["api/contract.test.ts"]
 }

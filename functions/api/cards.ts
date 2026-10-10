@@ -1,10 +1,10 @@
-import { consumeRateLimit, handleError, hashClientIp, json, parseCardSubmission, verifyTurnstile, type Env } from '../_lib/cards'
+import { consumeRateLimit, errorResponse, handleError, hashClientIp, json, parseCardSubmission, verifyTurnstile, type Env } from '../_lib/cards'
 
 type Context = { request: Request; env: Env }
 
 export async function onRequestPost({ request, env }: Context): Promise<Response> {
   try {
-    if (env.CARD_SUBMISSIONS_ENABLED === 'false') return json({ error: 'MAINTENANCE', message: '目前暫停寫卡，請稍後再試' }, 503)
+    if (env.CARD_SUBMISSIONS_ENABLED === 'false') return errorResponse(503, 'SERVICE_UNAVAILABLE', 'Card submissions are paused')
     const body = await parseCardSubmission(request)
     if (body.honeypot) return json({ success: true, card_id: `c_${crypto.randomUUID()}` }, 201)
     await verifyTurnstile(body.turnstile_token, request, env.TURNSTILE_SECRET_KEY, env.TURNSTILE_ALLOWED_HOSTNAME)
@@ -22,10 +22,10 @@ export async function onRequestGet({ request, env }: Context): Promise<Response>
   try {
     const url = new URL(request.url)
     const pageRaw = url.searchParams.get('page') ?? '1', limitRaw = url.searchParams.get('limit') ?? '12'
-    if (!/^\d+$/.test(pageRaw) || Number(pageRaw) < 1) return json({ error: 'VALIDATION_ERROR', message: 'page 必須是正整數' }, 400)
-    if (!/^\d+$/.test(limitRaw) || Number(limitRaw) < 1) return json({ error: 'VALIDATION_ERROR', message: 'limit 必須是正整數' }, 400)
+    if (!/^\d+$/.test(pageRaw) || Number(pageRaw) < 1) return errorResponse(400, 'VALIDATION_ERROR', 'page must be a positive integer')
+    if (!/^\d+$/.test(limitRaw) || Number(limitRaw) < 1) return errorResponse(400, 'VALIDATION_ERROR', 'limit must be a positive integer')
     const page = Number(pageRaw), limit = Math.min(12, Number(limitRaw)), offset = (page - 1) * limit
-    if (!Number.isSafeInteger(offset) || offset > 120_000) return json({ error: 'VALIDATION_ERROR', message: 'page 超出可查詢範圍' }, 400)
+    if (!Number.isSafeInteger(offset) || offset > 120_000) return errorResponse(400, 'VALIDATION_ERROR', 'page is out of range')
     const [rows, count] = await Promise.all([
       env.FORWARD_DB.prepare(`SELECT id,nickname,text_gratitude,text_anticipate,created_at FROM forward_cards
         WHERE status='approved' ORDER BY created_at DESC,id DESC LIMIT ? OFFSET ?`).bind(limit + 1, offset).all(),
