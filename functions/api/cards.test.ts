@@ -170,3 +170,54 @@ describe('POST /api/cards — Turnstile verification', () => {
     expect(calls).toHaveLength(0)
   })
 })
+
+describe('POST /api/cards — honeypot', () => {
+  const CARD_ID = /^c_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+
+  it('answers a filled honeypot like a real success, without writing or verifying anything', async () => {
+    const fetchMock = mockSiteverify({ success: true, action: WIDGET_ACTION, hostname: HOST })
+    const { db, calls } = createFakeDb()
+
+    const response = await onRequestPost({ request: submit({ ...validCard, honeypot: 'https://spam.example' }), env: makeEnv(db) })
+
+    expect(response.status).toBe(201)
+    const body = await response.json() as Record<string, unknown>
+    expect(Object.keys(body).sort()).toEqual(['card_id', 'success'])
+    expect(body.success).toBe(true)
+    expect(body.card_id).toMatch(CARD_ID)
+    expect(fetchMock).not.toHaveBeenCalled()
+    expect(calls).toHaveLength(0)
+  })
+
+  it('returns a different fake id each time, so the trap has no fixed fingerprint', async () => {
+    const { db } = createFakeDb()
+    const ids = new Set<unknown>()
+
+    for (let i = 0; i < 3; i++) {
+      const response = await onRequestPost({ request: submit({ ...validCard, honeypot: 'x' }), env: makeEnv(db) })
+      ids.add((await response.json() as { card_id: unknown }).card_id)
+    }
+
+    expect(ids.size).toBe(3)
+  })
+
+  it('still discards a honeypot hit that carries no Turnstile token', async () => {
+    const { db, calls } = createFakeDb()
+
+    const response = await onRequestPost({ request: submit({ ...validCard, honeypot: 'x', turnstile_token: '' }), env: makeEnv(db) })
+
+    expect(response.status).toBe(201)
+    expect(calls).toHaveLength(0)
+  })
+
+  it('returns the id of the card actually stored for a normal submission', async () => {
+    mockSiteverify({ success: true, action: WIDGET_ACTION, hostname: HOST })
+    const { db, cardInserts } = createFakeDb()
+
+    const response = await onRequestPost({ request: submit(validCard), env: makeEnv(db) })
+
+    const body = await response.json() as { card_id: string }
+    expect(body.card_id).toMatch(CARD_ID)
+    expect(cardInserts()[0]?.params[0]).toBe(body.card_id)
+  })
+})
