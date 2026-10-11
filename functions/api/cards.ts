@@ -6,7 +6,7 @@ export async function onRequestPost({ request, env }: Context): Promise<Response
   try {
     if (env.CARD_SUBMISSIONS_ENABLED === 'false') return json({ error: 'MAINTENANCE', message: '目前暫停寫卡，請稍後再試' }, 503)
     const body = await parseCardSubmission(request)
-    if (body.honeypot) return json({ success: true, card_id: 'discarded' }, 201)
+    if (body.honeypot) return json({ success: true, card_id: `c_${crypto.randomUUID()}` }, 201)
     await verifyTurnstile(body.turnstile_token, request, env.TURNSTILE_SECRET_KEY, env.TURNSTILE_ALLOWED_HOSTNAME)
     const ipHash = await hashClientIp(request, env.RATE_LIMIT_SALT)
     await consumeRateLimit(env.FORWARD_DB, ipHash, Date.now())
