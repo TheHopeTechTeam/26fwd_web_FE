@@ -12,6 +12,9 @@
 |---|---|
 | `cards.json` | 90 張卡片與預期答案 |
 | `questions.json` | 精簡版的 2 個題目（System One 格式，題目說明為中文） |
+| `proxy/` | 只在本機執行的 Worker，用你的 `wrangler login` 呼叫 Workers AI，不會部署 |
+| `run.mjs` | 把每張卡送給指定模型，原始回應寫入 `results/raw/<模型>.jsonl` |
+| `score.mjs` | 對照預期答案評分，寫入 `results/summary.json` |
 
 ## 組成
 | 組別 | 中文 | 英文 | 用途 |
@@ -66,3 +69,43 @@
 ## 驗證
 - 所有卡片都以網站的 `validateField()`（`src/lib/text.ts`）檢查過字數與字元規則，與真實送卡的驗證相同
 - 中英文成對檢查：每一對卡片的預期答案、難題標記與提示注入位置都相同；平衡組每類每種語言的難題數都不超過 2 張
+
+## 執行方式
+```bash
+# 終端機 1：本機代理（AI 綁定一律呼叫雲端，會使用帳號的 Workers AI 額度）
+npx wrangler dev --config scripts/moderation-eval/proxy/wrangler.jsonc --ip 127.0.0.1 --port 8787
+
+# 終端機 2
+node scripts/moderation-eval/run.mjs --model clef-flash
+node scripts/moderation-eval/run.mjs --model clef
+node scripts/moderation-eval/score.mjs            # 機率門檻預設 0.5，可加 --threshold 0.4
+```
+- 模型只會看到 `nickname`、`text_gratitude`、`text_anticipate`，與真實送卡存的欄位相同；預期答案不會送出
+- 已成功的卡片會跳過，中斷後重跑同一個指令即可接續；要重跑全部就先刪掉 `results/raw/<模型>.jsonl`
+- 延遲是在本機經過代理量到的，包含本機到 Cloudflare 的網路時間，只適合拿來比較兩個模型
+
+## 2026-10-12 試驗結果
+兩個模型各 90 張，共 180 次呼叫，全部成功。完整數字在 `results/summary.json`。
+
+「標示」有兩種規則：**機率規則**是 `needs_attention` 的機率 ≥ 0.5；**原因規則**是 `reason` 選了 `none` 以外的原因。
+
+| | Clef-flash | Clef |
+|---|---|---|
+| AUC（機率的排序能力，1 為完美） | 0.982 | 0.998 |
+| 機率規則：抓到問題卡 | 36/50（72%） | 48/50（96%） |
+| 機率規則：一般卡誤報 | 0/40 | 1/40 |
+| **原因規則：抓到問題卡** | **47/50（94%）** | **50/50（100%）** |
+| **原因規則：一般卡誤報** | **2/40（5%）** | **2/40（5%）** |
+| 問題卡的原因選對 | 92% | 98% |
+| 提示注入卡（6 張） | 全部標示 | 全部標示 |
+| 輸入 token（90 張） | 60,185 | 60,185 |
+| 換算 Neurons（90 張） | 約 208 | 約 1,313 |
+| 每日 10,000 Neurons 免費額度可判斷 | 約 4,300 張 | 約 680 張 |
+| 延遲 p50／p95（經本機代理） | 0.4／0.8 秒 | 0.6／4.8 秒 |
+
+觀察：
+- **原因規則比機率規則可靠**：Clef 有 2 張問題卡的機率低於 0.5（`zh-crisis-04` 0.25、`zh-inappropriate-04` 0.35），但原因都選對了
+- Clef-flash 的機率普遍偏低（沒有一張超過 0.9），0.5 對它來說太高；機率門檻需要依模型分別校準
+- 兩個模型的 2 張誤報相同：`zh-none-04`／`en-none-04`（朋友的小名加上開刀康復），本來就標為難題的邊界案例
+- Clef-flash 漏掉「拉人到其他團體」（`zh-other-04`、`en-other-04`）與離題抱怨（`zh-inappropriate-03`），Clef 都有抓到
+- 樣本數小：5% 誤報率的 95% 信賴區間是 1.4%～16.5%，需要用 UAT 的資料再確認
