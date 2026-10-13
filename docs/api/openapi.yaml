@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: FORWARD 2026 · Forward Card API
-  version: 0.1.0
+  version: 0.2.0
   description: |
     Contract between the FORWARD 2026 front end and the Forward Card backend.
     Human-readable notes (Traditional Chinese): docs/api/README.md.
@@ -14,11 +14,42 @@ tags:
   - name: public
   - name: admin
 paths:
+  /api/client-token:
+    post:
+      tags: [public]
+      summary: Get a Client Token cookie before submitting a card
+      description: |
+        The browser calls this before every card submission, with credentials 'same-origin'.
+        If the request already carries a valid token, nothing changes (no Set-Cookie), so a
+        page reload keeps the same token and quota. Otherwise a new token is set. No body either way.
+        The token is anonymous, carries no user data and is not an identity.
+      operationId: getClientToken
+      responses:
+        '204':
+          description: The browser holds a valid token (newly set or kept).
+          headers:
+            Set-Cookie:
+              description: Only when a new token is issued.
+              schema:
+                type: string
+                example: '__Host-fwd_ct=v1.<id>.<expiry>.<signature>; Max-Age=7200; Path=/; Secure; HttpOnly; SameSite=Strict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
   /api/cards:
     post:
       tags: [public]
       summary: Submit a Forward Card (stored as pending, never public until approved)
+      description: |
+        Requires the Client Token cookie from POST /api/client-token (send with credentials
+        'same-origin'). Checks run in this order: fields → honeypot → Client Token → Turnstile →
+        rate limits → insert. On 401 CLIENT_TOKEN_INVALID the Turnstile token has not been used
+        yet, so the client fetches a new Client Token and resends the same request once.
       operationId: submitCard
+      security: [{ clientToken: [] }]
       requestBody:
         required: true
         content:
@@ -34,6 +65,8 @@ paths:
                 $ref: '#/components/schemas/SubmitCardResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/ClientTokenInvalid'
         '413':
           $ref: '#/components/responses/Error'
         '429':
@@ -145,6 +178,14 @@ components:
       type: http
       scheme: bearer
       description: Server-side secret, at least 32 characters. Never stored by the browser.
+    clientToken:
+      type: apiKey
+      in: cookie
+      name: __Host-fwd_ct
+      description: |
+        Set by POST /api/client-token as an HttpOnly cookie that page scripts cannot read; expires
+        after 2 hours. Format v1.<random id>.<expiry, Unix seconds>.<HMAC-SHA256 signature>; the
+        server checks the signature and expiry without a database lookup.
   parameters:
     CardId:
       name: id
@@ -270,6 +311,7 @@ components:
                 - TURNSTILE_FAILED
                 - PAYLOAD_TOO_LARGE
                 - RATE_LIMITED
+                - CLIENT_TOKEN_INVALID
                 - UNAUTHORIZED
                 - NOT_FOUND
                 - METHOD_NOT_ALLOWED
@@ -306,6 +348,17 @@ components:
               fields:
                 nickname: required
                 text_gratitude: too_long
+    ClientTokenInvalid:
+      description: The Client Token cookie is missing, expired or not signed by this server. Nothing was stored.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            success: false
+            error:
+              code: CLIENT_TOKEN_INVALID
+              message: Missing, expired or invalid client token
     Unauthorized:
       description: Missing or invalid admin token
       content:
@@ -313,7 +366,10 @@ components:
           schema:
             $ref: '#/components/schemas/ApiError'
     RateLimited:
-      description: Too many submissions (1/minute, 3/hour per IP)
+      description: |
+        Too many requests. Cards: per Client Token, 60 seconds after the previous card and 3 per
+        clock hour; per IP, 400 per minute and 2,000 per hour. New Client Tokens: 600 per IP per
+        minute. These are staging candidates, to be confirmed after the load test.
       headers:
         Retry-After:
           schema: { type: integer }
@@ -325,5 +381,5 @@ components:
             success: false
             error:
               code: RATE_LIMITED
-              message: Too many submissions
+              message: Too many requests
               retry_after_seconds: 42

@@ -61,6 +61,8 @@ interface RequestOptions {
   body?: unknown;
   token?: string;
   signal?: AbortSignal;
+  /** Send and accept cookies. Only the Client Token and card submission requests need them. */
+  withCookies?: boolean;
 }
 
 export interface ClientOptions {
@@ -73,7 +75,7 @@ export function createApiClient({ baseUrl, fetch: fetchImpl, timeoutMs = 15000 }
   const root = baseUrl.replace(/\/+$/, '');
 
   async function request<T>(method: string, path: string, options: RequestOptions = {}): Promise<T> {
-    const { query, body, token, signal } = options;
+    const { query, body, token, signal, withCookies } = options;
     const url = root + path + (query ? `?${new URLSearchParams(query).toString()}` : '');
     const headers: Record<string, string> = { Accept: 'application/json' };
     if (body !== undefined) headers['Content-Type'] = 'application/json';
@@ -95,7 +97,7 @@ export function createApiClient({ baseUrl, fetch: fetchImpl, timeoutMs = 15000 }
         headers,
         body: body === undefined ? undefined : JSON.stringify(body),
         signal: controller.signal,
-        credentials: 'omit',
+        credentials: withCookies ? 'same-origin' : 'omit',
         cache: token ? 'no-store' : 'default',
       });
     } catch (error) {
@@ -124,15 +126,31 @@ export function createApiClient({ baseUrl, fetch: fetchImpl, timeoutMs = 15000 }
         retryAfterSeconds: err?.retry_after_seconds ?? parseRetryAfter(response.headers.get('Retry-After')),
       });
     }
+    if (response.status === 204) return undefined as T;
     if (data === null || typeof data !== 'object') {
       throw new ApiError(response.status, 'BAD_RESPONSE', 'Response was not JSON');
     }
     return data as T;
   }
 
+  // A card needs the Client Token cookie (#5), so every submission first asks for one; a browser
+  // that still holds a valid token keeps it. If the card is refused for its token anyway (it
+  // expired while the form was open, or the server's secret changed), get a new one and resend
+  // the same card once. The Turnstile token is still unused then: the server checks the Client
+  // Token before Turnstile.
+  async function sendCard(payload: SubmitCardRequest, signal?: AbortSignal) {
+    await request<void>('POST', '/api/client-token', { signal, withCookies: true });
+    return request<SubmitCardResponse>('POST', '/api/cards', { body: payload, signal, withCookies: true });
+  }
+
   return {
-    submitCard(payload: SubmitCardRequest, signal?: AbortSignal) {
-      return request<SubmitCardResponse>('POST', '/api/cards', { body: payload, signal });
+    async submitCard(payload: SubmitCardRequest, signal?: AbortSignal) {
+      try {
+        return await sendCard(payload, signal);
+      } catch (error) {
+        if (!(error instanceof ApiError) || error.code !== 'CLIENT_TOKEN_INVALID') throw error;
+        return sendCard(payload, signal);
+      }
     },
     async listCards(params: { page: number; limit: number }, signal?: AbortSignal) {
       const data = await request<ListCardsResponse>('GET', '/api/cards', {
@@ -175,6 +193,9 @@ export function describeError(error: unknown): string {
       return '格式錯誤，請檢查欄位內容後再送出。';
     case 'TURNSTILE_FAILED':
       return '人機驗證未通過，請重新驗證後再送出。';
+    case 'CLIENT_TOKEN_INVALID':
+      // Still refused after the automatic retry, which almost always means cookies are blocked.
+      return '無法完成送出驗證，請確認瀏覽器允許 Cookie 後再試一次。';
     case 'UNAUTHORIZED':
       return '驗證失敗，請重新輸入管理金鑰。';
     case 'NETWORK_ERROR':

@@ -1,10 +1,14 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Env } from '../_lib/cards'
+import { CLIENT_TOKEN_COOKIE, issueClientToken } from '../_lib/client-token'
+import { saltedHash } from '../_lib/rate-limit'
+import { createTestDb, sqliteAvailable } from '../_test/d1'
 import { onRequestPost } from './cards'
 
 const HOST = '26fwd-staging.pages.dev'
 const SITEVERIFY = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
 const WIDGET_ACTION = 'forward_card'
+const TOKEN_SECRET = 'client-token-test-secret-0123456789abcdef'
 
 type Call = { sql: string; params: unknown[] }
 
@@ -20,7 +24,8 @@ function createFakeDb() {
         async all() { calls.push({ sql, params }); return { results: [] } },
         async first() {
           calls.push({ sql, params })
-          return /SELECT minute_count/.test(sql) ? { minute_count: 1, hour_count: 1 } : null
+          // Every limiter UPSERT counts the request; the limits themselves are tested on real SQLite below.
+          return /RETURNING limiter_key/.test(sql) ? { limiter_key: params[0] } : null
         },
       }
       return statement
@@ -39,16 +44,17 @@ function makeEnv(db: D1Database, overrides: Partial<Env> = {}): Env {
     TURNSTILE_SECRET_KEY: 'test-secret',
     TURNSTILE_ALLOWED_HOSTNAME: HOST,
     RATE_LIMIT_SALT: 'test-salt',
+    CLIENT_TOKEN_SECRET: TOKEN_SECRET,
     ...overrides,
   }
 }
 
-function submit(body: Record<string, unknown>) {
-  return new Request(`https://${HOST}/api/cards`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', 'CF-Connecting-IP': '203.0.113.7' },
-    body: JSON.stringify(body),
-  })
+// `token`: omitted → a fresh valid Client Token; null → no cookie at all; a string → that token.
+async function submit(body: Record<string, unknown>, { token, ip = '203.0.113.7' }: { token?: string | null; ip?: string } = {}) {
+  const headers: Record<string, string> = { 'content-type': 'application/json', 'CF-Connecting-IP': ip }
+  const cookie = token === undefined ? await issueClientToken(TOKEN_SECRET, Date.now()) : token
+  if (cookie) headers.Cookie = `${CLIENT_TOKEN_COOKIE}=${cookie}`
+  return new Request(`https://${HOST}/api/cards`, { method: 'POST', headers, body: JSON.stringify(body) })
 }
 
 const validCard = {
@@ -80,7 +86,7 @@ describe('POST /api/cards — Turnstile verification', () => {
     const fetchMock = mockSiteverify({ success: true, action: WIDGET_ACTION, hostname: HOST })
     const { db, cardInserts } = createFakeDb()
 
-    const response = await onRequestPost({ request: submit(validCard), env: makeEnv(db) })
+    const response = await onRequestPost({ request: await submit(validCard), env: makeEnv(db) })
 
     expect(response.status).toBe(201)
     const body = await response.json() as { card_id: string }
@@ -101,7 +107,7 @@ describe('POST /api/cards — Turnstile verification', () => {
     mockSiteverify({ success: true, action: 'forward-card', hostname: HOST })
     const { db, calls } = createFakeDb()
 
-    const response = await onRequestPost({ request: submit(validCard), env: makeEnv(db) })
+    const response = await onRequestPost({ request: await submit(validCard), env: makeEnv(db) })
 
     expect(response.status).toBe(400)
     expect(await errorCode(response)).toMatch(/^TURNSTILE_/)
@@ -112,7 +118,7 @@ describe('POST /api/cards — Turnstile verification', () => {
     mockSiteverify({ success: true, action: WIDGET_ACTION, hostname: 'abc123.26fwd-staging.pages.dev' })
     const { db, calls } = createFakeDb()
 
-    const response = await onRequestPost({ request: submit(validCard), env: makeEnv(db) })
+    const response = await onRequestPost({ request: await submit(validCard), env: makeEnv(db) })
 
     expect(response.status).toBe(400)
     expect(calls).toHaveLength(0)
@@ -122,7 +128,7 @@ describe('POST /api/cards — Turnstile verification', () => {
     mockSiteverify({ success: false, 'error-codes': ['timeout-or-duplicate'] })
     const { db, calls } = createFakeDb()
 
-    const response = await onRequestPost({ request: submit(validCard), env: makeEnv(db) })
+    const response = await onRequestPost({ request: await submit(validCard), env: makeEnv(db) })
 
     expect(response.status).toBe(400)
     expect(calls).toHaveLength(0)
@@ -132,7 +138,7 @@ describe('POST /api/cards — Turnstile verification', () => {
     mockSiteverify({ success: true, action: WIDGET_ACTION, hostname: HOST }, 500)
     const { db, calls } = createFakeDb()
 
-    const response = await onRequestPost({ request: submit(validCard), env: makeEnv(db) })
+    const response = await onRequestPost({ request: await submit(validCard), env: makeEnv(db) })
 
     expect(response.status).toBe(500)
     expect(calls).toHaveLength(0)
@@ -142,7 +148,7 @@ describe('POST /api/cards — Turnstile verification', () => {
     vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('network down') }))
     const { db, calls } = createFakeDb()
 
-    const response = await onRequestPost({ request: submit(validCard), env: makeEnv(db) })
+    const response = await onRequestPost({ request: await submit(validCard), env: makeEnv(db) })
 
     expect(response.status).toBe(500)
     expect(calls).toHaveLength(0)
@@ -152,7 +158,7 @@ describe('POST /api/cards — Turnstile verification', () => {
     const fetchMock = mockSiteverify({ success: true, action: WIDGET_ACTION, hostname: HOST })
     const { db, calls } = createFakeDb()
 
-    const response = await onRequestPost({ request: submit({ ...validCard, turnstile_token: '' }), env: makeEnv(db) })
+    const response = await onRequestPost({ request: await submit({ ...validCard, turnstile_token: '' }), env: makeEnv(db) })
 
     expect(response.status).toBe(400)
     expect(fetchMock).not.toHaveBeenCalled()
@@ -163,7 +169,7 @@ describe('POST /api/cards — Turnstile verification', () => {
     const fetchMock = mockSiteverify({ success: true, action: WIDGET_ACTION, hostname: HOST })
     const { db, calls } = createFakeDb()
 
-    const response = await onRequestPost({ request: submit(validCard), env: makeEnv(db, { TURNSTILE_SECRET_KEY: undefined }) })
+    const response = await onRequestPost({ request: await submit(validCard), env: makeEnv(db, { TURNSTILE_SECRET_KEY: undefined }) })
 
     expect(response.status).toBe(503)
     expect(fetchMock).not.toHaveBeenCalled()
@@ -178,7 +184,7 @@ describe('POST /api/cards — honeypot', () => {
     const fetchMock = mockSiteverify({ success: true, action: WIDGET_ACTION, hostname: HOST })
     const { db, calls } = createFakeDb()
 
-    const response = await onRequestPost({ request: submit({ ...validCard, honeypot: 'https://spam.example' }), env: makeEnv(db) })
+    const response = await onRequestPost({ request: await submit({ ...validCard, honeypot: 'https://spam.example' }), env: makeEnv(db) })
 
     expect(response.status).toBe(201)
     const body = await response.json() as Record<string, unknown>
@@ -194,7 +200,7 @@ describe('POST /api/cards — honeypot', () => {
     const ids = new Set<unknown>()
 
     for (let i = 0; i < 3; i++) {
-      const response = await onRequestPost({ request: submit({ ...validCard, honeypot: 'x' }), env: makeEnv(db) })
+      const response = await onRequestPost({ request: await submit({ ...validCard, honeypot: 'x' }), env: makeEnv(db) })
       ids.add((await response.json() as { card_id: unknown }).card_id)
     }
 
@@ -204,7 +210,7 @@ describe('POST /api/cards — honeypot', () => {
   it('still discards a honeypot hit that carries no Turnstile token', async () => {
     const { db, calls } = createFakeDb()
 
-    const response = await onRequestPost({ request: submit({ ...validCard, honeypot: 'x', turnstile_token: '' }), env: makeEnv(db) })
+    const response = await onRequestPost({ request: await submit({ ...validCard, honeypot: 'x', turnstile_token: '' }), env: makeEnv(db) })
 
     expect(response.status).toBe(201)
     expect(calls).toHaveLength(0)
@@ -214,10 +220,130 @@ describe('POST /api/cards — honeypot', () => {
     mockSiteverify({ success: true, action: WIDGET_ACTION, hostname: HOST })
     const { db, cardInserts } = createFakeDb()
 
-    const response = await onRequestPost({ request: submit(validCard), env: makeEnv(db) })
+    const response = await onRequestPost({ request: await submit(validCard), env: makeEnv(db) })
 
     const body = await response.json() as { card_id: string }
     expect(body.card_id).toMatch(CARD_ID)
     expect(cardInserts()[0]?.params[0]).toBe(body.card_id)
+  })
+})
+
+describe('POST /api/cards — Client Token', () => {
+  it('refuses a card without a token with 401 CLIENT_TOKEN_INVALID, before Turnstile and without writing', async () => {
+    const fetchMock = mockSiteverify({ success: true, action: WIDGET_ACTION, hostname: HOST })
+    const { db, calls } = createFakeDb()
+
+    const response = await onRequestPost({ request: await submit(validCard, { token: null }), env: makeEnv(db) })
+
+    expect(response.status).toBe(401)
+    expect(await errorCode(response)).toBe('CLIENT_TOKEN_INVALID')
+    // The Turnstile token is still unused, so the browser can fetch a new Client Token and resend it.
+    expect(fetchMock).not.toHaveBeenCalled()
+    expect(calls).toHaveLength(0)
+  })
+
+  it('refuses expired, tampered and old-secret tokens the same way', async () => {
+    mockSiteverify({ success: true, action: WIDGET_ACTION, hostname: HOST })
+    const { db, calls } = createFakeDb()
+    const [version, id, expires, signature] = (await issueClientToken(TOKEN_SECRET, Date.now())).split('.') as [string, string, string, string]
+    const tokens = [
+      await issueClientToken(TOKEN_SECRET, Date.now() - 7200_000),
+      [version, id, String(Number(expires) + 3600), signature].join('.'),
+      await issueClientToken('a-previous-secret-that-was-rotated-out', Date.now()),
+    ]
+
+    for (const token of tokens) {
+      const response = await onRequestPost({ request: await submit(validCard, { token }), env: makeEnv(db) })
+      expect(response.status).toBe(401)
+      expect(await errorCode(response)).toBe('CLIENT_TOKEN_INVALID')
+    }
+    expect(calls).toHaveLength(0)
+  })
+
+  it('checks the fields and the honeypot before the token', async () => {
+    const { db, calls } = createFakeDb()
+
+    const invalid = await onRequestPost({ request: await submit({ ...validCard, nickname: '' }, { token: null }), env: makeEnv(db) })
+    const trapped = await onRequestPost({ request: await submit({ ...validCard, honeypot: 'x' }, { token: null }), env: makeEnv(db) })
+
+    expect(invalid.status).toBe(400)
+    expect(trapped.status).toBe(201)
+    expect(calls).toHaveLength(0)
+  })
+
+  it('answers 503 when the token secret is not configured, without calling Turnstile', async () => {
+    const fetchMock = mockSiteverify({ success: true, action: WIDGET_ACTION, hostname: HOST })
+    const { db, calls } = createFakeDb()
+
+    const response = await onRequestPost({ request: await submit(validCard), env: makeEnv(db, { CLIENT_TOKEN_SECRET: undefined }) })
+
+    expect(response.status).toBe(503)
+    expect(fetchMock).not.toHaveBeenCalled()
+    expect(calls).toHaveLength(0)
+  })
+})
+
+describe.skipIf(!sqliteAvailable)('POST /api/cards — rate limits (real SQLite)', () => {
+  const NOW = Date.parse('2026-11-13T12:00:10Z')
+
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(NOW)
+    mockSiteverify({ success: true, action: WIDGET_ACTION, hostname: HOST })
+  })
+  afterEach(() => { vi.useRealTimers() })
+
+  async function send(env: Env, options: { token?: string; ip?: string } = {}) {
+    const response = await onRequestPost({ request: await submit(validCard, options), env })
+    const body = await response.json() as { error?: { code?: string; retry_after_seconds?: number } }
+    return { status: response.status, code: body.error?.code, retry: body.error?.retry_after_seconds }
+  }
+
+  it('the same browser waits 60 seconds between cards; another browser on the same IP is not held up', async () => {
+    const { db } = createTestDb()
+    const env = makeEnv(db)
+    const mine = await issueClientToken(TOKEN_SECRET, NOW)
+
+    expect(await send(env, { token: mine })).toMatchObject({ status: 201 })
+    vi.setSystemTime(NOW + 20_000)
+    expect(await send(env, { token: mine })).toEqual({ status: 429, code: 'RATE_LIMITED', retry: 40 })
+    expect(await send(env, { token: await issueClientToken(TOKEN_SECRET, NOW) })).toMatchObject({ status: 201 })
+    vi.setSystemTime(NOW + 60_000)
+    expect(await send(env, { token: mine })).toMatchObject({ status: 201 })
+  })
+
+  it('400 browsers behind one IP can each send a card in the same minute; the 401st is refused, other IPs are not', async () => {
+    const { db, query } = createTestDb()
+    const env = makeEnv(db)
+
+    for (let i = 0; i < 400; i++) expect((await send(env)).status).toBe(201)
+
+    expect(await send(env)).toEqual({ status: 429, code: 'RATE_LIMITED', retry: 50 })
+    expect(await send(env, { ip: '198.51.100.20' })).toMatchObject({ status: 201 })
+    expect(query('SELECT COUNT(*) AS cards FROM forward_cards')).toEqual([{ cards: 401 }])
+  })
+
+  it('caps one IP at 2,000 cards per clock hour', async () => {
+    const { db, query } = createTestDb()
+    const hour = Math.floor(NOW / 3_600_000)
+    query(`INSERT INTO submission_rate_limits VALUES (?, 0, 0, ?, 2000, NULL)`, `ip:${await saltedHash('test-salt', '203.0.113.7')}`, hour)
+
+    expect(await send(makeEnv(db))).toEqual({ status: 429, code: 'RATE_LIMITED', retry: 3590 })
+  })
+
+  it('stores nothing for a refused card, and the limiter keeps only salted hashes', async () => {
+    const { db, query } = createTestDb()
+    const env = makeEnv(db)
+    const token = await issueClientToken(TOKEN_SECRET, NOW)
+
+    await send(env, { token })
+    await send(env, { token })
+
+    expect(query('SELECT COUNT(*) AS cards FROM forward_cards')).toEqual([{ cards: 1 }])
+    const keys = query('SELECT limiter_key FROM submission_rate_limits').map(row => String(row.limiter_key)).sort()
+    expect(keys).toHaveLength(2)
+    expect(keys[0]).toMatch(/^ip:[0-9a-f]{64}$/)
+    expect(keys[1]).toMatch(/^tok:[0-9a-f]{64}$/)
+    expect(JSON.stringify(query('SELECT * FROM submission_rate_limits'))).not.toMatch(new RegExp(`203\\.0\\.113\\.7|${token.split('.')[1]}`))
   })
 })
