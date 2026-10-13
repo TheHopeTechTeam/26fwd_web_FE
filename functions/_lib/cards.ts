@@ -7,7 +7,10 @@ export interface Env {
   TURNSTILE_ALLOWED_HOSTNAME?: string
   ADMIN_API_TOKEN?: string
   RATE_LIMIT_SALT?: string
+  CLIENT_TOKEN_SECRET?: string
   CARD_SUBMISSIONS_ENABLED?: string
+  // Staging only; see loadTestActive().
+  LOAD_TEST_MODE?: string
 }
 
 export type CardSubmission = {
@@ -96,41 +99,33 @@ export async function parseCardSubmission(request: Request): Promise<CardSubmiss
   }
 }
 
-export async function verifyTurnstile(token: string, request: Request, secret?: string, allowedHostname?: string): Promise<void> {
+// Staging load test (#5): scripted clients cannot solve a real Turnstile challenge, so while
+// LOAD_TEST_MODE=true the Turnstile check uses Cloudflare's always-pass test secret. It only takes
+// effect on the hostname written here, so the variable changes nothing if it is ever set on
+// production or reached through a preview URL. While active, every API response carries
+// X-FWD-Load-Test: on (functions/api/_middleware.ts).
+export const LOAD_TEST_HOSTNAME = '26fwd-staging.pages.dev'
+const TURNSTILE_ALWAYS_PASS_SECRET = '1x0000000000000000000000000000000AA'
+
+export function loadTestActive(request: Request, env: Env): boolean {
+  return env.LOAD_TEST_MODE === 'true' && new URL(request.url).hostname === LOAD_TEST_HOSTNAME
+}
+
+export async function verifyTurnstile(token: string, request: Request, env: Env): Promise<void> {
+  const loadTest = loadTestActive(request, env)
+  const secret = loadTest ? TURNSTILE_ALWAYS_PASS_SECRET : env.TURNSTILE_SECRET_KEY
   if (!secret) throw new ApiError(503, 'SERVICE_UNAVAILABLE', 'Turnstile secret is not configured')
   const form = new FormData(); form.set('secret', secret); form.set('response', token)
   const ip = request.headers.get('CF-Connecting-IP'); if (ip) form.set('remoteip', ip)
   const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'POST', body: form })
   if (!response.ok) throw new Error(`Turnstile HTTP ${response.status}`)
   const result = await response.json() as { success?: boolean; hostname?: string; action?: string }
-  const requestHostname = new URL(request.url).hostname
-  const expectedHostname = allowedHostname || requestHostname
-  if (!result.success || result.action !== 'forward_card' || result.hostname !== expectedHostname)
+  if (!result.success) throw new ApiError(400, 'TURNSTILE_FAILED', 'Turnstile verification failed')
+  // The always-pass secret answers with placeholder action and hostname values.
+  if (loadTest) return
+  const expectedHostname = env.TURNSTILE_ALLOWED_HOSTNAME || new URL(request.url).hostname
+  if (result.action !== 'forward_card' || result.hostname !== expectedHostname)
     throw new ApiError(400, 'TURNSTILE_FAILED', 'Turnstile verification failed')
-}
-
-export async function hashClientIp(request: Request, salt?: string): Promise<string> {
-  if (!salt) throw new ApiError(503, 'SERVICE_UNAVAILABLE', 'Rate limit salt is not configured')
-  const ip = request.headers.get('CF-Connecting-IP')
-  if (!ip) throw new ApiError(400, 'VALIDATION_ERROR', 'Client IP is unavailable')
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`${salt}:${ip}`))
-  return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('')
-}
-
-export async function consumeRateLimit(db: D1Database, ipHash: string, now: number): Promise<void> {
-  const minute = Math.floor(now / 60000), hour = Math.floor(now / 3600000)
-  if (Number.parseInt(ipHash.slice(0, 2), 16) % 64 === minute % 64)
-    await db.prepare('DELETE FROM submission_rate_limits WHERE hour_bucket < ?').bind(hour - 24).run()
-  await db.prepare(`INSERT INTO submission_rate_limits (ip_hash, minute_bucket, minute_count, hour_bucket, hour_count)
-    VALUES (?, ?, 1, ?, 1) ON CONFLICT(ip_hash) DO UPDATE SET
-    minute_count = CASE WHEN minute_bucket = excluded.minute_bucket THEN minute_count + 1 ELSE 1 END,
-    minute_bucket = excluded.minute_bucket,
-    hour_count = CASE WHEN hour_bucket = excluded.hour_bucket THEN hour_count + 1 ELSE 1 END,
-    hour_bucket = excluded.hour_bucket`).bind(ipHash, minute, hour).run()
-  const row = await db.prepare('SELECT minute_count, hour_count FROM submission_rate_limits WHERE ip_hash = ?').bind(ipHash).first<{ minute_count: number; hour_count: number }>()
-  if (!row) throw new Error('Rate limit state unavailable')
-  if (row.hour_count > 3) throw new ApiError(429, 'RATE_LIMITED', 'Too many submissions', { retryAfterSeconds: Math.max(1, Math.ceil(((hour + 1) * 3600000 - now) / 1000)) })
-  if (row.minute_count > 1) throw new ApiError(429, 'RATE_LIMITED', 'Too many submissions', { retryAfterSeconds: Math.max(1, Math.ceil(((minute + 1) * 60000 - now) / 1000)) })
 }
 
 export function authorize(request: Request, expected?: string): void {

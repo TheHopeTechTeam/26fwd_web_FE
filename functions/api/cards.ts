@@ -1,15 +1,23 @@
-import { consumeRateLimit, errorResponse, handleError, hashClientIp, json, parseCardSubmission, verifyTurnstile, type Env } from '../_lib/cards'
+import { errorResponse, handleError, json, parseCardSubmission, verifyTurnstile, type Env } from '../_lib/cards'
+import { requireClientToken } from '../_lib/client-token'
+import { clientIp, consumeRateLimit, RATE_RULES, requireSalt, saltedHash } from '../_lib/rate-limit'
 
 type Context = { request: Request; env: Env }
 
+// Order: validate → honeypot → Client Token → Turnstile → rate limits → insert. The Client Token
+// comes before Turnstile because a Turnstile token works only once: when the browser re-fetches
+// an expired Client Token and resends, the same Turnstile token is still unused.
 export async function onRequestPost({ request, env }: Context): Promise<Response> {
   try {
     if (env.CARD_SUBMISSIONS_ENABLED === 'false') return errorResponse(503, 'SERVICE_UNAVAILABLE', 'Card submissions are paused')
     const body = await parseCardSubmission(request)
     if (body.honeypot) return json({ success: true, card_id: `c_${crypto.randomUUID()}` }, 201)
-    await verifyTurnstile(body.turnstile_token, request, env.TURNSTILE_SECRET_KEY, env.TURNSTILE_ALLOWED_HOSTNAME)
-    const ipHash = await hashClientIp(request, env.RATE_LIMIT_SALT)
-    await consumeRateLimit(env.FORWARD_DB, ipHash, Date.now())
+    const tokenId = await requireClientToken(request, env.CLIENT_TOKEN_SECRET, Date.now())
+    await verifyTurnstile(body.turnstile_token, request, env)
+    const salt = requireSalt(env.RATE_LIMIT_SALT), now = Date.now()
+    // The IP is counted first: its quota is large, so a request then refused for its token costs it almost nothing.
+    await consumeRateLimit(env.FORWARD_DB, `ip:${await saltedHash(salt, clientIp(request))}`, RATE_RULES.ipSubmit, now)
+    await consumeRateLimit(env.FORWARD_DB, `tok:${await saltedHash(salt, tokenId)}`, RATE_RULES.token, now)
     const id = `c_${crypto.randomUUID()}`, createdAt = new Date().toISOString()
     await env.FORWARD_DB.prepare(`INSERT INTO forward_cards
       (id,nickname,text_gratitude,text_anticipate,status,agreed_to_publish,created_at)

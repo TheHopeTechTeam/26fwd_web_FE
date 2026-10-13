@@ -73,6 +73,8 @@ export type ApiErrorCode =
   | 'TURNSTILE_FAILED'
   | 'PAYLOAD_TOO_LARGE'
   | 'RATE_LIMITED'
+  /** 401 on POST /api/cards: the Client Token cookie is missing, expired or not genuine. */
+  | 'CLIENT_TOKEN_INVALID'
   | 'UNAUTHORIZED'
   | 'NOT_FOUND'
   | 'METHOD_NOT_ALLOWED'
