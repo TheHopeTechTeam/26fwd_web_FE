@@ -2,7 +2,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ApiError, createApiClient, describeError, type FetchLike } from '../../src/api/client'
 import { createMockFetch } from '../../src/api/mock/server'
 import type { Env } from '../_lib/cards'
-import { onRequestPost } from './cards'
+import { createTestDb, sqliteAvailable } from '../_test/d1'
+import { onRequestPost as submitCardHandler } from './cards'
+import { onRequestPost as clientTokenHandler } from './client-token'
 
 // The front end was built against the in-browser mock, which follows docs/api/openapi.yaml.
 // These tests send the same requests to the mock and to the real handler and require the
@@ -33,58 +35,74 @@ async function summarize(response: Response): Promise<Outcome> {
   }
 }
 
-// D1 stand-in. `submissionsSoFar` is how many cards this client already sent this minute.
-function fakeDb(submissionsSoFar = 0) {
-  const counts = { minute_count: submissionsSoFar + 1, hour_count: submissionsSoFar + 1 }
+function makeEnv(overrides: Partial<Env> = {}): Env {
   return {
-    prepare(sql: string) {
-      const statement = {
-        bind() { return statement },
-        async run() { return { meta: { changes: 1 } } },
-        async all() { return { results: [] } },
-        async first() { return /SELECT minute_count/.test(sql) ? counts : null },
-      }
-      return statement
-    },
-  } as unknown as D1Database
-}
-
-function makeEnv(overrides: Partial<Env> = {}, submissionsSoFar = 0): Env {
-  return {
-    FORWARD_DB: fakeDb(submissionsSoFar),
+    FORWARD_DB: createTestDb().db,
     TURNSTILE_SECRET_KEY: 'test-secret',
     TURNSTILE_ALLOWED_HOSTNAME: HOST,
     RATE_LIMIT_SALT: 'test-salt',
+    CLIENT_TOKEN_SECRET: 'client-token-test-secret-0123456789abcdef',
     ...overrides,
   }
 }
 
+// A browser tab on the real handlers. Like a real browser it keeps the cookie the server sets
+// and sends it back, but only on requests made with credentials 'same-origin'. `blockCookies`
+// is a browser set to refuse cookies. `log` records each response, with "+cookie" when the
+// server set a new Client Token.
+function browser(env: Env, { blockCookies = false } = {}) {
+  let cookie: string | undefined
+  const log: string[] = []
+  const fetch: FetchLike = async (input, init = {}) => {
+    const withCookies = init.credentials === 'same-origin'
+    const headers = new Headers(init.headers)
+    headers.set('CF-Connecting-IP', '203.0.113.7')
+    if (withCookies && cookie) headers.set('Cookie', cookie)
+    const request = new Request(`https://${HOST}${input}`, { method: init.method, headers, body: init.body as string | undefined })
+    const response = await (input === '/api/client-token' ? clientTokenHandler : submitCardHandler)({ request, env })
+    const setCookie = response.headers.get('Set-Cookie')
+    if (withCookies && setCookie && !blockCookies) cookie = setCookie.split(';')[0]
+    log.push(`${input} ${response.status}${setCookie ? ' +cookie' : ''}`)
+    return response
+  }
+  return { fetch, log }
+}
+
 function stubSiteverify(result: Record<string, unknown> = { success: true, action: 'forward_card', hostname: HOST }, status = 200) {
-  vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(result), { status })))
+  const siteverify = vi.fn(async () => new Response(JSON.stringify(result), { status }))
+  vi.stubGlobal('fetch', siteverify)
+  return siteverify
 }
 
-async function viaMock(bodyText: string, submissionsSoFar = 0): Promise<Outcome> {
-  const mockFetch = createMockFetch({ seed: [], latency: [0, 0], now: () => NOW })
-  for (let i = 0; i < submissionsSoFar; i++) await mockFetch('/api/cards', { method: 'POST', body: JSON.stringify(valid) })
-  return summarize(await mockFetch('/api/cards', { method: 'POST', body: bodyText }))
-}
+type Send = { cardsAlreadySent?: number; withToken?: boolean }
 
-async function viaBackend(bodyText: string, submissionsSoFar = 0): Promise<Outcome> {
-  stubSiteverify()
-  const request = new Request(`https://${HOST}/api/cards`, {
+// What the browser client does, but with a raw body: get a Client Token, then post the card.
+async function sendRaw(fetch: FetchLike, bodyText: string, { cardsAlreadySent = 0, withToken = true }: Send): Promise<Response> {
+  const post = (path: string, body?: string) => fetch(path, {
     method: 'POST',
-    headers: { 'content-type': 'application/json', 'CF-Connecting-IP': '203.0.113.7' },
-    body: bodyText,
+    credentials: 'same-origin',
+    ...(body === undefined ? {} : { headers: { 'Content-Type': 'application/json' }, body }),
   })
-  return summarize(await onRequestPost({ request, env: makeEnv({}, submissionsSoFar) }))
+  if (withToken) await post('/api/client-token')
+  for (let i = 0; i < cardsAlreadySent; i++) await post('/api/cards', JSON.stringify(valid))
+  return post('/api/cards', bodyText)
+}
+
+async function viaMock(bodyText: string, send: Send): Promise<Outcome> {
+  return summarize(await sendRaw(createMockFetch({ seed: [], latency: [0, 0], now: () => NOW }), bodyText, send))
+}
+
+async function viaBackend(bodyText: string, send: Send): Promise<Outcome> {
+  stubSiteverify()
+  return summarize(await sendRaw(browser(makeEnv()).fetch, bodyText, send))
 }
 
 const card = (overrides: Record<string, unknown>) => JSON.stringify({ ...valid, ...overrides })
 
 afterEach(() => { vi.unstubAllGlobals() })
 
-describe('POST /api/cards — mock and real backend give the same answer', () => {
-  const cases: Array<{ name: string; body: string; submissionsSoFar?: number }> = [
+describe.skipIf(!sqliteAvailable)('POST /api/cards — mock and real backend give the same answer', () => {
+  const cases: Array<{ name: string; body: string } & Send> = [
     { name: 'a valid card', body: card({}) },
     { name: 'missing nickname', body: card({ nickname: undefined }) },
     { name: 'blank nickname', body: card({ nickname: '   ' }) },
@@ -104,36 +122,82 @@ describe('POST /api/cards — mock and real backend give the same answer', () =>
     { name: 'body is JSON null', body: 'null' },
     { name: 'malformed JSON', body: '{"nickname":' },
     { name: 'body over 4 KiB', body: card({ text_gratitude: 'x'.repeat(5000) }) },
-    { name: 'second card within the same minute', body: card({}), submissionsSoFar: 1 },
+    { name: 'second card within 60 seconds', body: card({}), cardsAlreadySent: 1 },
+    { name: 'no Client Token', body: card({}), withToken: false },
+    { name: 'invalid fields and no Client Token (fields are checked first)', body: card({ nickname: '' }), withToken: false },
+    { name: 'filled honeypot and no Client Token (the trap still answers first)', body: card({ honeypot: 'x' }), withToken: false },
   ]
 
-  it.each(cases)('$name', async ({ body, submissionsSoFar }) => {
-    const expected = await viaMock(body, submissionsSoFar)
-    const actual = await viaBackend(body, submissionsSoFar)
+  it.each(cases)('$name', async ({ body, ...send }) => {
+    const expected = await viaMock(body, send)
+    const actual = await viaBackend(body, send)
     expect(actual).toEqual(expected)
   })
 })
 
-// The real front-end client calling the real handler: what a visitor would see once
-// VITE_API_MODE=live. Messages come from describeError(), the same function the form uses.
-describe('POST /api/cards — visitor-facing result through the real client', () => {
-  function clientFor(env: Env) {
-    const backendFetch: FetchLike = async (input, init = {}) => onRequestPost({
-      request: new Request(`https://${HOST}${input}`, {
-        method: init.method,
-        headers: { ...(init.headers as Record<string, string>), 'CF-Connecting-IP': '203.0.113.7' },
-        body: init.body as string,
-      }),
-      env,
-    })
-    return createApiClient({ baseUrl: '', fetch: backendFetch })
-  }
-
-  async function failure(env: Env, payload: Record<string, unknown> = valid): Promise<ApiError> {
-    const error = await clientFor(env).submitCard(payload as never).then(() => null, (e: unknown) => e)
+// The real front-end client calling the real handlers in a simulated browser: what a visitor
+// would see once VITE_API_MODE=live. Messages come from describeError(), as in the form.
+describe.skipIf(!sqliteAvailable)('POST /api/cards — visitor-facing result through the real client', () => {
+  async function failure(env: Env, payload: Record<string, unknown> = valid, cardsAlreadySent = 0): Promise<ApiError> {
+    const client = createApiClient({ baseUrl: '', fetch: browser(env).fetch })
+    for (let i = 0; i < cardsAlreadySent; i++) await client.submitCard(valid as never)
+    const error = await client.submitCard(payload as never).then(() => null, (e: unknown) => e)
     expect(error).toBeInstanceOf(ApiError)
     return error as ApiError
   }
+
+  it('gets a Client Token first, then the card goes through with it', async () => {
+    stubSiteverify()
+    const tab = browser(makeEnv())
+
+    await expect(createApiClient({ baseUrl: '', fetch: tab.fetch }).submitCard(valid as never)).resolves.toMatchObject({ success: true })
+
+    expect(tab.log).toEqual(['/api/client-token 204 +cookie', '/api/cards 201'])
+  })
+
+  it('a page reload keeps the same token, so the quota is not reset', async () => {
+    stubSiteverify()
+    const tab = browser(makeEnv())
+    await createApiClient({ baseUrl: '', fetch: tab.fetch }).submitCard(valid as never)
+
+    const reloaded = createApiClient({ baseUrl: '', fetch: tab.fetch })
+    const error = await reloaded.submitCard(valid as never).then(() => null, (e: unknown) => e)
+
+    expect((error as ApiError).code).toBe('RATE_LIMITED')
+    expect(tab.log).toEqual(['/api/client-token 204 +cookie', '/api/cards 201', '/api/client-token 204', '/api/cards 429'])
+  })
+
+  it('when the server stops accepting the token (here, a secret change), the card is resent once with a new token and the same Turnstile token', async () => {
+    const siteverify = stubSiteverify()
+    const env = makeEnv()
+    const tab = browser(env)
+    let rotated = false
+    const rotateBeforeFirstCard: FetchLike = (input, init) => {
+      if (input === '/api/cards' && !rotated) {
+        rotated = true
+        env.CLIENT_TOKEN_SECRET = 'a-new-secret-after-rotation-0123456789ab'
+      }
+      return tab.fetch(input, init)
+    }
+
+    await expect(createApiClient({ baseUrl: '', fetch: rotateBeforeFirstCard }).submitCard(valid as never)).resolves.toMatchObject({ success: true })
+
+    expect(tab.log).toEqual(['/api/client-token 204 +cookie', '/api/cards 401', '/api/client-token 204 +cookie', '/api/cards 201'])
+    expect(siteverify).toHaveBeenCalledTimes(1)
+    expect(((siteverify.mock.calls[0] as unknown as [string, RequestInit])[1].body as FormData).get('response')).toBe('token-from-widget')
+  })
+
+  it('if the browser blocks cookies, the visitor is asked to allow them, and Turnstile is never used', async () => {
+    const siteverify = stubSiteverify()
+    const tab = browser(makeEnv(), { blockCookies: true })
+
+    const error = await createApiClient({ baseUrl: '', fetch: tab.fetch }).submitCard(valid as never).then(() => null, (e: unknown) => e)
+
+    expect((error as ApiError).code).toBe('CLIENT_TOKEN_INVALID')
+    expect(describeError(error)).toBe('無法完成送出驗證，請確認瀏覽器允許 Cookie 後再試一次。')
+    expect(tab.log).toEqual(['/api/client-token 204 +cookie', '/api/cards 401', '/api/client-token 204 +cookie', '/api/cards 401'])
+    expect(siteverify).not.toHaveBeenCalled()
+  })
 
   it('field errors come back per field with the format message', async () => {
     stubSiteverify()
@@ -159,7 +223,7 @@ describe('POST /api/cards — visitor-facing result through the real client', ()
 
   it('rate limiting says "too frequent" and carries a retry time', async () => {
     stubSiteverify()
-    const error = await failure(makeEnv({}, 1))
+    const error = await failure(makeEnv(), valid, 1)
     expect(error.code).toBe('RATE_LIMITED')
     expect(error.retryAfterSeconds).toBeGreaterThan(0)
     expect(describeError(error)).toBe('發送太頻繁，請稍後再試。')
@@ -174,9 +238,11 @@ describe('POST /api/cards — visitor-facing result through the real client', ()
 
   it('a missing server secret reads as a temporary outage', async () => {
     stubSiteverify()
-    const error = await failure(makeEnv({ TURNSTILE_SECRET_KEY: undefined }))
-    expect(error.code).toBe('SERVICE_UNAVAILABLE')
-    expect(describeError(error)).toBe('服務暫時無法使用，請稍後再試。')
+    for (const missing of [{ TURNSTILE_SECRET_KEY: undefined }, { CLIENT_TOKEN_SECRET: undefined }]) {
+      const error = await failure(makeEnv(missing))
+      expect(error.code).toBe('SERVICE_UNAVAILABLE')
+      expect(describeError(error)).toBe('服務暫時無法使用，請稍後再試。')
+    }
   })
 
   it('a verification service outage is a generic system error, never a stored card', async () => {
@@ -189,6 +255,6 @@ describe('POST /api/cards — visitor-facing result through the real client', ()
   it('error messages never echo secrets or internal details', async () => {
     stubSiteverify({}, 500)
     const error = await failure(makeEnv())
-    expect(error.message).not.toMatch(/test-secret|test-salt|siteverify|HTTP 500/i)
+    expect(error.message).not.toMatch(/test-secret|test-salt|client-token-test-secret|siteverify|HTTP 500/i)
   })
 })

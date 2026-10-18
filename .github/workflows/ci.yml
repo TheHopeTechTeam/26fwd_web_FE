@@ -21,7 +21,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # Same as deploy-pages.yml and the Cloudflare Pages build. The backend tests run the
+          # real migrations on node:sqlite, which needs Node 22.13 or later (they skip on older Node).
+          node-version: 22
           cache: npm
 
       - name: Install dependencies

@@ -32,7 +32,8 @@ export interface MockServerOptions {
   seed?: StoredCard[];
 }
 
-const RATE_PER_MINUTE = 1;
+const CLIENT_TOKEN_TTL_MS = 7200_000;
+const MIN_GAP_MS = 60_000;
 const RATE_PER_HOUR = 3;
 const ID_PATTERN = /^[A-Za-z0-9_-]{1,80}$/;
 
@@ -73,15 +74,25 @@ function parseIntParam(value: string | null, fallback: number): number | null {
 export function createMockServer(options: MockServerOptions = {}) {
   const now = options.now ?? (() => Date.now());
   const cards: StoredCard[] = options.seed ?? createSeedCards(now());
-  // One simulated client, so the limiter state is a single pair of buckets.
-  const rate = { minuteBucket: -1, minuteCount: 0, hourBucket: -1, hourCount: 0 };
+  // Stands in for the one simulated browser's Client Token cookie and its quota. Like the real
+  // cookie it is set by POST /api/client-token and only travels with requests made with
+  // credentials 'same-origin'; a new token starts a new quota, as on the server.
+  let clientToken: { expiresAt: number; lastCardAt: number | null; hourBucket: number; hourCount: number } | null = null;
+
+  function issueClientToken(sendsCookies: boolean): MockResponse {
+    const t = now();
+    if (sendsCookies && (!clientToken || clientToken.expiresAt <= t)) {
+      clientToken = { expiresAt: t + CLIENT_TOKEN_TTL_MS, lastCardAt: null, hourBucket: -1, hourCount: 0 };
+    }
+    return { status: 204, body: null, headers: { 'Cache-Control': 'no-store' } };
+  }
 
   function authorized(headers: Headers): boolean {
     const match = /^Bearer (.+)$/.exec(headers.get('Authorization') ?? '');
     return !!match && (match[1] ?? '').length >= ADMIN_TOKEN_MIN_LENGTH;
   }
 
-  function submitCard(bodyText: string): MockResponse {
+  function submitCard(bodyText: string, sendsCookies: boolean): MockResponse {
     if (new TextEncoder().encode(bodyText).length > MAX_BODY_BYTES) {
       return error(413, 'PAYLOAD_TOO_LARGE', 'Request body exceeds 4 KiB');
     }
@@ -118,28 +129,23 @@ export function createMockServer(options: MockServerOptions = {}) {
     }
 
     const t = now();
-    const minute = Math.floor(t / 60000);
+    const token = sendsCookies && clientToken && clientToken.expiresAt > t ? clientToken : null;
+    if (!token) return error(401, 'CLIENT_TOKEN_INVALID', 'Missing, expired or invalid client token');
+
+    // Per token: 60 seconds after the previous card, and 3 per clock hour.
     const hour = Math.floor(t / 3600000);
-    if (rate.minuteBucket !== minute) {
-      rate.minuteBucket = minute;
-      rate.minuteCount = 0;
+    if (token.hourBucket !== hour) {
+      token.hourBucket = hour;
+      token.hourCount = 0;
     }
-    if (rate.hourBucket !== hour) {
-      rate.hourBucket = hour;
-      rate.hourCount = 0;
+    let waitMs = 0;
+    if (token.lastCardAt !== null) waitMs = Math.max(waitMs, token.lastCardAt + MIN_GAP_MS - t);
+    if (token.hourCount >= RATE_PER_HOUR) waitMs = Math.max(waitMs, (hour + 1) * 3600000 - t);
+    if (waitMs > 0) {
+      return error(429, 'RATE_LIMITED', 'Too many requests', { retry_after_seconds: Math.max(1, Math.ceil(waitMs / 1000)) });
     }
-    if (rate.hourCount >= RATE_PER_HOUR) {
-      return error(429, 'RATE_LIMITED', 'Too many submissions', {
-        retry_after_seconds: Math.ceil(((hour + 1) * 3600000 - t) / 1000),
-      });
-    }
-    if (rate.minuteCount >= RATE_PER_MINUTE) {
-      return error(429, 'RATE_LIMITED', 'Too many submissions', {
-        retry_after_seconds: Math.ceil(((minute + 1) * 60000 - t) / 1000),
-      });
-    }
-    rate.minuteCount++;
-    rate.hourCount++;
+    token.lastCardAt = t;
+    token.hourCount++;
 
     const card: StoredCard = {
       id: randomId(),
@@ -188,12 +194,23 @@ export function createMockServer(options: MockServerOptions = {}) {
     return { status: 200, body: { success: true, card_id: card.id, status: card.status }, headers: { 'Cache-Control': 'no-store' } };
   }
 
-  async function handle(method: string, rawUrl: string, headers: Headers, bodyText: string): Promise<MockResponse> {
+  async function handle(
+    method: string,
+    rawUrl: string,
+    headers: Headers,
+    bodyText: string,
+    sendsCookies = false,
+  ): Promise<MockResponse> {
     const url = new URL(rawUrl, 'https://mock.invalid');
     const path = url.pathname.replace(/\/+$/, '');
 
+    if (path === '/api/client-token') {
+      if (method === 'POST') return issueClientToken(sendsCookies);
+      return error(405, 'METHOD_NOT_ALLOWED', 'Method not allowed');
+    }
+
     if (path === '/api/cards') {
-      if (method === 'POST') return submitCard(bodyText);
+      if (method === 'POST') return submitCard(bodyText, sendsCookies);
       if (method === 'GET') return listPublic(url.searchParams);
       return error(405, 'METHOD_NOT_ALLOWED', 'Method not allowed');
     }
@@ -250,8 +267,9 @@ export function createMockFetch(options: MockFetchOptions = {}): FetchLike {
       );
     });
     const body = typeof init.body === 'string' ? init.body : '';
-    const result = await server.handle(init.method ?? 'GET', input, new Headers(init.headers), body);
-    return new Response(JSON.stringify(result.body), {
+    const sendsCookies = init.credentials === 'same-origin' || init.credentials === 'include';
+    const result = await server.handle(init.method ?? 'GET', input, new Headers(init.headers), body, sendsCookies);
+    return new Response(result.status === 204 ? null : JSON.stringify(result.body), {
       status: result.status,
       headers: { 'Content-Type': 'application/json; charset=utf-8', ...result.headers },
     });

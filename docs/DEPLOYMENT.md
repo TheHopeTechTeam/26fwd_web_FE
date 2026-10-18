@@ -53,10 +53,15 @@
 npx wrangler d1 create forward_cards_staging
 npx wrangler d1 create forward_cards_prod
 
-# 執行 Schema 遷移
+# 執行 Schema 遷移（依編號順序，每個資料庫各執行一次）
 npx wrangler d1 execute forward_cards_staging --remote --file=./migrations/0001_initial.sql
+npx wrangler d1 execute forward_cards_staging --remote --file=./migrations/0002_client_token_rate_limits.sql
 npx wrangler d1 execute forward_cards_prod --remote --file=./migrations/0001_initial.sql
+npx wrangler d1 execute forward_cards_prod --remote --file=./migrations/0002_client_token_rate_limits.sql
 ```
+
+> - 已經套用過的 migration 不可修改，之後的變更一律新增下一個編號。
+> - `0002` 會把限流表的鍵欄位改名，**舊版程式在套用後無法送卡**。對已上線的資料庫，套用 `0002` 後要立刻部署包含 Client Token 的版本；新建的資料庫（例如 M4 的正式庫）則在第一次部署前套用即可。
 
 ### 2. 環境變數綁定清單
 
@@ -68,6 +73,7 @@ TURNSTILE_SECRET_KEY=<staging-widget-secret-key>
 TURNSTILE_ALLOWED_HOSTNAME=26fwd-staging.pages.dev
 ADMIN_API_TOKEN=<staging-secret-token-32-chars>
 RATE_LIMIT_SALT=<staging-random-salt>
+CLIENT_TOKEN_SECRET=<staging-random-secret-32-chars-or-more>
 VITE_GIVE_URL=https://thehope.co/give?utm_campaign=staging_test
 VITE_GA4_MEASUREMENT_ID=
 CARD_SUBMISSIONS_ENABLED=true
@@ -81,15 +87,27 @@ TURNSTILE_SECRET_KEY=<production-turnstile-secret-key>
 TURNSTILE_ALLOWED_HOSTNAME=forward.thehope.co
 ADMIN_API_TOKEN=<production-high-entropy-token-32-chars>
 RATE_LIMIT_SALT=<production-high-entropy-salt>
+CLIENT_TOKEN_SECRET=<production-random-secret-32-chars-or-more>
 VITE_GIVE_URL=<official-forward-give-url-from-finance>
 VITE_GA4_MEASUREMENT_ID=<official-ga4-measurement-id>
 CARD_SUBMISSIONS_ENABLED=true
 ```
 
 > **設定注意事項**
-> - `TURNSTILE_SECRET_KEY`、`ADMIN_API_TOKEN`、`RATE_LIMIT_SALT` 在 Cloudflare Pages 要設為 **Secret（加密）**類型，不要用明文變數。
+> - `TURNSTILE_SECRET_KEY`、`ADMIN_API_TOKEN`、`RATE_LIMIT_SALT`、`CLIENT_TOKEN_SECRET` 在 Cloudflare Pages 要設為 **Secret（加密）**類型，不要用明文變數。`CLIENT_TOKEN_SECRET` 至少 32 字元，可用 `openssl rand -base64 48` 產生；staging 與正式環境要用不同的值。更換它會讓所有 Client Token 立即失效（前端會自動重領）。
 > - `VITE_*` 在 build 時寫入前端 bundle，修改後需重新部署才會生效。
 > - Turnstile 的 hostname 檢查只接受主網址；Pages 每次部署的預覽網址（`<hash>.26fwd-staging.pages.dev`）會被拒絕，驗收請使用主網址。
+
+#### Staging 壓測模式 `LOAD_TEST_MODE`（只用於 #5 的 300 人壓測）
+
+自動化腳本無法通過真實的 Turnstile，所以壓測時在 `26fwd-staging` 暫時加上明文變數 `LOAD_TEST_MODE=true`：Turnstile 改用 Cloudflare 官方的「永遠通過」測試 secret，只檢查 `success`。Client Token、限流與寫入 D1 都照正常流程執行。
+
+- **只有網域剛好是 `26fwd-staging.pages.dev` 才會生效**（寫死在程式裡）。正式網域與預覽網址即使設了這個變數也不會生效，而且每個請求都會記一行錯誤 log
+- 生效期間，每個 `/api/*` 回應都帶 `X-FWD-Load-Test: on`，並記一行警告 log
+- 開啟：設定變數 → 重新部署 → 確認回應出現 `X-FWD-Load-Test: on`
+- 關閉：刪除變數 → 重新部署 → 確認標頭消失，並用手機以真實 Turnstile 送一張卡
+- 壓測卡片的暱稱一律以 `壓測-` 開頭，方便事後清理
+- **正式專案 `26fwd-prod` 永遠不設定這個變數**；M4 上線檢查要確認它不存在
 
 ---
 

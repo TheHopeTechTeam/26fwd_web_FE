@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ApiError, createApiClient, describeError } from './client';
+import { ApiError, createApiClient, describeError, type FetchLike } from './client';
 import { createMockFetch } from './mock/server';
 import { createSeedCards } from './mock/seed';
 import type { SubmitCardRequest } from './types';
@@ -101,7 +101,7 @@ describe('POST /api/cards', () => {
     await expect(client.submitCard(valid)).resolves.toMatchObject({ success: true });
   });
 
-  it('limits to 1 per minute and 3 per hour with Retry-After', async () => {
+  it('allows a card 60 seconds after the previous one and 3 per hour, with Retry-After', async () => {
     const { client, advance } = setup();
     await client.submitCard(valid);
     const tooSoon = await expectError(client.submitCard(valid), 429, 'RATE_LIMITED');
@@ -115,6 +115,101 @@ describe('POST /api/cards', () => {
     advance(61_000);
     const hourly = await expectError(client.submitCard(valid), 429, 'RATE_LIMITED');
     expect(hourly.retryAfterSeconds).toBeGreaterThan(60);
+  });
+});
+
+describe('Client Token', () => {
+  const invalidToken = { success: false, error: { code: 'CLIENT_TOKEN_INVALID', message: 'Missing, expired or invalid client token' } };
+
+  // A fetch that answers with the given [status, body] pairs in order and records each request.
+  function scripted(...responses: Array<[number, unknown?]>) {
+    const calls: Array<{ path: string; body?: string }> = [];
+    const fetch: FetchLike = async (input, init = {}) => {
+      calls.push({ path: input, body: init.body as string | undefined });
+      const [status, body] = responses.shift() ?? [500];
+      return new Response(status === 204 ? null : JSON.stringify(body ?? {}), { status });
+    };
+    return { client: createApiClient({ baseUrl: '', fetch }), calls };
+  }
+
+  it('gets a Client Token before each card; only those two requests carry cookies', async () => {
+    const seed = createSeedCards(Date.parse('2026-11-14T12:00:00Z'));
+    const mock = createMockFetch({ seed, latency: [0, 0] });
+    const calls: string[] = [];
+    const client = createApiClient({
+      baseUrl: '',
+      fetch: (input, init) => {
+        calls.push(`${init?.method} ${input.split('?')[0]} ${init?.credentials}`);
+        return mock(input, init);
+      },
+    });
+
+    await client.listCards({ page: 1, limit: 12 });
+    await client.submitCard(valid);
+    await client.adminListCards(ADMIN_TOKEN, 'pending');
+
+    expect(calls).toEqual([
+      'GET /api/cards omit',
+      'POST /api/client-token same-origin',
+      'POST /api/cards same-origin',
+      'GET /api/admin/cards omit',
+    ]);
+  });
+
+  it('the mock refuses a card sent without the token cookie, like the server', async () => {
+    const mock = createMockFetch({ seed: [], latency: [0, 0] });
+    const send = (credentials: RequestCredentials) =>
+      mock('/api/cards', { method: 'POST', body: JSON.stringify(valid), credentials }).then((r) => r.status);
+
+    expect(await send('same-origin')).toBe(401);
+    await mock('/api/client-token', { method: 'POST', credentials: 'same-origin' });
+    expect(await send('omit')).toBe(401);
+    expect(await send('same-origin')).toBe(201);
+  });
+
+  it('a page reload keeps the token, so it does not reset the quota', async () => {
+    const mock = createMockFetch({ seed: [], latency: [0, 0] });
+    await createApiClient({ baseUrl: '', fetch: mock }).submitCard(valid);
+    const afterReload = createApiClient({ baseUrl: '', fetch: mock });
+    await expectError(afterReload.submitCard(valid), 429, 'RATE_LIMITED');
+  });
+
+  it('after the 2-hour expiry, the next card simply gets a new token', async () => {
+    const { client, advance } = setup();
+    await client.submitCard(valid);
+    advance(7200_000 + 1000);
+    await expect(client.submitCard(valid)).resolves.toMatchObject({ success: true });
+  });
+
+  it('when the token is refused, gets a new one and resends the same card once', async () => {
+    const { client, calls } = scripted([204], [401, invalidToken], [204], [201, { success: true, card_id: 'c_x' }]);
+
+    await expect(client.submitCard(valid)).resolves.toEqual({ success: true, card_id: 'c_x' });
+
+    expect(calls.map((c) => c.path)).toEqual(['/api/client-token', '/api/cards', '/api/client-token', '/api/cards']);
+    expect(calls[3]?.body).toBe(calls[1]?.body);
+  });
+
+  it('gives up after that one retry and asks the visitor to allow cookies', async () => {
+    const { client, calls } = scripted([204], [401, invalidToken], [204], [401, invalidToken]);
+
+    const error = await expectError(client.submitCard(valid), 401, 'CLIENT_TOKEN_INVALID');
+
+    expect(calls).toHaveLength(4);
+    expect(describeError(error)).toBe('無法完成送出驗證，請確認瀏覽器允許 Cookie 後再試一次。');
+  });
+
+  it('does not send the card when no token can be had, and does not retry other errors', async () => {
+    const limited = { success: false, error: { code: 'RATE_LIMITED', message: 'Too many requests', retry_after_seconds: 30 } };
+    const noToken = scripted([429, limited]);
+    const tooSoon = await expectError(noToken.client.submitCard(valid), 429, 'RATE_LIMITED');
+    expect(tooSoon.retryAfterSeconds).toBe(30);
+    expect(noToken.calls).toHaveLength(1);
+
+    const fieldError = { success: false, error: { code: 'VALIDATION_ERROR', message: 'x', fields: { nickname: 'required' } } };
+    const invalid = scripted([204], [400, fieldError]);
+    await expectError(invalid.client.submitCard(valid), 400, 'VALIDATION_ERROR');
+    expect(invalid.calls).toHaveLength(2);
   });
 });
 

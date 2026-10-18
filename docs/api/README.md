@@ -1,6 +1,6 @@
 # FORWARD 2026 · Forward Card API 契約（給後端）
 
-> 版本 v0.1（2026-09-22）｜對應規格表 ⑦ US-07／US-10／US-13／US-17、⑧ DATA-01～24
+> 版本 v0.2（2026-10-13，新增 Client Token，見 #5）｜v0.1（2026-09-22）｜對應規格表 ⑦ US-07／US-10／US-13／US-17、⑧ DATA-01～24
 > 前端目前以瀏覽器內的 mock server（`src/api/mock/server.ts`）實作**完全相同**的契約，後端照本文件實作後，只要把 `VITE_API_MODE=live`、`VITE_API_BASE_URL` 指向後端即可切換。
 > 機器可讀版本：[`openapi.yaml`](./openapi.yaml)（可直接匯入 Postman）。TypeScript 型別：`src/api/types.ts`。三者須保持一致。
 
@@ -12,7 +12,7 @@
 | 時間 | 一律 ISO 8601 UTC（例：`2026-11-14T10:00:00.000Z`）。前端也能解析 SQLite `YYYY-MM-DD HH:MM:SS`（視為 UTC），但新資料請輸出 ISO |
 | 字數 | 一律以 **trim 後的 Unicode code point** 計算（emoji 算 1），前後端規則一致 |
 | 換行 | 前端送出前會把 `\r\n`／`\r` 正規化為 `\n` |
-| CORS | 若 API 與網站不同網域，需允許網站 origin；前端請求 `credentials: 'omit'`（不帶 cookie） |
+| Cookie | 只有領取 Client Token 與送卡兩個請求使用 `credentials: 'same-origin'`（帶 Client Token cookie），其餘請求 `credentials: 'omit'`。Client Token cookie 為 `__Host-` 前綴且 `SameSite=Strict`，**API 必須與網站同網域**（目前即是：Pages Functions 與網站同一個網域） |
 | 快取 | 公開 `GET /api/cards` 可設 `Cache-Control: public, max-age=15`（下架最多延遲約 15 秒生效）；所有 admin 端點 `Cache-Control: no-store` |
 
 ### 錯誤格式（所有非 2xx）
@@ -37,6 +37,7 @@
 | --- | --- | --- | --- |
 | 400 | `VALIDATION_ERROR` | 欄位格式錯、JSON 壞掉、查詢參數超出範圍 | 格式錯誤，請檢查欄位內容後再送出。 |
 | 400 | `TURNSTILE_FAILED` | Turnstile 驗證失敗或過期 | 人機驗證未通過，請重新驗證後再送出。 |
+| 401 | `CLIENT_TOKEN_INVALID` | 送卡時 Client Token 缺少、過期或簽章不符 | 不顯示：前端自動重新領取並重送一次 |
 | 401 | `UNAUTHORIZED` | admin token 缺少或錯誤 | 驗證失敗，請重新輸入管理金鑰。 |
 | 404 | `NOT_FOUND` | 卡片不存在／路徑不存在 | — |
 | 405 | `METHOD_NOT_ALLOWED` | 方法不支援 | — |
@@ -47,9 +48,30 @@
 
 ---
 
+## 0. 領取 Client Token `POST /api/client-token`
+
+前端**每次送卡前**呼叫一次（`credentials: 'same-origin'`，不需要 body）。Client Token 是伺服器簽發的匿名 token，讓共用同一個對外 IP 的人（會場 wifi、行動網路）各自有送卡額度；它不含使用者資料，也不作為身分識別。
+
+| 情況 | 回應 |
+| --- | --- |
+| 瀏覽器已有有效 token | `204`，**不換新**（沒有 `Set-Cookie`）。重新整理頁面也沿用同一個 token，送卡額度不會重算 |
+| 沒有 token，或已過期、竄改、由舊密鑰簽發 | `204`，以 `Set-Cookie` 設定新 token |
+| 同一個 IP 每分鐘領取超過 600 個新 token | `429 RATE_LIMITED`（已有有效 token 的請求不計入） |
+| 暫停收卡、伺服器設定缺漏 | `503 SERVICE_UNAVAILABLE` |
+
+Cookie：`__Host-fwd_ct=v1.<隨機 ID>.<到期時間（Unix 秒）>.<HMAC-SHA256 簽章>; Max-Age=7200; Path=/; Secure; HttpOnly; SameSite=Strict`
+
+- `HttpOnly`：前端 JavaScript 讀不到，XSS 也偷不到
+- `__Host-` 前綴：必須 `Secure`、`Path=/` 且不能指定 Domain，其他 thehope.co 子網域無法植入或覆寫
+- 簽章密鑰 `CLIENT_TOKEN_SECRET` 只在伺服器；驗證只看簽章與到期時間，不查資料庫。更換密鑰會讓所有 token 立即失效，前端會自動重領
+
+---
+
 ## 1. 送出卡片 `POST /api/cards`
 
 免登入（Q-09）。成功後卡片狀態固定為 `pending`，**不會直接公開**，需經人工核准（Q-10／US-16）。
+
+需要帶上第 0 節的 Client Token cookie（`credentials: 'same-origin'`）。缺少、過期或簽章不符時回 `401 CLIENT_TOKEN_INVALID`，不寫入任何資料；這時 Turnstile token 還沒被使用，前端重新領取 Client Token 後，以**同一個 request** 重送一次。
 
 **Request**
 
@@ -73,9 +95,16 @@
 | `honeypot` | string | 人類永遠送 `""`。**有值時回 201 假成功，不寫入、不消耗限流**（DATA-10） |
 | `turnstile_token` | string | 啟用 Turnstile 時必填；伺服器以 Siteverify 驗證 `success`／`action = forward_card`／`hostname`，不落地（DATA-09） |
 
-**處理順序**（US-16）：body 大小 → JSON／欄位驗證 → honeypot → Turnstile → IP 限流 → 寫入 `pending`（之後若導入風險辨識，放在寫入前，且結果一律維持 `pending`）。
+**處理順序**（US-16）：body 大小 → JSON／欄位驗證 → honeypot → **Client Token** → Turnstile → 限流（先 IP、再 Client Token）→ 寫入 `pending`（之後若導入風險辨識，放在寫入前，且結果一律維持 `pending`）。Client Token 放在 Turnstile 之前，是因為 Turnstile token 只能用一次。
 
-**限流**（US-13）：同一 IP 每分鐘 1 張、每小時 3 張，超過回 429。IP 只以 `SHA-256(salt + ":" + IP)` 存在 `submission_rate_limits`，不寫入卡片（DATA-08）。
+**限流**（US-13，staging 測試候選，壓測後確認）：超過回 429，並附上需要等待的秒數。
+
+| 層 | 上限 |
+| --- | --- |
+| 每個 Client Token | 距上一張 **60 秒**內不可再送（從上一張的送出時間起算，不是整點分鐘）；每個整點小時 **3 張** |
+| 每個 IP | 每分鐘 **400 張**、每小時 **2,000 張** |
+
+被拒絕的請求不會消耗 Client Token 的額度，也不會延後可以再送的時間。IP 與 Client Token 都只以加鹽 SHA-256 雜湊存在 `submission_rate_limits`，不保存原文，也不寫入卡片（DATA-08）。
 
 **Response `201`**
 
@@ -178,12 +207,13 @@ CREATE TABLE forward_cards (
 );
 CREATE INDEX idx_forward_cards_status_created ON forward_cards (status, created_at DESC);
 
-CREATE TABLE submission_rate_limits (
-  ip_hash       TEXT PRIMARY KEY,                   -- SHA-256(salt:IP) hex
-  minute_bucket INTEGER NOT NULL,
-  minute_count  INTEGER NOT NULL,
-  hour_bucket   INTEGER NOT NULL,
-  hour_count    INTEGER NOT NULL
+CREATE TABLE submission_rate_limits (           -- migrations 0001 + 0002
+  limiter_key    TEXT PRIMARY KEY,                  -- 'ip:' | 'iss:' | 'tok:' + SHA-256(salt:值) hex
+  minute_bucket  INTEGER NOT NULL,
+  minute_count   INTEGER NOT NULL,
+  hour_bucket    INTEGER NOT NULL,
+  hour_count     INTEGER NOT NULL,
+  last_submit_ms INTEGER                            -- 上一次放行的時間（Unix 毫秒）
 );
 ```
 
