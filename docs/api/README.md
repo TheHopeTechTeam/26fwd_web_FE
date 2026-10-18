@@ -95,7 +95,7 @@ Cookie：`__Host-fwd_ct=v1.<隨機 ID>.<到期時間（Unix 秒）>.<HMAC-SHA256
 | `honeypot` | string | 人類永遠送 `""`。**有值時回 201 假成功，不寫入、不消耗限流**（DATA-10） |
 | `turnstile_token` | string | 啟用 Turnstile 時必填；伺服器以 Siteverify 驗證 `success`／`action = forward_card`／`hostname`，不落地（DATA-09） |
 
-**處理順序**（US-16）：body 大小 → JSON／欄位驗證 → honeypot → **Client Token** → Turnstile → 限流（先 IP、再 Client Token）→ 寫入 `pending`（之後若導入風險辨識，放在寫入前，且結果一律維持 `pending`）。Client Token 放在 Turnstile 之前，是因為 Turnstile token 只能用一次。
+**處理順序**（US-16）：body 大小 → JSON／欄位驗證 → honeypot → **Client Token** → Turnstile → 限流（IP 與 Client Token 兩層都通過才計數）→ 寫入 `pending`（之後若導入風險辨識，放在寫入前，且結果一律維持 `pending`）。Client Token 放在 Turnstile 之前，是因為 Turnstile token 只能用一次。
 
 **限流**（US-13，staging 測試候選，壓測後確認）：超過回 429，並附上需要等待的秒數。
 
@@ -104,7 +104,7 @@ Cookie：`__Host-fwd_ct=v1.<隨機 ID>.<到期時間（Unix 秒）>.<HMAC-SHA256
 | 每個 Client Token | 距上一張 **60 秒**內不可再送（從上一張的送出時間起算，不是整點分鐘）；每個整點小時 **3 張** |
 | 每個 IP | 每分鐘 **400 張**、每小時 **2,000 張** |
 
-被拒絕的請求不會消耗 Client Token 的額度，也不會延後可以再送的時間。IP 與 Client Token 都只以加鹽 SHA-256 雜湊存在 `submission_rate_limits`，不保存原文，也不寫入卡片（DATA-08）。
+兩層會先全部檢查、都通過才一起計數：被任一層拒絕的請求不會消耗任何一層的額度（例如 60 秒內重送被擋下，不會占用同一個 IP 其他人的額度），也不會延後可以再送的時間。IP 與 Client Token 都只以加鹽 SHA-256 雜湊存在 `submission_rate_limits`，不保存原文，也不寫入卡片（DATA-08）。
 
 **Response `201`**
 

@@ -53,18 +53,37 @@ export async function consumeRateLimit(db: D1Database, key: string, rule: RateRu
       AND (last_submit_ms IS NULL OR last_submit_ms <= excluded.last_submit_ms - ?)
     RETURNING limiter_key`).bind(key, minute, hour, now, rule.perMinute, rule.perHour, rule.minGapMs).first()
   if (counted) return
-  const row = await db.prepare(`SELECT minute_bucket, minute_count, hour_bucket, hour_count, last_submit_ms
-    FROM submission_rate_limits WHERE limiter_key = ?`).bind(key).first<LimiterRow>()
-  throw new ApiError(429, 'RATE_LIMITED', 'Too many requests', { retryAfterSeconds: secondsUntilAllowed(row, rule, now) })
+  throw tooManyRequests(waitMs(await readLimiterRow(db, key), rule, now))
 }
 
-function secondsUntilAllowed(row: LimiterRow | null, rule: RateRule, now: number): number {
-  const minute = Math.floor(now / 60_000), hour = Math.floor(now / 3_600_000)
-  let waitMs = 0
-  if (row) {
-    if (row.minute_bucket === minute && row.minute_count >= rule.perMinute) waitMs = Math.max(waitMs, (minute + 1) * 60_000 - now)
-    if (row.hour_bucket === hour && row.hour_count >= rule.perHour) waitMs = Math.max(waitMs, (hour + 1) * 3_600_000 - now)
-    if (row.last_submit_ms !== null) waitMs = Math.max(waitMs, row.last_submit_ms + rule.minGapMs - now)
-  }
-  return Math.max(1, Math.ceil(waitMs / 1000))
+// Counts one request against every layer, or against none. All layers are checked before any is
+// counted, so a card refused by its token does not use up the shared IP quota (#13 review). Two
+// simultaneous requests can both pass the check; the counting above stays atomic per layer, so
+// the limits still hold, and at worst a request refused by a later layer is counted by an
+// earlier one.
+export async function consumeRateLimits(db: D1Database, layers: Array<[key: string, rule: RateRule]>, now: number): Promise<void> {
+  let longestWait = 0
+  for (const [key, rule] of layers) longestWait = Math.max(longestWait, waitMs(await readLimiterRow(db, key), rule, now))
+  if (longestWait > 0) throw tooManyRequests(longestWait)
+  for (const [key, rule] of layers) await consumeRateLimit(db, key, rule, now)
 }
+
+function readLimiterRow(db: D1Database, key: string): Promise<LimiterRow | null> {
+  return db.prepare(`SELECT minute_bucket, minute_count, hour_bucket, hour_count, last_submit_ms
+    FROM submission_rate_limits WHERE limiter_key = ?`).bind(key).first<LimiterRow>()
+}
+
+// How long until `rule` lets the next request through for this row; 0 or less means now. Mirrors
+// the WHERE clause of the UPSERT in consumeRateLimit.
+function waitMs(row: LimiterRow | null, rule: RateRule, now: number): number {
+  if (!row) return 0
+  const minute = Math.floor(now / 60_000), hour = Math.floor(now / 3_600_000)
+  let wait = 0
+  if (row.minute_bucket === minute && row.minute_count >= rule.perMinute) wait = Math.max(wait, (minute + 1) * 60_000 - now)
+  if (row.hour_bucket === hour && row.hour_count >= rule.perHour) wait = Math.max(wait, (hour + 1) * 3_600_000 - now)
+  if (row.last_submit_ms !== null) wait = Math.max(wait, row.last_submit_ms + rule.minGapMs - now)
+  return wait
+}
+
+const tooManyRequests = (wait: number) =>
+  new ApiError(429, 'RATE_LIMITED', 'Too many requests', { retryAfterSeconds: Math.max(1, Math.ceil(wait / 1000)) })
