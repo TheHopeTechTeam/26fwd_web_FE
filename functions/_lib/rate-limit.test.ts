@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createTestDb, migrationNames, sqliteAvailable } from '../_test/d1'
 import { ApiError } from './cards'
-import { consumeRateLimit, type RateRule } from './rate-limit'
+import { consumeRateLimit, consumeRateLimits, type RateRule } from './rate-limit'
 
 const AT = (iso: string) => Date.parse(iso)
 const NO_LIMIT = Number.MAX_SAFE_INTEGER
@@ -64,6 +64,51 @@ describe.skipIf(!sqliteAvailable)('consumeRateLimit (real SQLite, real migration
     query(`INSERT INTO submission_rate_limits VALUES ('ip:old', 0, 1, ?, 1, NULL), ('ip:recent', 0, 1, ?, 1, NULL)`, hour - 25, hour - 24)
     await consumeRateLimit(db, 'ip:00', perMinute, now)
     expect(query('SELECT limiter_key FROM submission_rate_limits ORDER BY limiter_key').map(row => row.limiter_key)).toEqual(['ip:00', 'ip:recent'])
+  })
+})
+
+describe.skipIf(!sqliteAvailable)('consumeRateLimits: every layer or none', () => {
+  const ipRule: RateRule = { perMinute: 400, perHour: NO_LIMIT, minGapMs: 0 }
+  const tokenRule: RateRule = { perMinute: NO_LIMIT, perHour: 3, minGapMs: 60_000 }
+  const counts = (query: (sql: string, ...params: unknown[]) => Record<string, unknown>[]) =>
+    Object.fromEntries(query('SELECT limiter_key, minute_count FROM submission_rate_limits').map(row => [row.limiter_key, row.minute_count]))
+
+  async function attemptBoth(db: D1Database, token: string, now: number): Promise<'ok' | number> {
+    try {
+      await consumeRateLimits(db, [['ip:shared', ipRule], [token, tokenRule]], now)
+      return 'ok'
+    } catch (error) {
+      if (error instanceof ApiError && error.code === 'RATE_LIMITED') return error.retryAfterSeconds ?? -1
+      throw error
+    }
+  }
+
+  it('counts every layer when all of them allow the request', async () => {
+    const { db, query } = createTestDb()
+    expect(await attemptBoth(db, 'tok:a', AT('2026-11-13T12:00:10Z'))).toBe('ok')
+    expect(counts(query)).toEqual({ 'ip:shared': 1, 'tok:a': 1 })
+  })
+
+  it('regression (#13 review): a card refused for its token does not use up the shared IP quota', async () => {
+    const { db, query } = createTestDb()
+    expect(await attemptBoth(db, 'tok:a', AT('2026-11-13T12:00:10Z'))).toBe('ok')
+    for (const second of [15, 20, 25]) expect(await attemptBoth(db, 'tok:a', AT(`2026-11-13T12:00:${second}Z`))).toBeGreaterThan(0)
+    expect(counts(query)).toEqual({ 'ip:shared': 1, 'tok:a': 1 })
+  })
+
+  it('a card refused by the IP layer does not use up its token quota either', async () => {
+    const { db, query } = createTestDb()
+    query(`INSERT INTO submission_rate_limits VALUES ('ip:shared', ?, 400, 0, 0, NULL)`, Math.floor(AT('2026-11-13T12:00:10Z') / 60_000))
+    expect(await attemptBoth(db, 'tok:a', AT('2026-11-13T12:00:10Z'))).toBe(50)
+    expect(counts(query)).toEqual({ 'ip:shared': 400 })
+  })
+
+  it('when several layers refuse, reports the longest wait', async () => {
+    const { db, query } = createTestDb()
+    expect(await attemptBoth(db, 'tok:a', AT('2026-11-13T12:00:10Z'))).toBe('ok')
+    query(`UPDATE submission_rate_limits SET minute_count = 400 WHERE limiter_key = 'ip:shared'`)
+    // IP: free again at 12:01:00 (40 s); token: 60 s after 12:00:10, at 12:01:10 (50 s).
+    expect(await attemptBoth(db, 'tok:a', AT('2026-11-13T12:00:20Z'))).toBe(50)
   })
 })
 
