@@ -50,7 +50,7 @@
   width: 18px;
   height: 2px;
   margin-inline: 4px;
-  background: linear-gradient(90deg, var(--line-strong), var(--gold-dim));
+  background: linear-gradient(90deg, var(--line-strong), var(--accent-dim));
   border-radius: 1px;
 }
 
@@ -65,7 +65,7 @@
   padding: 8px 14px;
   border-radius: var(--radius-full);
   border: 1px solid var(--line-strong);
-  background: rgba(255, 255, 255, 0.03);
+  background: rgb(var(--rgb-light) / 0.03);
   color: var(--text-2);
   font-size: 0.9375rem;
   transition:
@@ -76,14 +76,14 @@
 
 .journey-tags__all:hover,
 .journey-tags__step:hover {
-  border-color: var(--gold);
+  border-color: var(--accent);
   color: var(--text);
 }
 
 .journey-tags__all.is-on,
 .journey-tags__step.is-on {
-  background: var(--gold);
-  border-color: var(--gold);
+  background: var(--accent);
+  border-color: var(--accent);
   color: var(--ink);
 }
 
@@ -198,7 +198,7 @@
   border-radius: 50%;
   box-shadow:
     0 10px 30px rgba(0, 0, 0, 0.35),
-    0 0 0 2px rgba(255, 255, 255, 0.1);
+    0 0 0 2px rgb(var(--rgb-light) / 0.1);
   transition: box-shadow 0.4s var(--ease-standard);
 }
 
@@ -206,7 +206,7 @@
 .floater__button:focus-visible .floater__img {
   box-shadow:
     0 14px 36px rgba(0, 0, 0, 0.45),
-    0 0 0 3px var(--gold);
+    0 0 0 3px var(--accent);
 }
 
 .floater__button:focus-visible {
@@ -220,7 +220,7 @@
   translate: -50% 0;
   padding: 2px 10px;
   border-radius: var(--radius-full);
-  background: rgba(20, 28, 31, 0.82);
+  background: rgb(var(--rgb-base-deep) / 0.82);
   font-size: 0.75rem;
   white-space: nowrap;
   color: var(--text);
@@ -244,7 +244,7 @@
 .floater.is-match .floater__img {
   box-shadow:
     0 16px 40px rgba(0, 0, 0, 0.45),
-    0 0 0 3px var(--gold);
+    0 0 0 3px var(--accent);
 }
 
 .floater.is-muted .floater__button {
@@ -309,7 +309,7 @@
   bottom: 12px;
   padding: 4px 10px;
   border-radius: var(--radius-full);
-  background: rgba(20, 28, 31, 0.8);
+  background: rgb(var(--rgb-base-deep) / 0.8);
   color: var(--text);
   font-family: var(--font-mono);
   font-size: 0.625rem;
@@ -342,8 +342,8 @@
 .testimony__tags li {
   padding: 4px 12px;
   border-radius: var(--radius-full);
-  border: 1px solid var(--border-gold, rgba(255, 201, 70, 0.5));
-  color: var(--gold);
+  border: 1px solid rgb(var(--rgb-accent) / 0.5);
+  color: var(--accent);
   font-size: 0.8125rem;
 }
 
@@ -356,7 +356,7 @@
 .testimony__quote {
   margin: 4px 0;
   padding-left: 16px;
-  border-left: 3px solid var(--gold);
+  border-left: 3px solid var(--accent);
   font-size: clamp(1.25rem, 1rem + 1.1vw, 1.75rem);
   line-height: 1.5;
 }

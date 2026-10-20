@@ -1,6 +1,6 @@
 .site-footer {
   border-top: 1px solid var(--line);
-  background: var(--navy-deep);
+  background: var(--bg-deep);
   padding-block: 48px max(40px, env(safe-area-inset-bottom, 0px));
 }
 
@@ -50,7 +50,7 @@
 }
 
 .site-footer__links a:hover {
-  color: var(--gold);
+  color: var(--accent);
   text-decoration: underline;
 }
 

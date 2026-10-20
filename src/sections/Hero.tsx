@@ -37,13 +37,13 @@ export function Hero() {
         <svg className="hero__arch" viewBox="0 0 400 560" preserveAspectRatio="xMidYMax meet">
           <defs>
             <linearGradient id="hero-door" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor="#ffe7a8" stopOpacity=".95" />
-              <stop offset=".55" stopColor="#ffc946" stopOpacity=".55" />
-              <stop offset="1" stopColor="#ffc946" stopOpacity="0" />
+              <stop offset="0" style={{ stopColor: 'color-mix(in srgb, var(--accent-bright) 60%, white)' }} stopOpacity=".95" />
+              <stop offset=".55" style={{ stopColor: 'var(--accent)' }} stopOpacity=".55" />
+              <stop offset="1" style={{ stopColor: 'var(--accent)' }} stopOpacity="0" />
             </linearGradient>
             <linearGradient id="hero-frame" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor="#ffffff" stopOpacity=".35" />
-              <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
+              <stop offset="0" style={{ stopColor: 'var(--text)' }} stopOpacity=".35" />
+              <stop offset="1" style={{ stopColor: 'var(--text)' }} stopOpacity="0" />
             </linearGradient>
           </defs>
           <path d="M60 560V200a140 140 0 0 1 280 0v360" fill="none" stroke="url(#hero-frame)" strokeWidth="2" />

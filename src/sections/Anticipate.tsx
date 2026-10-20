@@ -73,57 +73,57 @@ function MinistryArt({ kind }: { kind: Ministry['art'] }) {
     case 'building':
       return (
         <svg {...common}>
-          <rect width="400" height="300" fill="#22323a" />
+          <rect width="400" height="300" className="art-bg" />
           {Array.from({ length: 9 }, (_, i) => (
-            <rect key={i} x={40 + i * 38} y={90 - (i % 3) * 14} width="14" height={210} fill="#ffffff" opacity={0.04 + (i % 3) * 0.02} />
+            <rect key={i} x={40 + i * 38} y={90 - (i % 3) * 14} width="14" height={210} className="art-light" opacity={0.04 + (i % 3) * 0.02} />
           ))}
-          <path d="M120 300V150a80 80 0 0 1 160 0v150" fill="none" stroke="#ffc946" strokeWidth="3" opacity=".9" />
-          <path d="M150 300V160a50 50 0 0 1 100 0v140z" fill="#ffc946" opacity=".22" />
-          <path d="M0 300l400-300" stroke="#ffd873" strokeWidth="80" opacity=".05" />
+          <path d="M120 300V150a80 80 0 0 1 160 0v150" fill="none" className="art-line" strokeWidth="3" opacity=".9" />
+          <path d="M150 300V160a50 50 0 0 1 100 0v140z" className="art-fill" opacity=".22" />
+          <path d="M0 300l400-300" className="art-line-bright" strokeWidth="80" opacity=".05" />
         </svg>
       );
     case 'missions':
       return (
         <svg {...common}>
-          <rect width="400" height="300" fill="#1f2c35" />
-          <g fill="none" stroke="#ffffff" opacity=".18">
+          <rect width="400" height="300" className="art-bg" />
+          <g fill="none" className="art-line-light" opacity=".18">
             <circle cx="200" cy="150" r="110" />
             <ellipse cx="200" cy="150" rx="50" ry="110" />
             <ellipse cx="200" cy="150" rx="90" ry="110" />
             <path d="M90 150h220M104 95h192M104 205h192" />
           </g>
-          <path d="M70 230C140 120 250 110 330 70" fill="none" stroke="#ffc946" strokeWidth="3" strokeDasharray="2 10" strokeLinecap="round" />
-          <circle cx="70" cy="230" r="7" fill="#ffc946" />
-          <circle cx="330" cy="70" r="7" fill="#ffc946" />
+          <path d="M70 230C140 120 250 110 330 70" fill="none" className="art-line" strokeWidth="3" strokeDasharray="2 10" strokeLinecap="round" />
+          <circle cx="70" cy="230" r="7" className="art-fill" />
+          <circle cx="330" cy="70" r="7" className="art-fill" />
         </svg>
       );
     case 'outreach':
       return (
         <svg {...common}>
-          <rect width="400" height="300" fill="#26332f" />
+          <rect width="400" height="300" className="art-bg" />
           {[
             [110, 120], [200, 90], [290, 130], [150, 200], [250, 205], [200, 150],
           ].map(([x, y], i) => (
-            <circle key={i} cx={x} cy={y} r={i === 5 ? 26 : 16} fill={i === 5 ? '#ffc946' : '#ffffff'} opacity={i === 5 ? 0.9 : 0.16} />
+            <circle key={i} cx={x} cy={y} r={i === 5 ? 26 : 16} className={i === 5 ? 'art-fill' : 'art-light'} opacity={i === 5 ? 0.9 : 0.16} />
           ))}
-          <g stroke="#ffc946" strokeWidth="2" opacity=".5">
+          <g className="art-line" strokeWidth="2" opacity=".5">
             <path d="M200 150L110 120M200 150L200 90M200 150L290 130M200 150L150 200M200 150L250 205" />
           </g>
-          <circle cx="200" cy="150" r="80" fill="none" stroke="#ffc946" opacity=".25" strokeDasharray="4 8" />
+          <circle cx="200" cy="150" r="80" fill="none" className="art-line" opacity=".25" strokeDasharray="4 8" />
         </svg>
       );
     case 'online':
     default:
       return (
         <svg {...common}>
-          <rect width="400" height="300" fill="#1d2a36" />
-          <g fill="none" stroke="#ffc946" strokeLinecap="round">
+          <rect width="400" height="300" className="art-bg" />
+          <g fill="none" className="art-line" strokeLinecap="round">
             <path d="M150 190a70 70 0 0 1 100 0" strokeWidth="3" opacity=".9" />
             <path d="M120 160a110 110 0 0 1 160 0" strokeWidth="3" opacity=".55" />
             <path d="M90 130a150 150 0 0 1 220 0" strokeWidth="3" opacity=".3" />
           </g>
-          <circle cx="200" cy="215" r="10" fill="#ffc946" />
-          <g fill="#ffffff" opacity=".12">
+          <circle cx="200" cy="215" r="10" className="art-fill" />
+          <g className="art-light" opacity=".12">
             {Array.from({ length: 24 }, (_, i) => (
               <circle key={i} cx={20 + (i % 12) * 33} cy={i < 12 ? 40 : 270} r="3" />
             ))}
