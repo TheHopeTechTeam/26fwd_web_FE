@@ -8,10 +8,10 @@
 //   npx wrangler dev --config scripts/moderation-eval/proxy/wrangler.jsonc --ip 127.0.0.1 --port 8787
 //   node scripts/moderation-eval/run.mjs --data ../26fwd-moderation-eval --model clef --cards cards.json --tag v2
 import { createHash } from 'node:crypto'
-import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs'
-import { dirname, relative, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { appendFileSync, existsSync, readFileSync } from 'node:fs'
+import { relative, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
+import { checkTag, dataFile, fail, privateDataDir, resultsDir } from './paths.mjs'
 
 const { values: args } = parseArgs({
   options: {
@@ -28,25 +28,20 @@ const { values: args } = parseArgs({
 })
 
 const MODELS = { 'clef-flash': '@cf/cloudflare/clef-flash', clef: '@cf/cloudflare/clef' }
-const fail = (message) => { console.error(`✗ ${message}`); process.exit(1) }
 
 if (!MODELS[args.model]) fail('--model must be clef-flash or clef')
-if (!args.data) fail('--data must point to a checkout of the private repo 26fwd-moderation-eval')
-if (args.tag && !/^[\w.-]+$/.test(args.tag)) fail('--tag may only contain letters, digits, ".", "_" and "-"')
-// Cards and results must never land in this public repo.
-const publicRepo = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
-const data = resolve(args.data)
-if (!relative(publicRepo, data).startsWith('..')) fail(`--data ${data} is inside the public repo; use the private checkout instead`)
+// Cards, questions and results stay inside the private checkout (see paths.mjs).
+const data = privateDataDir(args.data)
+const tag = checkTag(args.tag)
 // Card text only ever goes to the local proxy, never to another host.
 if (!['127.0.0.1', 'localhost'].includes(new URL(args.endpoint).hostname)) fail('--endpoint must be a local address')
 
-const cards = JSON.parse(readFileSync(resolve(data, args.cards), 'utf8'))
-const questions = JSON.parse(readFileSync(resolve(data, args.questions), 'utf8'))
+const cards = JSON.parse(readFileSync(dataFile(data, args.cards, '--cards'), 'utf8'))
+const questions = JSON.parse(readFileSync(dataFile(data, args.questions, '--questions'), 'utf8'))
 // Recorded with every answer, so each result can be traced to the exact prompt version.
 const questionsVersion = createHash('sha256').update(JSON.stringify(questions)).digest('hex').slice(0, 12)
 
-mkdirSync(resolve(data, 'results/raw'), { recursive: true })
-const outFile = resolve(data, `results/raw/${args.model}${args.tag ? `-${args.tag}` : ''}.jsonl`)
+const outFile = resolve(resultsDir(data, 'results/raw'), `${args.model}${tag}.jsonl`)
 const done = new Set(
   existsSync(outFile)
     ? readFileSync(outFile, 'utf8').split('\n').filter(Boolean).map((line) => JSON.parse(line)).filter((r) => r.ok).map((r) => r.id)
@@ -78,7 +73,8 @@ async function call(card) {
     try {
       const response = await fetch(args.endpoint, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        // The proxy only answers requests carrying this header (see proxy/index.js).
+        headers: { 'content-type': 'application/json', 'X-FWD-Eval-Tool': 'run.mjs' },
         body: JSON.stringify({ model: MODELS[args.model], input: inputFor(card) }),
       })
       const body = await response.json()

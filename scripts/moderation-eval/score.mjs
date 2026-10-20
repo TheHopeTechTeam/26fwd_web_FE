@@ -10,6 +10,7 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { relative, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
+import { checkTag, dataFile, fail, privateDataDir, resultsDir } from './paths.mjs'
 
 const { values: args } = parseArgs({
   options: {
@@ -19,18 +20,15 @@ const { values: args } = parseArgs({
     cards: { type: 'string', default: 'cards.json' },
   },
 })
-if (!args.data) {
-  console.error('✗ --data must point to a checkout of the private repo 26fwd-moderation-eval')
-  process.exit(1)
-}
-
 // Workers AI bills Clef by input tokens at these published neuron rates per million.
 const NEURONS_PER_MILLION = { 'clef-flash': 3455, clef: 21818 }
 const BENIGN_SHARES = [0.9, 0.95, 0.98]
 
-const data = resolve(args.data)
-const suffix = `${args.model}${args.tag ? `-${args.tag}` : ''}`
-const rawFile = resolve(data, `results/raw/${suffix}.jsonl`)
+if (!NEURONS_PER_MILLION[args.model]) fail('--model must be clef-flash or clef')
+// Cards, results and the summary stay inside the private checkout (see paths.mjs).
+const data = privateDataDir(args.data)
+const suffix = `${args.model}${checkTag(args.tag)}`
+const rawFile = dataFile(data, `results/raw/${suffix}.jsonl`, 'results file')
 const answers = new Map()
 for (const line of readFileSync(rawFile, 'utf8').split('\n').filter(Boolean)) {
   const result = JSON.parse(line)
@@ -78,7 +76,7 @@ const summary = { model: args.model, tag: args.tag ?? null, questions_versions: 
 const all = []
 let tokens = 0
 for (const file of args.cards.split(',')) {
-  const cards = JSON.parse(readFileSync(resolve(data, file), 'utf8'))
+  const cards = JSON.parse(readFileSync(dataFile(data, file, '--cards'), 'utf8'))
   const rows = cards.map((card) => {
     const result = answers.get(card.id)
     if (!result) throw new Error(`${card.id} has no answer in ${relative(data, rawFile)}; run run.mjs first`)
@@ -100,7 +98,7 @@ summary.projection_per_1000_cards = BENIGN_SHARES.map((share) => {
 })
 summary.usage = { input_tokens: tokens, estimated_neurons: Math.round((tokens * NEURONS_PER_MILLION[args.model]) / 1e6) }
 
-const outFile = resolve(data, `results/summary-${suffix}.json`)
+const outFile = resolve(resultsDir(data, 'results'), `summary-${suffix}.json`)
 writeFileSync(outFile, JSON.stringify(summary, null, 2) + '\n')
 
 const line = (name, s) => ({
