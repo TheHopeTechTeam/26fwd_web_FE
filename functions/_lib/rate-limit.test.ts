@@ -132,6 +132,36 @@ describe.skipIf(!sqliteAvailable)('requests that reach the database out of order
     await expect(consumeRateLimits(db, [['ip:shared', ipRule], ['tok:b', tokenRule]], earlier)).resolves.toBeUndefined()
   })
 
+  // Many random interleavings, reproducible (fixed seed): 30 browsers on one IP send 60 cards
+  // within two minutes, each request's time jittered and its arrival delayed by up to 1.5 s, as
+  // when Turnstile latency varies. Two things must always hold.
+  it('random out-of-order arrivals: a first card is never refused, and one token never gets two cards within 60 seconds', async () => {
+    let seed = 20261021
+    const random = () => { seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5; return (seed >>> 0) / 2 ** 32 }
+    for (let round = 0; round < 25; round++) {
+      const { db } = createTestDb()
+      const start = AT('2026-11-13T12:00:00Z')
+      const arrivals = Array.from({ length: 60 }, () => ({ token: `tok:${Math.floor(random() * 30)}`, now: start + Math.floor(random() * 120_000) }))
+        .map((request) => ({ ...request, arrives: request.now + random() * 1500 }))
+        .sort((a, b) => a.arrives - b.arrives)
+      const stored = new Map<string, number[]>()
+      for (const { token, now } of arrivals) {
+        try {
+          await consumeRateLimits(db, [['ip:shared', ipRule], [token, tokenRule]], now)
+          stored.set(token, [...(stored.get(token) ?? []), now])
+        } catch (error) {
+          if (!(error instanceof ApiError) || error.code !== 'RATE_LIMITED') throw error
+          expect(stored.has(token), `round ${round}: first card of ${token} refused`).toBe(true)
+          expect(error.retryAfterSeconds).toBeGreaterThanOrEqual(1)
+        }
+      }
+      for (const times of stored.values()) {
+        const sorted = [...times].sort((a, b) => a - b)
+        for (let i = 1; i < sorted.length; i++) expect(sorted[i]! - sorted[i - 1]!).toBeGreaterThanOrEqual(60_000)
+      }
+    }
+  })
+
   it('the 60-second rule still refuses a second card from the same token, whatever order they arrive in', async () => {
     const { db, query } = createTestDb()
     expect(await attempt(db, 'tok:a', tokenRule, later)).toBe('ok')
