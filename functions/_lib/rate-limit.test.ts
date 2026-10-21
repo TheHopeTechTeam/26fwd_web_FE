@@ -112,6 +112,34 @@ describe.skipIf(!sqliteAvailable)('consumeRateLimits: every layer or none', () =
   })
 })
 
+// On Cloudflare, concurrent requests can reach D1 in a different order from the `now` they read
+// (staging load test 10/21: 13 of 300 first cards were refused with "wait 1 second").
+describe.skipIf(!sqliteAvailable)('requests that reach the database out of order', () => {
+  const ipRule: RateRule = { perMinute: 400, perHour: 2000, minGapMs: 0 }
+  const tokenRule: RateRule = { perMinute: NO_LIMIT, perHour: 3, minGapMs: 60_000 }
+  const later = AT('2026-11-13T12:00:10.900Z'), earlier = AT('2026-11-13T12:00:10.400Z')
+
+  it('regression (load test 10/21): a rule without a gap counts a request whose time is earlier than the last one', async () => {
+    const { db, query } = createTestDb()
+    expect(await attempt(db, 'ip:shared', ipRule, later)).toBe('ok')
+    expect(await attempt(db, 'ip:shared', ipRule, earlier)).toBe('ok')
+    expect(query('SELECT minute_count, last_submit_ms FROM submission_rate_limits')).toEqual([{ minute_count: 2, last_submit_ms: later }])
+  })
+
+  it('regression (load test 10/21): the all-layers check does not refuse it either', async () => {
+    const { db } = createTestDb()
+    await consumeRateLimits(db, [['ip:shared', ipRule], ['tok:a', tokenRule]], later)
+    await expect(consumeRateLimits(db, [['ip:shared', ipRule], ['tok:b', tokenRule]], earlier)).resolves.toBeUndefined()
+  })
+
+  it('the 60-second rule still refuses a second card from the same token, whatever order they arrive in', async () => {
+    const { db, query } = createTestDb()
+    expect(await attempt(db, 'tok:a', tokenRule, later)).toBe('ok')
+    expect(await attempt(db, 'tok:a', tokenRule, earlier)).toBe(61)
+    expect(query('SELECT hour_count, last_submit_ms FROM submission_rate_limits')).toEqual([{ hour_count: 1, last_submit_ms: later }])
+  })
+})
+
 describe.skipIf(!sqliteAvailable)('migration 0002', () => {
   it('renames the key column and keeps the rows written under 0001', () => {
     const [first, second] = migrationNames()

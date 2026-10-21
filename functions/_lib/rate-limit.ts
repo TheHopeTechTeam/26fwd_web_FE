@@ -35,6 +35,9 @@ type LimiterRow = { minute_bucket: number; minute_count: number; hour_bucket: nu
 // Counts one request for `key`, or throws 429 without counting it. A single conditional UPSERT
 // both checks and counts, so concurrent requests cannot all slip under a limit, and a refused
 // retry neither uses up quota nor pushes the wait further out.
+// Requests can reach D1 in a different order from the `now` they read (the 10/21 staging load
+// test refused 13 of 300 that way), so the gap is only compared when the rule has one, and
+// last_submit_ms only ever moves forward.
 export async function consumeRateLimit(db: D1Database, key: string, rule: RateRule, now: number): Promise<void> {
   const minute = Math.floor(now / 60_000), hour = Math.floor(now / 3_600_000)
   if (Number.parseInt(key.slice(-2), 16) % 64 === minute % 64)
@@ -47,11 +50,11 @@ export async function consumeRateLimit(db: D1Database, key: string, rule: RateRu
       minute_bucket = excluded.minute_bucket,
       hour_count = CASE WHEN hour_bucket = excluded.hour_bucket THEN hour_count + 1 ELSE 1 END,
       hour_bucket = excluded.hour_bucket,
-      last_submit_ms = excluded.last_submit_ms
+      last_submit_ms = MAX(COALESCE(last_submit_ms, 0), excluded.last_submit_ms)
     WHERE (minute_bucket <> excluded.minute_bucket OR minute_count < ?)
       AND (hour_bucket <> excluded.hour_bucket OR hour_count < ?)
-      AND (last_submit_ms IS NULL OR last_submit_ms <= excluded.last_submit_ms - ?)
-    RETURNING limiter_key`).bind(key, minute, hour, now, rule.perMinute, rule.perHour, rule.minGapMs).first()
+      AND (? = 0 OR last_submit_ms IS NULL OR last_submit_ms <= excluded.last_submit_ms - ?)
+    RETURNING limiter_key`).bind(key, minute, hour, now, rule.perMinute, rule.perHour, rule.minGapMs, rule.minGapMs).first()
   if (counted) return
   throw tooManyRequests(waitMs(await readLimiterRow(db, key), rule, now))
 }
@@ -81,7 +84,7 @@ function waitMs(row: LimiterRow | null, rule: RateRule, now: number): number {
   let wait = 0
   if (row.minute_bucket === minute && row.minute_count >= rule.perMinute) wait = Math.max(wait, (minute + 1) * 60_000 - now)
   if (row.hour_bucket === hour && row.hour_count >= rule.perHour) wait = Math.max(wait, (hour + 1) * 3_600_000 - now)
-  if (row.last_submit_ms !== null) wait = Math.max(wait, row.last_submit_ms + rule.minGapMs - now)
+  if (rule.minGapMs > 0 && row.last_submit_ms !== null) wait = Math.max(wait, row.last_submit_ms + rule.minGapMs - now)
   return wait
 }
 
