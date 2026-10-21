@@ -169,7 +169,10 @@ const of = (phase, kind) => samples.filter(s => s.phase === phase && (!kind || s
 // `count` browsers, each with exactly one response of this kind, all with `status`.
 const all = (list, count, test) => list.length === count && list.every(test)
 const cardsA = of('A', 'card'), cardsB = of('B', 'card'), cardsC = of('C', 'card')
-const stored = [...cardsA, ...cardsC].filter(s => s.status === 201).length
+// Every 201 is a stored card, whichever phase it came from (on 10/21 13 first cards refused in A
+// were stored in B), and every 429 is a refusal the IP row must not count.
+const stored = samples.filter(s => s.kind === 'card' && s.status === 201).length
+const refused = samples.filter(s => s.kind === 'card' && s.status === 429).length
 const checks = [
   [`A: all ${users} got a new token (204 with a cookie)`, all(of('A', 'token-new'), users, s => s.status === 204 && !!s.cookie)],
   [`A: all ${users} cards stored (201)`, all(cardsA, users, s => s.status === 201)],
@@ -200,7 +203,7 @@ const nickname = `壓測-${run}-%`
 console.log(`\nexpected in D1: ${stored} cards for this run. Check with:`)
 console.log(`  npx wrangler d1 execute forward_cards_staging --remote --command "SELECT COUNT(*) AS cards, COUNT(DISTINCT nickname) AS distinct_nicknames, SUM(status = 'pending') AS pending FROM forward_cards WHERE nickname LIKE '${nickname}'"`)
 console.log(`  npx wrangler d1 execute forward_cards_staging --remote --command "SELECT minute_count, hour_count FROM submission_rate_limits WHERE limiter_key LIKE 'ip:%' ORDER BY last_submit_ms DESC LIMIT 1"`)
-console.log(`  (the IP row should count ${stored}: the cards stored, not the ${cardsB.length} refused resends)`)
+console.log(`  (the IP row should count ${stored}: the cards stored, not the ${refused} refused requests)`)
 
 mkdirSync(new URL('reports/', import.meta.url), { recursive: true })
 const reportFile = new URL(`reports/${startedAt.toISOString().replace(/[:.]/g, '-')}-${run}.json`, import.meta.url)
