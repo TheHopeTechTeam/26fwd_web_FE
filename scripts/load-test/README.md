@@ -12,25 +12,36 @@
 | B 重送 | 同一批人在 60 秒內用同一個 cookie 再送一次 | token 沿用（204、沒有新 cookie）、全部被擋（429，附等待秒數） |
 | C 新來的人 | 另外 `--newcomers` 個瀏覽器（預設 50）各送一張卡 | 全部寫入（201） |
 
-C 用來確認 B 被擋下的重送沒有占用同一個 IP 的額度（PR #13 review 第 1 點、#27）。預設會等到整分鐘剛過才開始，讓三個階段落在同一個「每 IP 每分鐘」的計數區間。
+C 用來確認 B 被擋下的重送沒有占用同一個 IP 的額度（PR #13 review 第 1 點、#27）。預設會等到整分鐘剛過（以伺服器時間為準）才開始，讓三個階段落在同一個「每 IP 每分鐘」的計數區間。
+
+## 結果有效的前提
+
+| 前提 | 不符合時 | 腳本怎麼確認 |
+|---|---|---|
+| A、B、C 的送卡請求，在伺服器上都落在同一個整分鐘 | C 換到新的一分鐘，額度重新計算，C 全部寫入也證明不了 B 沒有占用額度；D1 的 IP 計數也無法對照 | 從每個請求的送出／收到時間，加上回應的 `Date` 標頭推算伺服器時鐘和本機的差距，算出這些請求在伺服器上最早、最晚可能的時間，必須在同一分鐘內 |
+| 每個人的 B 重送，在伺服器上距離自己的第一張卡不到 60 秒 | B 測不到「每個 token 間隔 60 秒」的規則 | 每個人「B 收到回應」減「A 送出」的時間都要小於 60 秒（兩個時間都在伺服器上量，時鐘差距會互相抵消） |
+
+不符合的話，對應的檢查會標示 `⚠ INVALID, run again`（無效、需要重測），不算通過也不算失敗，結束代碼不是 0。判斷邏輯在 `checks.mjs`，測試在 `checks.test.mjs`。為了讓三個階段放得進一分鐘，`--ramp` 最多 40 秒。
 
 ## 安全設計
 
 - 只接受 `https://26fwd-staging.pages.dev` 或本機的 wrangler 伺服器，其他網址一律拒絕
 - 第一個回應沒有 `X-FWD-Load-Test: on` 就中止。後端只有在 staging 網域開啟 `LOAD_TEST_MODE` 時才會帶這個標頭，所以腳本不可能對正式環境或沒開壓測模式的環境送出卡片
 - `--users` + `--newcomers` 不能超過每 IP 每分鐘 400 張的上限
-- 卡片暱稱都是 `壓測-<本次代號>-<序號>`，事後可以精確計數與清理
+- 卡片暱稱都是 `壓測-<本次代號>-<序號>`；核對與清理的 SQL 都同時鎖定本次代號和本次在伺服器上的時間範圍，不會碰到其他批次
 
 ## 執行步驟（staging）
 
 1. 事先在 #5 公告時段，取得 Ian 同意
 2. 在 Cloudflare 的 `26fwd-staging` 加上變數 `LOAD_TEST_MODE=true`，重新部署
 3. 確認標頭：`curl -s -o /dev/null -D - -X POST https://26fwd-staging.pages.dev/api/client-token | grep -i x-fwd-load-test`
-4. 執行：`node scripts/load-test/run.mjs`
-5. 用腳本最後印出的兩個 `wrangler d1 execute` 指令核對：本次卡片數 = 寫入成功數、暱稱不重複、全部 pending；IP 計數 = 寫入成功數（不含被擋下的重送）
+4. 執行：`node scripts/load-test/run.mjs`。先看 `conditions:` 兩個前提是否成立，有任何 `⚠ INVALID` 就重測
+5. **馬上**用腳本印出的 `wrangler d1 execute` 指令核對，要在下一步用手機送卡之前：
+   - 本次卡片（依本次代號）：張數、不重複暱稱、pending 都等於寫入成功數，建立時間都在印出的時間範圍內
+   - IP 計數：staging 的 salt 是加密變數、算不出 key，所以依本次的分鐘區間和最後寫入時間找出那一筆，應該**剛好一筆**、`minute_count` = 寫入成功數（不含被擋下的重送）。`hour_count` 可能較大，因為包含同一個 IP 在這一小時稍早送的卡。同一分鐘若有其他 IP 也送卡會出現多筆，請一併記錄
 6. 刪除 `LOAD_TEST_MODE`，重新部署；確認標頭消失，並用手機以真實 Turnstile 送一張卡
-7. 結果（含 p50／p95）回報在 #5；壓測卡片經 Ian 同意後再清理：
-   `npx wrangler d1 execute forward_cards_staging --remote --command "DELETE FROM forward_cards WHERE nickname LIKE '壓測-%' AND status = 'pending'"`
+7. 結果（含 p50／p95）回報在 #5
+8. 清理**只在 Ian 同意後**、一次只清一個批次：用該次腳本印出（也存在報告 JSON 的 `d1` 欄位）的兩個指令，先執行 `cleanupPreview`，確認筆數等於該次寫入成功數，再執行 `cleanup`。兩者都只涵蓋該次代號、該次時間範圍內、仍是 pending 的卡片；其他批次與既有測試資料一律保留
 
 報告 JSON 存在 `scripts/load-test/reports/`（不進 git）。
 
@@ -40,10 +51,12 @@ C 用來確認 B 被擋下的重送沒有占用同一個 IP 的額度（PR #13 r
 |---|---|---|
 | `--users` | 300 | A 階段的人數 |
 | `--newcomers` | 50 | C 階段的人數 |
-| `--ramp` | 20 | A 階段的人在幾秒內陸續送出 |
-| `--no-align` | — | 不等整分鐘，立刻開始 |
+| `--ramp` | 20 | A 階段的人在幾秒內陸續送出，最多 40 |
+| `--no-align` | — | 不等整分鐘，立刻開始；三個階段可能跨到下一分鐘，C 會被標成無效 |
 | `--base` | staging | 本機試跑時改成 `http://127.0.0.1:<port>` |
 | `--host-header`、`--client-ip` | — | 只限本機試跑：模擬 Cloudflare 會帶的網域與 `CF-Connecting-IP` |
+| `--database` | — | 只限本機試跑：印出的 D1 指令使用的本機資料庫名稱 |
+| `--salt` | — | 只限本機試跑：本機的 `RATE_LIMIT_SALT`，用來算出 IP 紀錄的確切 key（需搭配 `--client-ip`） |
 
 ## 限制
 
