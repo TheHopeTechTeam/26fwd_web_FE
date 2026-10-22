@@ -36,8 +36,10 @@ type LimiterRow = { minute_bucket: number; minute_count: number; hour_bucket: nu
 // both checks and counts, so concurrent requests cannot all slip under a limit, and a refused
 // retry neither uses up quota nor pushes the wait further out.
 // Requests can reach D1 in a different order from the `now` they read (the 10/21 staging load
-// test refused 13 of 300 that way), so the gap is only compared when the rule has one, and
-// last_submit_ms only ever moves forward.
+// test refused 13 of 300 that way). So the gap is only compared when the rule has one, and the
+// stored windows and last_submit_ms only ever move forward: a request that arrives after a later
+// clock minute or hour has started counts against that later window instead of resetting it
+// (#31 review).
 export async function consumeRateLimit(db: D1Database, key: string, rule: RateRule, now: number): Promise<void> {
   const minute = Math.floor(now / 60_000), hour = Math.floor(now / 3_600_000)
   if (Number.parseInt(key.slice(-2), 16) % 64 === minute % 64)
@@ -46,13 +48,13 @@ export async function consumeRateLimit(db: D1Database, key: string, rule: RateRu
       (limiter_key, minute_bucket, minute_count, hour_bucket, hour_count, last_submit_ms)
     VALUES (?, ?, 1, ?, 1, ?)
     ON CONFLICT (limiter_key) DO UPDATE SET
-      minute_count = CASE WHEN minute_bucket = excluded.minute_bucket THEN minute_count + 1 ELSE 1 END,
-      minute_bucket = excluded.minute_bucket,
-      hour_count = CASE WHEN hour_bucket = excluded.hour_bucket THEN hour_count + 1 ELSE 1 END,
-      hour_bucket = excluded.hour_bucket,
+      minute_count = CASE WHEN excluded.minute_bucket > minute_bucket THEN 1 ELSE minute_count + 1 END,
+      minute_bucket = MAX(minute_bucket, excluded.minute_bucket),
+      hour_count = CASE WHEN excluded.hour_bucket > hour_bucket THEN 1 ELSE hour_count + 1 END,
+      hour_bucket = MAX(hour_bucket, excluded.hour_bucket),
       last_submit_ms = MAX(COALESCE(last_submit_ms, 0), excluded.last_submit_ms)
-    WHERE (minute_bucket <> excluded.minute_bucket OR minute_count < ?)
-      AND (hour_bucket <> excluded.hour_bucket OR hour_count < ?)
+    WHERE (excluded.minute_bucket > minute_bucket OR minute_count < ?)
+      AND (excluded.hour_bucket > hour_bucket OR hour_count < ?)
       AND (? = 0 OR last_submit_ms IS NULL OR last_submit_ms <= excluded.last_submit_ms - ?)
     RETURNING limiter_key`).bind(key, minute, hour, now, rule.perMinute, rule.perHour, rule.minGapMs, rule.minGapMs).first()
   if (counted) return
@@ -77,13 +79,14 @@ function readLimiterRow(db: D1Database, key: string): Promise<LimiterRow | null>
 }
 
 // How long until `rule` lets the next request through for this row; 0 or less means now. Mirrors
-// the WHERE clause of the UPSERT in consumeRateLimit.
+// the WHERE clause of the UPSERT in consumeRateLimit, so a request whose time falls before the
+// stored window waits for the end of that window.
 function waitMs(row: LimiterRow | null, rule: RateRule, now: number): number {
   if (!row) return 0
   const minute = Math.floor(now / 60_000), hour = Math.floor(now / 3_600_000)
   let wait = 0
-  if (row.minute_bucket === minute && row.minute_count >= rule.perMinute) wait = Math.max(wait, (minute + 1) * 60_000 - now)
-  if (row.hour_bucket === hour && row.hour_count >= rule.perHour) wait = Math.max(wait, (hour + 1) * 3_600_000 - now)
+  if (row.minute_bucket >= minute && row.minute_count >= rule.perMinute) wait = Math.max(wait, (row.minute_bucket + 1) * 60_000 - now)
+  if (row.hour_bucket >= hour && row.hour_count >= rule.perHour) wait = Math.max(wait, (row.hour_bucket + 1) * 3_600_000 - now)
   if (rule.minGapMs > 0 && row.last_submit_ms !== null) wait = Math.max(wait, row.last_submit_ms + rule.minGapMs - now)
   return wait
 }
