@@ -312,6 +312,16 @@ describe.skipIf(!sqliteAvailable)('POST /api/cards — rate limits (real SQLite)
     expect(await send(env, { token: mine })).toMatchObject({ status: 201 })
   })
 
+  it('regression (load test 10/21): a first card is not refused when it reaches the database after a later one', async () => {
+    const { db } = createTestDb()
+    const env = makeEnv(db)
+
+    vi.setSystemTime(NOW + 500)
+    expect(await send(env)).toMatchObject({ status: 201 })
+    vi.setSystemTime(NOW)
+    expect(await send(env)).toMatchObject({ status: 201 })
+  })
+
   it('regression (#13 review): when 300 people at one venue all resend within 60 seconds, the next 100 people can still send', async () => {
     const { db, query } = createTestDb()
     const env = makeEnv(db)
