@@ -5,12 +5,16 @@
 //   node scripts/moderation-eval/score.mjs --data ../26fwd-moderation-eval --model clef --tag v2 \
 //     --cards cards.json,cards-others-health.json,cards-format.json
 //
+// Every answer scored must come from the questions in --questions and from each card's current
+// text; otherwise nothing is scored (#29 review). Labels may change: scoring uses the current ones.
+//
 // A card is flagged for a reviewer when the model names any reason other than "none" (the rule
 // adopted in #5). The needs_attention probability at 0.5 is shown for reference.
-import { readFileSync, writeFileSync } from 'node:fs'
-import { relative, resolve } from 'node:path'
+import { readFileSync } from 'node:fs'
+import { relative } from 'node:path'
 import { parseArgs } from 'node:util'
-import { checkTag, dataFile, fail, privateDataDir, resultsDir } from './paths.mjs'
+import { checkTag, dataFile, fail, privateDataDir, resultsDir, resultsFile, writeResultsFile } from './paths.mjs'
+import { questionsVersion, staleAnswers } from './versions.mjs'
 
 const { values: args } = parseArgs({
   options: {
@@ -18,6 +22,7 @@ const { values: args } = parseArgs({
     model: { type: 'string', default: 'clef' },
     tag: { type: 'string' },
     cards: { type: 'string', default: 'cards.json' },
+    questions: { type: 'string', default: 'questions.json' },
   },
 })
 // Workers AI bills Clef by input tokens at these published neuron rates per million.
@@ -28,6 +33,7 @@ if (!NEURONS_PER_MILLION[args.model]) fail('--model must be clef-flash or clef')
 // Cards, results and the summary stay inside the private checkout (see paths.mjs).
 const data = privateDataDir(args.data)
 const suffix = `${args.model}${checkTag(args.tag)}`
+const currentQuestions = questionsVersion(JSON.parse(readFileSync(dataFile(data, args.questions, '--questions'), 'utf8')))
 const rawFile = dataFile(data, `results/raw/${suffix}.jsonl`, 'results file')
 const answers = new Map()
 for (const line of readFileSync(rawFile, 'utf8').split('\n').filter(Boolean)) {
@@ -72,15 +78,19 @@ function score(rows) {
   }
 }
 
-const summary = { model: args.model, tag: args.tag ?? null, questions_versions: [], sets: {} }
+const summary = { model: args.model, tag: args.tag ?? null, questions_version: currentQuestions, sets: {} }
 const all = []
 let tokens = 0
 for (const file of args.cards.split(',')) {
   const cards = JSON.parse(readFileSync(dataFile(data, file, '--cards'), 'utf8'))
+  const missing = cards.filter((card) => !answers.has(card.id)).length
+  if (missing) fail(`${missing} cards in ${file} have no answer in ${relative(data, rawFile)}; run run.mjs first`)
+  const stale = staleAnswers(cards.map((card) => answers.get(card.id)), cards, currentQuestions)
+  if (stale.length) {
+    fail(`${relative(data, rawFile)} cannot be scored against ${file} with ${args.questions}: ${stale.join(', ')}. Run a new batch with another --tag; answers to earlier questions can also be scored by passing the questions file they came from`)
+  }
   const rows = cards.map((card) => {
     const result = answers.get(card.id)
-    if (!result) throw new Error(`${card.id} has no answer in ${relative(data, rawFile)}; run run.mjs first`)
-    if (!summary.questions_versions.includes(result.questions_version)) summary.questions_versions.push(result.questions_version)
     tokens += result.output.usage.input_tokens
     const reason = result.output.answers.reason.choice
     return { id: card.id, lang: card.lang, expected: card.expected, reason, flagged: reason !== 'none', p: result.output.answers.needs_attention.noul }
@@ -98,8 +108,8 @@ summary.projection_per_1000_cards = BENIGN_SHARES.map((share) => {
 })
 summary.usage = { input_tokens: tokens, estimated_neurons: Math.round((tokens * NEURONS_PER_MILLION[args.model]) / 1e6) }
 
-const outFile = resolve(resultsDir(data, 'results'), `summary-${suffix}.json`)
-writeFileSync(outFile, JSON.stringify(summary, null, 2) + '\n')
+const outFile = resultsFile(resultsDir(data, 'results'), `summary-${suffix}.json`)
+writeResultsFile(outFile, JSON.stringify(summary, null, 2) + '\n')
 
 const line = (name, s) => ({
   set: name,
@@ -108,6 +118,6 @@ const line = (name, s) => ({
   'reason right': `${s.reason_right}/${s.problem_cards}`,
   'p ≥ 0.5 (reference)': `${s.probability_rule.caught}/${s.problem_cards} · ${s.probability_rule.false_flags}/${s.ordinary_cards}`,
 })
-console.log(`${args.model}${args.tag ? ` (${args.tag})` : ''} · questions ${summary.questions_versions.join(', ')} · ${all.length} cards · ~${summary.usage.estimated_neurons} neurons`)
+console.log(`${args.model}${args.tag ? ` (${args.tag})` : ''} · questions ${currentQuestions} · ${all.length} cards · ~${summary.usage.estimated_neurons} neurons`)
 console.table([...Object.entries(summary.sets).map(([name, s]) => line(name, s)), line('overall', summary.overall)])
 console.log(`summary: ${relative(process.cwd(), outFile)}`)

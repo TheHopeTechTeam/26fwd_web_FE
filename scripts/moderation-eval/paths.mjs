@@ -1,7 +1,7 @@
 // Keeps every file the trial tools read or write inside the private data checkout, and that
 // checkout outside this public repo, so test cards and results can never land in a public commit
 // (#5, #29 review). Paths are compared after resolving symlinks.
-import { existsSync, mkdirSync, realpathSync, statSync } from 'node:fs'
+import { closeSync, constants, existsSync, fstatSync, lstatSync, mkdirSync, openSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, isAbsolute, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -56,4 +56,65 @@ export function resultsDir(data, sub) {
   const real = realpathSync(path)
   if (!allowed(real)) fail(`results folder ${real} is not inside ${data}`)
   return real
+}
+
+const NO_FOLLOW = constants.O_NOFOLLOW ?? 0
+
+function existing(path) {
+  try {
+    return lstatSync(path)
+  } catch (error) {
+    if (error.code === 'ENOENT') return null
+    throw error
+  }
+}
+
+// The folder check above cannot stop the results file itself from leading elsewhere: a symlink,
+// even a dangling one, or a hard link shared with a file outside --data, such as one in this public
+// repo, would take the write with it (#29 review). So a results file must be a plain file with no
+// other name.
+function refuseLinked(path, stats) {
+  if (stats.isSymbolicLink()) fail(`results file ${path} is a symlink; results are only written to plain files inside --data`)
+  if (!stats.isFile()) fail(`results file ${path} is not a regular file`)
+  if (stats.nlink > 1) fail(`results file ${path} has another hard link; results are only written to plain files inside --data`)
+}
+
+// <dir>/<name> for a folder from resultsDir, refused if it already exists as anything but a plain file.
+export function resultsFile(dir, name) {
+  const path = resolve(dir, name)
+  if (dirname(path) !== dir) fail(`results file name ${name} must not contain a folder`)
+  const stats = existing(path)
+  if (stats) refuseLinked(path, stats)
+  return path
+}
+
+// Opens a results log to read what it holds and to append to it. Opening does not follow a
+// symlink, and the open file is checked again, so nothing can be swapped in after resultsFile.
+export function openResultsLog(path) {
+  let fd
+  try {
+    fd = openSync(path, constants.O_RDWR | constants.O_APPEND | constants.O_CREAT | NO_FOLLOW, 0o644)
+  } catch (error) {
+    fail(`cannot open results file ${path}: ${error.code ?? error.message}`)
+  }
+  refuseLinked(path, fstatSync(fd))
+  return fd
+}
+
+// Replaces a results file in one step: the text goes to a new file beside it, renamed over it. A
+// rename replaces the name itself, never the file a symlink or another hard link leads to.
+export function writeResultsFile(path, text) {
+  const temp = `${path}.${process.pid}.tmp`
+  const fd = openSync(temp, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | NO_FOLLOW, 0o644)
+  try {
+    try {
+      writeFileSync(fd, text)
+    } finally {
+      closeSync(fd)
+    }
+    renameSync(temp, path)
+  } catch (error) {
+    rmSync(temp, { force: true })
+    throw error
+  }
 }
