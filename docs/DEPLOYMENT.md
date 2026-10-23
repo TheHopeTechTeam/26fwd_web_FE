@@ -56,12 +56,15 @@ npx wrangler d1 create forward_cards_prod
 # 執行 Schema 遷移（依編號順序，每個資料庫各執行一次）
 npx wrangler d1 execute forward_cards_staging --remote --file=./migrations/0001_initial.sql
 npx wrangler d1 execute forward_cards_staging --remote --file=./migrations/0002_client_token_rate_limits.sql
+npx wrangler d1 execute forward_cards_staging --remote --file=./migrations/0003_approved_card_count.sql
 npx wrangler d1 execute forward_cards_prod --remote --file=./migrations/0001_initial.sql
 npx wrangler d1 execute forward_cards_prod --remote --file=./migrations/0002_client_token_rate_limits.sql
+npx wrangler d1 execute forward_cards_prod --remote --file=./migrations/0003_approved_card_count.sql
 ```
 
 > - 已經套用過的 migration 不可修改，之後的變更一律新增下一個編號。
 > - `0002` 會把限流表的鍵欄位改名，**舊版程式在套用後無法送卡**。對已上線的資料庫，套用 `0002` 後要立刻部署包含 Client Token 的版本；新建的資料庫（例如 M4 的正式庫）則在第一次部署前套用即可。
+> - `0003` 新增「已核准總數」小表與三個觸發器，以當下已核准的張數為起點。與部署的先後順序不影響運作：尚未套用時，卡片牆會改為逐張計數並在 log 記錄錯誤。重新執行一次會依實際卡片重新計算總數，可用來修正總數。
 
 ### 2. 環境變數綁定清單
 
