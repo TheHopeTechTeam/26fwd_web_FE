@@ -42,6 +42,7 @@ npm run preview    # 預覽 build 結果
 
 ## API（先用假資料）
 
+- 審核同工操作說明：[`docs/ADMIN_GUIDE.md`](docs/ADMIN_GUIDE.md)（staging 登入、審核流程與目前限制；管理金鑰另行提供）。
 - 契約文件（給後端）：[`docs/api/README.md`](docs/api/README.md)、[`docs/api/openapi.yaml`](docs/api/openapi.yaml)
 - 前端呼叫一律經過 `src/api/client.ts`；`VITE_API_MODE=mock`（預設）時由 `src/api/mock/server.ts` 在瀏覽器內模擬**同一份 HTTP 契約**（狀態碼、錯誤格式、限流 1 次／分、3 次／時、honeypot、分頁），假資料只存在記憶體，重新整理即重置。
 - 後端完成後：設定 `VITE_API_MODE=live` 與 `VITE_API_BASE_URL` 即可切換，不需改程式。
