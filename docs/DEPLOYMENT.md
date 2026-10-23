@@ -66,6 +66,21 @@ npx wrangler d1 execute forward_cards_prod --remote --file=./migrations/0003_app
 > - `0002` 會把限流表的鍵欄位改名，**舊版程式在套用後無法送卡**。對已上線的資料庫，套用 `0002` 後要立刻部署包含 Client Token 的版本；新建的資料庫（例如 M4 的正式庫）則在第一次部署前套用即可。
 > - `0003` 新增「已核准總數」小表與三個觸發器，以當下已核准的張數為起點。與部署的先後順序不影響運作：尚未套用時，卡片牆會改為逐張計數並在 log 記錄錯誤。重新執行一次會依實際卡片重新計算總數，可用來修正總數。
 
+#### `0003` 的對帳與回復
+
+**對帳**（部署後、UAT 期間、活動期間每天一次）：兩個數字必須相同。不相同時，重新執行一次 `0003`，會依實際卡片重新計算總數。
+```bash
+npx wrangler d1 execute forward_cards_staging --remote --command "SELECT (SELECT count FROM forward_card_counts WHERE status='approved') AS total, (SELECT COUNT(*) FROM forward_cards WHERE status='approved') AS counted"
+```
+
+**回復**：套用前先記下 Time Travel 書籤（`npx wrangler d1 time-travel info forward_cards_staging`）。程式與 migration 可以各自、以任意順序回復：
+- **只回復程式**：部署前一版即可。舊程式不讀總數表，觸發器繼續維護總數，不影響運作。
+- **只回復 migration**：刪除三個觸發器與總數表，卡片資料不受影響；目前的程式找不到總數表時會改回逐張計數。之後要恢復，重新執行 `0003` 即可。
+  ```bash
+  npx wrangler d1 execute forward_cards_staging --remote --command "DROP TRIGGER IF EXISTS forward_cards_count_insert; DROP TRIGGER IF EXISTS forward_cards_count_update; DROP TRIGGER IF EXISTS forward_cards_count_delete; DROP TABLE IF EXISTS forward_card_counts"
+  ```
+- **Time Travel 還原**（`npx wrangler d1 time-travel restore forward_cards_staging --bookmark=<書籤>`）會連同書籤之後新增或變更的卡片一起還原，只在必要時使用。
+
 ### 2. 環境變數綁定清單
 
 #### Staging (`26fwd-staging`)

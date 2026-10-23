@@ -65,12 +65,17 @@ async function wallPage(db: D1Database, page: number, limit: number, offset: num
   return { items: rows.slice(0, limit), pagination: { page, limit, has_more: rows.length > limit, total_count: total } }
 }
 
-// Counts instead, and says so in the log, while the total is missing (0003 not applied yet).
+// Counts instead, and says so in the log, while the total is missing: 0003 not applied yet, or its
+// row gone. Any other database error still fails the request.
 async function approvedTotal(db: D1Database): Promise<number> {
+  let row: { count: number } | null
   try {
-    const row = await db.prepare("SELECT count FROM forward_card_counts WHERE status='approved'").first<{ count: number }>()
-    if (row) return row.count
-  } catch { /* no forward_card_counts table yet */ }
+    row = await db.prepare("SELECT count FROM forward_card_counts WHERE status='approved'").first<{ count: number }>()
+  } catch (error) {
+    if (!/no such table/i.test(String(error))) throw error
+    row = null
+  }
+  if (row) return row.count
   console.error('forward_card_counts has no approved total; counting the cards instead (apply migration 0003)')
   const counted = await db.prepare("SELECT COUNT(*) AS count FROM forward_cards WHERE status='approved'").first<{ count: number }>()
   return counted?.count ?? 0

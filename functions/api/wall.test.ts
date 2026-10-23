@@ -184,6 +184,25 @@ describe.skipIf(!sqliteAvailable)('GET /api/cards', () => {
     expect(body.items).toHaveLength(5)
     expect(error).toHaveBeenCalledTimes(2)
   })
+
+  it('any other database error on the total still fails the request instead of counting', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const t = createTestDb()
+    insert(t, 'approved', 2)
+    const statements: string[] = []
+    const failing = {
+      prepare(sql: string) {
+        statements.push(sql)
+        if (!/forward_card_counts/.test(sql)) return t.db.prepare(sql)
+        return { first: () => Promise.reject(new Error('D1_ERROR: storage temporarily unavailable')) }
+      },
+    } as unknown as D1Database
+    const response = await wallResponse(envFor(failing))
+    expect(response.status).toBe(500)
+    expect(statements.some(sql => /COUNT\(/i.test(sql))).toBe(false)
+    expect(error).toHaveBeenCalledWith('Card API failure', expect.any(Error))
+    expect(error).not.toHaveBeenCalledWith(expect.stringContaining('counting the cards instead'))
+  })
 })
 
 describe.skipIf(!sqliteAvailable)('GET /api/cards: edge cache', () => {
