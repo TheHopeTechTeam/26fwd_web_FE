@@ -312,6 +312,31 @@ describe.skipIf(!sqliteAvailable)('POST /api/cards — rate limits (real SQLite)
     expect(await send(env, { token: mine })).toMatchObject({ status: 201 })
   })
 
+  it('regression (load test 10/21): a first card is not refused when it reaches the database after a later one', async () => {
+    const { db } = createTestDb()
+    const env = makeEnv(db)
+
+    vi.setSystemTime(NOW + 500)
+    expect(await send(env)).toMatchObject({ status: 201 })
+    vi.setSystemTime(NOW)
+    expect(await send(env)).toMatchObject({ status: 201 })
+  })
+
+  it('regression (#13 review): when 300 people at one venue all resend within 60 seconds, the next 100 people can still send', async () => {
+    const { db, query } = createTestDb()
+    const env = makeEnv(db)
+    const crowd = await Promise.all(Array.from({ length: 300 }, () => issueClientToken(TOKEN_SECRET, NOW)))
+    const ipCount = () => query(`SELECT minute_count FROM submission_rate_limits WHERE limiter_key LIKE 'ip:%'`)[0]?.minute_count
+
+    for (const token of crowd) expect((await send(env, { token })).status).toBe(201)
+    vi.setSystemTime(NOW + 20_000)
+    for (const token of crowd) expect(await send(env, { token })).toEqual({ status: 429, code: 'RATE_LIMITED', retry: 40 })
+    expect(ipCount()).toBe(300)
+
+    for (let i = 0; i < 100; i++) expect((await send(env)).status).toBe(201)
+    expect(ipCount()).toBe(400)
+  })
+
   it('400 browsers behind one IP can each send a card in the same minute; the 401st is refused, other IPs are not', async () => {
     const { db, query } = createTestDb()
     const env = makeEnv(db)

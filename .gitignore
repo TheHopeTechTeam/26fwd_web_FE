@@ -29,3 +29,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+
+# Load-test reports (scripts/load-test/run.mjs)
+scripts/load-test/reports/
