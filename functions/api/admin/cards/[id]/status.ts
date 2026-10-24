@@ -5,7 +5,7 @@ export async function onRequestPatch({ request, env, params }: Context): Promise
   try {
     authorize(request, env.ADMIN_API_TOKEN)
     const id = validateCardId(params.id)
-    // An unreadable body answers like a missing status, as it always has.
+    // An unreadable body answers like a missing status, as it always has. `from` is required.
     const body = (await readAdminBody(request)) ?? {}
     const status = body.status
     if (status !== 'approved' && status !== 'hidden')

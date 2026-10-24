@@ -7,7 +7,11 @@
 -- which model and which version of the questions judged it, what it answered, and whether the card
 -- was published because of it. It never stores card text, which stays in forward_cards, and a
 -- judgment is deleted with its card.
--- Apply this before deploying the code that uses it: the admin list reads card_moderations.
+-- card_status_changes records every status change after a card is sent (Ian 10/25): from what, to
+-- what, by whom and when. "By whom" is only the model or a reviewer, because reviewers share one
+-- admin token (individual audit is US-17). Like judgments, it holds no card text and is deleted
+-- with its card.
+-- Apply this before deploying the code that uses it: the admin endpoints read and write these tables.
 
 CREATE TABLE IF NOT EXISTS app_settings (
   key TEXT PRIMARY KEY,
@@ -33,3 +37,16 @@ CREATE TABLE IF NOT EXISTS card_moderations (
   latency_ms INTEGER,
   judged_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS card_status_changes (
+  id INTEGER PRIMARY KEY,
+  card_id TEXT NOT NULL REFERENCES forward_cards (id) ON DELETE CASCADE,
+  from_status TEXT NOT NULL CHECK (from_status IN ('pending', 'approved', 'hidden')),
+  to_status TEXT NOT NULL CHECK (to_status IN ('pending', 'approved', 'hidden')),
+  -- model: published by the auto-publish. reviewer: anyone with the admin token.
+  actor TEXT NOT NULL CHECK (actor IN ('model', 'reviewer')),
+  changed_at TEXT NOT NULL
+);
+
+-- One card's history in order, and the lookup that deleting a card needs.
+CREATE INDEX IF NOT EXISTS card_status_changes_card ON card_status_changes (card_id, id);

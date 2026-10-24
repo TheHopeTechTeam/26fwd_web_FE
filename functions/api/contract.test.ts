@@ -278,7 +278,7 @@ describe.skipIf(!sqliteAvailable)('two reviewers on one card — mock and real b
   }
   const mock = () => createMockFetch({ latency: [0, 0], seed: [{ id: ID, nickname: 'n', text_gratitude: 'g', text_anticipate: 'a', status: 'pending', created_at: '2026-11-14T12:00:00.000Z' }] })
 
-  // A hides the card, then B acts on the stale list, then B again after refreshing, and two bad requests.
+  // A hides the card, then B acts on the stale list, then B again after refreshing, then bad requests.
   async function review(fetch: FetchLike) {
     const api = createApiClient({ baseUrl: '', fetch })
     const outcome = (promise: Promise<unknown>) => promise.then(
@@ -291,6 +291,8 @@ describe.skipIf(!sqliteAvailable)('two reviewers on one card — mock and real b
       await outcome(api.adminSetStatus(ADMIN, ID, 'approved', 'hidden')),
       await outcome(api.adminSetStatus(ADMIN, ID, 'hidden', 'published' as never)),
       await outcome(api.adminHide(ADMIN, 'c_missing', 'pending')),
+      await outcome(api.adminSetStatus(ADMIN, ID, 'hidden', undefined as never)),
+      await outcome(api.adminHide(ADMIN, ID, undefined as never)),
     ]
   }
 
@@ -299,6 +301,7 @@ describe.skipIf(!sqliteAvailable)('two reviewers on one card — mock and real b
     expect(await review(backend())).toEqual(fromMock)
     expect(fromMock[1]).toEqual({ status: 409, code: 'CARD_STATUS_CHANGED', currentStatus: 'hidden', fields: undefined })
     expect(fromMock[2]).toEqual({ ok: { success: true, card_id: ID, status: 'approved' } })
+    expect(fromMock.slice(5)).toEqual(Array(2).fill({ status: 400, code: 'VALIDATION_ERROR', currentStatus: undefined, fields: { from: 'required' } }))
   })
 
   it('a hide request whose body is not a JSON object gets the same 400 from both', async () => {
@@ -312,6 +315,6 @@ describe.skipIf(!sqliteAvailable)('two reviewers on one card — mock and real b
     }
     const fromMock = await send(mock())
     expect(await send(backend())).toEqual(fromMock)
-    expect(fromMock).toEqual({ status: 400, error: { code: 'VALIDATION_ERROR', message: 'Body must be a JSON object', fields: { from: 'invalid' } } })
+    expect(fromMock).toEqual({ status: 400, error: { code: 'VALIDATION_ERROR', message: 'from must be pending, approved or hidden', fields: { from: 'required' } } })
   })
 })

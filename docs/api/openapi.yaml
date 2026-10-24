@@ -135,7 +135,7 @@ paths:
           application/json:
             schema:
               type: object
-              required: [status]
+              required: [status, from]
               properties:
                 status:
                   type: string
@@ -166,12 +166,12 @@ paths:
       parameters:
         - $ref: '#/components/parameters/CardId'
       requestBody:
-        required: false
-        description: Optional. Without a body the card is hidden whatever its status.
+        required: true
         content:
           application/json:
             schema:
               type: object
+              required: [from]
               properties:
                 from:
                   $ref: '#/components/schemas/ExpectedStatus'
@@ -301,9 +301,9 @@ components:
         judged_at: { type: string, format: date-time }
     ExpectedStatus:
       description: |
-        The status the reviewer saw when acting. With it the change applies only while the card still
-        has that status; if someone else changed it first the answer is 409 CARD_STATUS_CHANGED with
-        the card's status now, and nothing is overwritten. Without it the change applies regardless.
+        The status the reviewer saw when acting (required). The change applies only while the card
+        still has that status; if someone else changed it first the answer is 409 CARD_STATUS_CHANGED
+        with the card's status now, and nothing is overwritten. Missing: 400 with fields.from required.
       allOf:
         - $ref: '#/components/schemas/CardStatus'
     Pagination:

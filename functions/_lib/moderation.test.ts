@@ -36,6 +36,7 @@ function setup({ switchValue = 'on', questions = JSON.stringify(QUESTIONS), mode
 }
 const statusOf = (t: TestDb) => t.query("SELECT status FROM forward_cards WHERE id = 'c_1'")[0]?.status
 const judgments = (t: TestDb) => t.query('SELECT * FROM card_moderations')
+const history = (t: TestDb) => t.query('SELECT card_id, from_status, to_status, actor, changed_at FROM card_status_changes ORDER BY id')
 
 async function versionOf(json: unknown) {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(json)))
@@ -92,6 +93,8 @@ describe.skipIf(!sqliteAvailable)('judging a card while auto-publish is on', () 
     })])
     expect(judgments(t)[0]?.judged_at).toMatch(/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/)
     expect(judgments(t)[0]?.latency_ms).toBeGreaterThanOrEqual(0)
+    // The status history says the model published it, at the time of the judgment (Ian 10/25).
+    expect(history(t)).toEqual([{ card_id: 'c_1', from_status: 'pending', to_status: 'approved', actor: 'model', changed_at: judgments(t)[0]?.judged_at }])
   })
 
   it('any other reason: the card stays pending and the judgment says flagged', async () => {
@@ -99,6 +102,7 @@ describe.skipIf(!sqliteAvailable)('judging a card while auto-publish is on', () 
     await moderateCard(env, 'c_1', CARD)
     expect(statusOf(t)).toBe('pending')
     expect(judgments(t)).toEqual([expect.objectContaining({ outcome: 'flagged', reason: 'flag_a', reason_probability: 0.06, auto_published: 0 })])
+    expect(history(t)).toEqual([])
   })
 
   it('questions missing or unusable: stays pending, recorded, and the model is not called', async () => {
@@ -162,6 +166,7 @@ describe.skipIf(!sqliteAvailable)('judging a card while auto-publish is on', () 
       await moderateCard(env, 'c_1', CARD)
       expect(statusOf(t)).toBe(reviewed)
       expect(judgments(t)).toEqual([expect.objectContaining({ outcome: 'clear', auto_published: 0 })])
+      expect(history(t)).toEqual([])
     }
   })
 
@@ -175,6 +180,7 @@ describe.skipIf(!sqliteAvailable)('judging a card while auto-publish is on', () 
     await moderateCard(env, 'c_1', CARD)
     expect(statusOf(t)).toBe('pending')
     expect(judgments(t)).toEqual([expect.objectContaining({ outcome: 'clear', auto_published: 0 })])
+    expect(history(t)).toEqual([])
   })
 
   it('never throws, and leaves the card pending, when the judgment cannot be written', async () => {
@@ -186,14 +192,25 @@ describe.skipIf(!sqliteAvailable)('judging a card while auto-publish is on', () 
     expect(error).toHaveBeenCalledWith('card moderation failed; the card stays pending', 'c_1', expect.anything())
   })
 
-  it('records no card text, and a judgment is deleted with its card', async () => {
+  it('publishes nothing when the status history cannot be written: one transaction', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const { t, env } = setup()
+    t.query('DROP TABLE card_status_changes')
+    await expect(moderateCard(env, 'c_1', CARD)).resolves.toBeUndefined()
+    expect(statusOf(t)).toBe('pending')
+    expect(judgments(t)).toEqual([])
+  })
+
+  it('records no card text, and the judgment and status history are deleted with their card', async () => {
     const { t, env } = setup()
     await moderateCard(env, 'c_1', CARD)
-    const stored = JSON.stringify(judgments(t))
+    expect(history(t)).toHaveLength(1)
+    const stored = JSON.stringify([judgments(t), history(t)])
     for (const text of Object.values(CARD)) expect(stored).not.toContain(text)
     t.query('PRAGMA foreign_keys = ON') // as on D1
     t.query("DELETE FROM forward_cards WHERE id = 'c_1'")
     expect(judgments(t)).toEqual([])
+    expect(history(t)).toEqual([])
   })
 })
 

@@ -226,7 +226,7 @@ describe('admin API', () => {
     expect(pending.items.every((c) => c.status === 'pending')).toBe(true);
     const target = pending.items[0]!;
 
-    await expect(client.adminSetStatus(ADMIN_TOKEN, target.id, 'approved')).resolves.toEqual({
+    await expect(client.adminSetStatus(ADMIN_TOKEN, target.id, 'approved', 'pending')).resolves.toEqual({
       success: true,
       card_id: target.id,
       status: 'approved',
@@ -234,14 +234,14 @@ describe('admin API', () => {
     const wall = await client.listCards({ page: 1, limit: 12 });
     expect(wall.items[0]?.id).toBe(target.id);
 
-    await client.adminHide(ADMIN_TOKEN, target.id);
+    await client.adminHide(ADMIN_TOKEN, target.id, 'approved');
     const after = await client.listCards({ page: 1, limit: 12 });
     expect(after.items.some((c) => c.id === target.id)).toBe(false);
   });
 
   it('404s on unknown ids', async () => {
     const { client } = setup();
-    await expectError(client.adminHide(ADMIN_TOKEN, 'c_missing'), 404, 'NOT_FOUND');
+    await expectError(client.adminHide(ADMIN_TOKEN, 'c_missing', 'pending'), 404, 'NOT_FOUND');
   });
 
   it('two reviewers on one card: the second, acting on a stale list, gets CARD_STATUS_CHANGED and the card is not overwritten', async () => {
@@ -255,7 +255,16 @@ describe('admin API', () => {
     expect((await client.listCards({ page: 1, limit: 12 })).items.some((c) => c.id === target.id)).toBe(false);
   });
 
-  it('sends `from` only when given, and lists every card with its model judgment (none in the mock)', async () => {
+  it('regression (Ian 10/25): a change without `from` is refused, so it cannot skip the check', async () => {
+    const { client } = setup();
+    const target = (await client.adminListCards(ADMIN_TOKEN, 'pending')).items[0]!;
+    const error = await expectError(client.adminSetStatus(ADMIN_TOKEN, target.id, 'approved', undefined as never), 400, 'VALIDATION_ERROR');
+    expect(error.fields).toEqual({ from: 'required' });
+    expect((await expectError(client.adminHide(ADMIN_TOKEN, target.id, undefined as never), 400, 'VALIDATION_ERROR')).fields).toEqual({ from: 'required' });
+    expect((await client.adminListCards(ADMIN_TOKEN, 'pending')).items.some((c) => c.id === target.id)).toBe(true);
+  });
+
+  it('always sends `from`, and lists every card with its model judgment (none in the mock)', async () => {
     const calls: Array<{ path: string; body?: string }> = [];
     const ok = { success: true, card_id: 'c_1', status: 'hidden' };
     const fetch: FetchLike = async (input, init = {}) => {
@@ -264,14 +273,10 @@ describe('admin API', () => {
     };
     const client = createApiClient({ baseUrl: '', fetch });
     await client.adminSetStatus(ADMIN_TOKEN, 'c_1', 'approved', 'pending');
-    await client.adminSetStatus(ADMIN_TOKEN, 'c_1', 'approved');
     await client.adminHide(ADMIN_TOKEN, 'c_1', 'approved');
-    await client.adminHide(ADMIN_TOKEN, 'c_1');
     expect(calls.map((c) => c.body)).toEqual([
       JSON.stringify({ status: 'approved', from: 'pending' }),
-      JSON.stringify({ status: 'approved' }),
       JSON.stringify({ from: 'approved' }),
-      undefined,
     ]);
 
     const { client: mocked } = setup();

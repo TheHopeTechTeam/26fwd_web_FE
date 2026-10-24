@@ -64,7 +64,7 @@ npx wrangler d1 execute forward_cards_prod --remote --file=./migrations/0004_mod
 
 > - 已經套用過的 migration 不可修改，之後的變更一律新增下一個編號。
 > - `0002` 會把限流表的鍵欄位改名，**舊版程式在套用後無法送卡**。對已上線的資料庫，套用 `0002` 後要立刻部署包含 Client Token 的版本；新建的資料庫（例如 M4 的正式庫）則在第一次部署前套用即可。
-> - `0004` 新增自動公開開關（預設關閉）與模型判斷紀錄表。**要在部署 M1.6 的程式之前套用**：後台列表會讀判斷紀錄表，未套用時後台列表會失敗。套用後舊版程式不受影響。
+> - `0004` 新增自動公開開關（預設關閉）、模型判斷紀錄表與狀態變更紀錄表。**要在部署 M1.6 的程式之前套用**：後台列表會讀判斷紀錄表，核准與隱藏會寫入狀態變更紀錄，未套用時這些操作都會失敗。套用後舊版程式不受影響。
 
 ### 2. 環境變數綁定清單
 
@@ -122,19 +122,25 @@ npx wrangler d1 execute forward_cards_staging --remote --command "UPDATE app_set
 
 # 列出某段時間內被自動公開的卡（例如切回全人工後，需要逐張檢查時）
 npx wrangler d1 execute forward_cards_staging --remote --command "SELECT m.card_id, m.judged_at, c.status FROM card_moderations m JOIN forward_cards c ON c.id = m.card_id WHERE m.auto_published = 1 AND m.judged_at BETWEEN '<開始 ISO 時間>' AND '<結束 ISO 時間>' ORDER BY m.judged_at"
+
+# 被模型自動公開、之後又被審核者隱藏的卡數（UAT 用）
+npx wrangler d1 execute forward_cards_staging --remote --command "SELECT COUNT(DISTINCT m.card_id) AS auto_published, COUNT(DISTINCT r.card_id) AS hidden_later FROM card_status_changes m LEFT JOIN card_status_changes r ON r.card_id = m.card_id AND r.id > m.id AND r.actor = 'reviewer' AND r.to_status = 'hidden' WHERE m.actor = 'model'"
 ```
 
 > - 判斷在回覆送卡請求之後於背景執行（`waitUntil`），使用者不用等待模型；判斷失敗、逾時（5 秒）或背景工作沒有執行完，卡片都維持待審。
 > - 自動公開只在卡片仍是待審時發生：審核者已經處理過的卡，不會被模型覆蓋。
 > - 開關關閉時完全不呼叫模型，不使用 Workers AI 額度。開啟時若額度用完，之後的卡會記錄 `model_error` 並留給審核人員。
+> - 狀態變更紀錄 `card_status_changes`：模型自動公開，以及審核者的每次核准、隱藏，各記一筆（原狀態、新狀態、`model`／`reviewer`、時間），不含卡片內文，隨卡片刪除。審核者共用管理金鑰，所以無法區分是哪一位。
+> - 這一版的後台畫面在核准、隱藏時會帶上審核者看到的狀態（`from`，後端改為必填）。畫面與後端在同一次部署生效；部署前就開著的後台頁面送出會被拒絕（400），整頁重新整理即可。
 
 **停用與回復**（套用 `0004` 前先記下 Time Travel 書籤：`npx wrangler d1 time-travel info forward_cards_staging`）
 - **只是要停用自動公開**：不需要回復，把開關改成 `off`（上面的指令）即可，下一張卡起生效。
-- **只回復程式**：部署前一版即可。舊程式不會用到這兩張表，表留著不影響運作。
-- **回復 `0004`**：**一定要先回復程式**，因為新程式的後台列表會讀判斷紀錄表，表不存在時後台列表會失敗。刪表會一併刪除判斷紀錄，需要保留時先匯出（匯出檔含判斷結果，不要放進 repo）：
+- **只回復程式**：部署前一版即可。舊程式不會用到 `0004` 的三張表，表留著不影響運作。
+- **回復 `0004`**：**一定要先回復程式**，因為新程式的後台列表、核准與隱藏都會用到這些表，表不存在時會失敗。刪表會一併刪除判斷紀錄與狀態變更紀錄，需要保留時先匯出（匯出檔含判斷結果，不要放進 repo）：
   ```bash
   npx wrangler d1 export forward_cards_staging --remote --table card_moderations --output card_moderations.sql
-  npx wrangler d1 execute forward_cards_staging --remote --command "DROP TABLE IF EXISTS card_moderations; DROP TABLE IF EXISTS app_settings"
+  npx wrangler d1 export forward_cards_staging --remote --table card_status_changes --output card_status_changes.sql
+  npx wrangler d1 execute forward_cards_staging --remote --command "DROP TABLE IF EXISTS card_status_changes; DROP TABLE IF EXISTS card_moderations; DROP TABLE IF EXISTS app_settings"
   ```
   卡片資料不受影響；之後要恢復，重新執行 `0004` 即可，開關會回到 `off`。
 - **Time Travel 還原**（`npx wrangler d1 time-travel restore forward_cards_staging --bookmark=<書籤>`）會連同書籤之後新增或變更的卡片一起還原，只在必要時使用。

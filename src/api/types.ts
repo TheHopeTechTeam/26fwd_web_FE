@@ -81,12 +81,17 @@ export interface AdminListResponse {
 }
 
 /**
- * PATCH /api/admin/cards/:id/status body. `from` is the status the reviewer saw: with it, the
+ * PATCH /api/admin/cards/:id/status body. `from` (required) is the status the reviewer saw: the
  * change applies only while the card still has that status, otherwise 409 CARD_STATUS_CHANGED.
  */
 export interface AdminStatusRequest {
   status: Exclude<CardStatus, 'pending'>;
-  from?: CardStatus;
+  from: CardStatus;
+}
+
+/** PATCH /api/admin/cards/:id/hide body: `from` as in AdminStatusRequest. */
+export interface AdminHideRequest {
+  from: CardStatus;
 }
 
 /** PATCH /api/admin/cards/:id/status and PATCH /api/admin/cards/:id/hide */

@@ -171,19 +171,19 @@ export function createApiClient({ baseUrl, fetch: fetchImpl, timeoutMs = 15000 }
       return request<AdminListResponse>('GET', '/api/admin/cards', { query: { status }, token, signal });
     },
     /**
-     * `from`: the status the reviewer saw. With it the change applies only if no one else changed
-     * the card first; otherwise it fails with CARD_STATUS_CHANGED (409) and the card's status now.
+     * `from`: the status the reviewer saw. The change applies only if no one else changed the card
+     * first; otherwise it fails with CARD_STATUS_CHANGED (409) and the card's status now.
      */
-    adminSetStatus(token: string, id: string, status: Exclude<CardStatus, 'pending'>, from?: CardStatus) {
+    adminSetStatus(token: string, id: string, status: Exclude<CardStatus, 'pending'>, from: CardStatus) {
       return request<AdminStatusResponse>('PATCH', `/api/admin/cards/${encodeURIComponent(id)}/status`, {
-        body: from === undefined ? { status } : { status, from },
+        body: { status, from },
         token,
       });
     },
     /** `from` as in adminSetStatus. */
-    adminHide(token: string, id: string, from?: CardStatus) {
+    adminHide(token: string, id: string, from: CardStatus) {
       return request<AdminStatusResponse>('PATCH', `/api/admin/cards/${encodeURIComponent(id)}/hide`, {
-        ...(from === undefined ? {} : { body: { from } }),
+        body: { from },
         token,
       });
     },

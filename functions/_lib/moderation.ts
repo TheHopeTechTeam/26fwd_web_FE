@@ -133,11 +133,14 @@ export async function moderateCard(env: Env, cardId: string, card: CardText): Pr
     }
 
     // One transaction: the card is published only if it is still pending (a reviewer may have acted
-    // first) and the switch is still on, and the judgment records whether it was.
+    // first) and the switch is still on, the judgment records whether it was, and so does the status
+    // history when it was.
     await db.batch([
       db.prepare(`UPDATE forward_cards SET status = 'approved' WHERE id = ? AND status = 'pending'
         AND (SELECT value FROM app_settings WHERE key = 'auto_publish') = 'on'`).bind(cardId),
       recordJudgment(db, cardId, { ...answer, version, outcome: 'clear', latencyMs }, 'changes()'),
+      db.prepare(`INSERT INTO card_status_changes (card_id, from_status, to_status, actor, changed_at)
+        SELECT card_id, 'pending', 'approved', 'model', judged_at FROM card_moderations WHERE card_id = ? AND auto_published = 1`).bind(cardId),
     ])
   } catch (error) {
     console.error('card moderation failed; the card stays pending', cardId, error)

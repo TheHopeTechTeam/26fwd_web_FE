@@ -16,9 +16,11 @@ function fakeDb(rowCount: number, changes = 1) {
         // Honour the LIMIT bound by the handler, like D1 would.
         async all() { return { results: rows.slice(0, Number(params.at(-1))) } },
         async run() { return { meta: { changes } } },
+        async first() { return null },
       }
       return statement
     },
+    async batch(statements: unknown[]) { return statements.map(() => ({ meta: { changes } })) },
   }
   return { db: db as unknown as D1Database, bound }
 }
@@ -88,7 +90,7 @@ describe('PATCH /api/admin/cards/:id/status — errors', () => {
   })
 
   it('answers an unknown card with 404 NOT_FOUND', async () => {
-    const response = await setStatus(fakeDb(0, 0).db, '{"status":"approved"}')
+    const response = await setStatus(fakeDb(0, 0).db, '{"status":"approved","from":"pending"}')
     expect(response.status).toBe(404)
     expect((await response.json() as { error: { code: string } }).error.code).toBe('NOT_FOUND')
   })

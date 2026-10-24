@@ -1,14 +1,13 @@
 import { changeStatus, expectedStatus, readAdminBody } from '../../../../_lib/admin-status'
-import { ApiError, authorize, handleError, json, validateCardId, type Env } from '../../../../_lib/cards'
+import { authorize, handleError, json, validateCardId, type Env } from '../../../../_lib/cards'
 type Context = { request: Request; env: Env; params: { id: string } }
-// The body is optional: { from } makes the takedown conditional on the status the reviewer saw. A
-// body that is there but unreadable is refused, so a broken request never skips that check.
+// The body { from } is required: the takedown applies only while the card still has the status the
+// reviewer saw. A missing or unreadable body is refused, so no request skips that check.
 export async function onRequestPatch({ request, env, params }: Context): Promise<Response> {
   try {
     authorize(request, env.ADMIN_API_TOKEN)
     const id = validateCardId(params.id)
-    const body = await readAdminBody(request, true)
-    if (!body) throw new ApiError(400, 'VALIDATION_ERROR', 'Body must be a JSON object', { fields: { from: 'invalid' } })
+    const body = (await readAdminBody(request)) ?? {}
     await changeStatus(env.FORWARD_DB, id, 'hidden', expectedStatus(body.from))
     return json({ success: true, card_id: id, status: 'hidden' })
   } catch (error) { return handleError(error) }

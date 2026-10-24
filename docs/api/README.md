@@ -201,7 +201,9 @@ Cookie：`__Host-fwd_ct=v1.<隨機 ID>.<到期時間（Unix 秒）>.<HMAC-SHA256
 
 `status` 只接受 `approved`｜`hidden`。`:id` 需符合 `^[A-Za-z0-9_-]{1,80}$`，否則 400；找不到回 404。
 
-`from` 是審核者載入時看到的狀態（`pending`｜`approved`｜`hidden`）。有帶時，只有卡片仍是這個狀態才會變更；若已被其他人改變，回 **409 `CARD_STATUS_CHANGED`**，附上 `current_status`，不覆蓋先前的結果，請重新整理後再操作。沒帶時維持舊行為，直接變更。後台畫面一律帶上 `from`。
+`from`（必填）是審核者載入時看到的狀態（`pending`｜`approved`｜`hidden`）。只有卡片仍是這個狀態才會變更；若已被其他人改變，回 **409 `CARD_STATUS_CHANGED`**，附上 `current_status`，不覆蓋先前的結果，請重新整理後再操作。沒帶回 400（`fields.from: required`），格式不對回 400（`fields.from: invalid`）。
+
+每次變更都會在同一筆交易中寫入狀態變更紀錄 `card_status_changes`（見「資料表建議」），`actor` 為 `reviewer`。改成卡片原本的狀態不算變更，不記錄。
 
 **Response `200`**
 
@@ -211,7 +213,11 @@ Cookie：`__Host-fwd_ct=v1.<隨機 ID>.<到期時間（Unix 秒）>.<HMAC-SHA256
 
 ### 3.3 緊急下架 `PATCH /api/admin/cards/:id/hide`
 
-等同把狀態設為 `hidden`，回應同 3.2（`"status": "hidden"`）。`hidden` 是下架，**不是刪除**。body 可省略；帶 `{ "from": "pending" }` 時與 3.2 相同，卡片已被其他人改變就回 409。
+```json
+{ "from": "approved" }
+```
+
+等同把狀態設為 `hidden`，回應同 3.2（`"status": "hidden"`）。`hidden` 是下架，**不是刪除**。`from` 必填，規則與 3.2 相同：卡片已被其他人改變就回 409；沒帶或 body 不是 JSON 物件回 400。
 
 ---
 
@@ -257,11 +263,20 @@ CREATE TABLE card_moderations (                  -- migration 0004：模型的�
   latency_ms                  INTEGER,
   judged_at                   TEXT NOT NULL
 );
+
+CREATE TABLE card_status_changes (               -- migration 0004：狀態變更紀錄，不含卡片內文，隨卡片刪除
+  id          INTEGER PRIMARY KEY,
+  card_id     TEXT NOT NULL REFERENCES forward_cards (id) ON DELETE CASCADE,
+  from_status TEXT NOT NULL,                     -- pending | approved | hidden
+  to_status   TEXT NOT NULL,
+  actor       TEXT NOT NULL,                     -- model（自動公開）| reviewer（持有管理金鑰者，無法區分是哪一位）
+  changed_at  TEXT NOT NULL
+);
 ```
 
 ## 尚未定案、本契約刻意不包含的部分
 
-- 退件、改寫，以及記錄「哪位審核者做了什麼」的個別稽核紀錄（US-17）。模型的判斷紀錄已在 M1.6 加入（見 3.1）
+- 退件、改寫，以及記錄「哪位審核者做了什麼」的個別稽核紀錄（US-17）。模型的判斷紀錄（見 3.1）與不區分審核者的狀態變更紀錄（見「資料表建議」）已在 M1.6 加入
 - 保存期限、刪除與跨年度取回（Q-32，US-15）
 
 這些拍板後會以**新增欄位／新端點**的方式擴充，不改動上面既有的欄位與回應形狀。
