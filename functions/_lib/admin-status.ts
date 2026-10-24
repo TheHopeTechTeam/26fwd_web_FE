@@ -3,8 +3,9 @@ import { ApiError } from './cards'
 
 const STATUSES: readonly string[] = ['pending', 'approved', 'hidden']
 
-// The small JSON body the admin endpoints take. Where `optional`, an empty body is allowed.
-export async function readAdminBody(request: Request, optional = false): Promise<Record<string, unknown>> {
+// The small JSON body the admin endpoints take, or null when it is not a JSON object. Where
+// `optional`, an empty body is allowed and reads as {}.
+export async function readAdminBody(request: Request, optional = false): Promise<Record<string, unknown> | null> {
   const raw = await request.text()
   if (optional && raw === '') return {}
   const mediaType = request.headers.get('content-type')?.split(';', 1)[0]?.trim().toLowerCase()
@@ -12,9 +13,9 @@ export async function readAdminBody(request: Request, optional = false): Promise
   if (new TextEncoder().encode(raw).byteLength > 1024) throw new ApiError(413, 'PAYLOAD_TOO_LARGE', 'Request body exceeds 1 KiB')
   try {
     const parsed: unknown = JSON.parse(raw)
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : {}
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : null
   } catch {
-    return {}
+    return null
   }
 }
 

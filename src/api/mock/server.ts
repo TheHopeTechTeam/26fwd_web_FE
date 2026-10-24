@@ -232,19 +232,25 @@ export function createMockServer(options: MockServerOptions = {}) {
       if (match && method === 'PATCH') {
         const id = decodeURIComponent(match[1] ?? '');
         if (!ID_PATTERN.test(id)) return error(400, 'VALIDATION_ERROR', 'Invalid card id');
-        let body: { status?: unknown; from?: unknown } = {};
-        try {
-          const parsed: unknown = JSON.parse(bodyText || '{}');
-          if (parsed && typeof parsed === 'object') body = parsed as { status?: unknown; from?: unknown };
-        } catch {
-          // An unreadable body is treated as empty, like the backend.
+        // Like the backend: null when a body is there but is not a JSON object.
+        let body: { status?: unknown; from?: unknown } | null = {};
+        if (bodyText) {
+          try {
+            const parsed: unknown = JSON.parse(bodyText);
+            body = parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as { status?: unknown; from?: unknown }) : null;
+          } catch {
+            body = null;
+          }
         }
-        if (match[2] === 'hide') return updateStatus(id, 'hidden', body.from);
-        const next = body.status;
+        if (match[2] === 'hide') {
+          if (!body) return error(400, 'VALIDATION_ERROR', 'Body must be a JSON object', { fields: { from: 'invalid' } });
+          return updateStatus(id, 'hidden', body.from);
+        }
+        const next = body?.status;
         if (next !== 'approved' && next !== 'hidden') {
           return error(400, 'VALIDATION_ERROR', 'status must be approved or hidden', { fields: { status: 'invalid' } });
         }
-        return updateStatus(id, next, body.from);
+        return updateStatus(id, next, body?.from);
       }
     }
 

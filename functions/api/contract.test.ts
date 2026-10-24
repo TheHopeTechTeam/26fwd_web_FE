@@ -300,4 +300,18 @@ describe.skipIf(!sqliteAvailable)('two reviewers on one card — mock and real b
     expect(fromMock[1]).toEqual({ status: 409, code: 'CARD_STATUS_CHANGED', currentStatus: 'hidden', fields: undefined })
     expect(fromMock[2]).toEqual({ ok: { success: true, card_id: ID, status: 'approved' } })
   })
+
+  it('a hide request whose body is not a JSON object gets the same 400 from both', async () => {
+    const send = async (fetch: FetchLike) => {
+      const response = await fetch(`/api/admin/cards/${ID}/hide`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${ADMIN}`, 'Content-Type': 'application/json' },
+        body: '{"from":',
+      })
+      return { status: response.status, error: ((await response.json()) as { error: unknown }).error }
+    }
+    const fromMock = await send(mock())
+    expect(await send(backend())).toEqual(fromMock)
+    expect(fromMock).toEqual({ status: 400, error: { code: 'VALIDATION_ERROR', message: 'Body must be a JSON object', fields: { from: 'invalid' } } })
+  })
 })

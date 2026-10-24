@@ -128,6 +128,17 @@ npx wrangler d1 execute forward_cards_staging --remote --command "SELECT m.card_
 > - 自動公開只在卡片仍是待審時發生：審核者已經處理過的卡，不會被模型覆蓋。
 > - 開關關閉時完全不呼叫模型，不使用 Workers AI 額度。開啟時若額度用完，之後的卡會記錄 `model_error` 並留給審核人員。
 
+**停用與回復**（套用 `0004` 前先記下 Time Travel 書籤：`npx wrangler d1 time-travel info forward_cards_staging`）
+- **只是要停用自動公開**：不需要回復，把開關改成 `off`（上面的指令）即可，下一張卡起生效。
+- **只回復程式**：部署前一版即可。舊程式不會用到這兩張表，表留著不影響運作。
+- **回復 `0004`**：**一定要先回復程式**，因為新程式的後台列表會讀判斷紀錄表，表不存在時後台列表會失敗。刪表會一併刪除判斷紀錄，需要保留時先匯出（匯出檔含判斷結果，不要放進 repo）：
+  ```bash
+  npx wrangler d1 export forward_cards_staging --remote --table card_moderations --output card_moderations.sql
+  npx wrangler d1 execute forward_cards_staging --remote --command "DROP TABLE IF EXISTS card_moderations; DROP TABLE IF EXISTS app_settings"
+  ```
+  卡片資料不受影響；之後要恢復，重新執行 `0004` 即可，開關會回到 `off`。
+- **Time Travel 還原**（`npx wrangler d1 time-travel restore forward_cards_staging --bookmark=<書籤>`）會連同書籤之後新增或變更的卡片一起還原，只在必要時使用。
+
 #### Staging 壓測模式 `LOAD_TEST_MODE`（只用於 #5 的 300 人壓測）
 
 自動化腳本無法通過真實的 Turnstile，所以壓測時在 `26fwd-staging` 暫時加上明文變數 `LOAD_TEST_MODE=true`：Turnstile 改用 Cloudflare 官方的「永遠通過」測試 secret，只檢查 `success`。Client Token、限流與寫入 D1 都照正常流程執行。

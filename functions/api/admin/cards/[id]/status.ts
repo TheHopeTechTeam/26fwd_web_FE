@@ -5,7 +5,8 @@ export async function onRequestPatch({ request, env, params }: Context): Promise
   try {
     authorize(request, env.ADMIN_API_TOKEN)
     const id = validateCardId(params.id)
-    const body = await readAdminBody(request)
+    // An unreadable body answers like a missing status, as it always has.
+    const body = (await readAdminBody(request)) ?? {}
     const status = body.status
     if (status !== 'approved' && status !== 'hidden')
       throw new ApiError(400, 'VALIDATION_ERROR', 'status must be approved or hidden', { fields: { status: 'invalid' } })

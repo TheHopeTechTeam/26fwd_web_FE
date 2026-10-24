@@ -79,6 +79,17 @@ describe.skipIf(!sqliteAvailable)('two reviewers on one card (409, Ian 10/23)', 
     expect((await hide(env, 'from=pending', 'c_1', 'application/x-www-form-urlencoded')).status).toBe(400)
     expect(statusOf(t)).toBe('pending')
   })
+
+  it('regression (review): a hide request whose body is not a JSON object is refused, so a broken request never skips the check', async () => {
+    const { t, env } = setup()
+    t.query("UPDATE forward_cards SET status = 'approved' WHERE id = 'c_1'")
+    for (const body of ['{"from":"pending"', '"pending"', '[]', 'null', '42']) {
+      const response = await hide(env, body)
+      expect(response.status, body).toBe(400)
+      expect(await errorOf(response)).toEqual({ code: 'VALIDATION_ERROR', message: 'Body must be a JSON object', fields: { from: 'invalid' } })
+    }
+    expect(statusOf(t)).toBe('approved')
+  })
 })
 
 describe.skipIf(!sqliteAvailable)('GET /api/admin/cards: the model\'s judgment with each card', () => {
