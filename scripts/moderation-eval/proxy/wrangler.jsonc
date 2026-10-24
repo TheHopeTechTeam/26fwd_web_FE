@@ -1,0 +1,11 @@
+// Local-only proxy for the moderation trial: `wrangler dev` runs this Worker on this machine,
+// and its AI binding calls Workers AI with your `wrangler login`. Never deploy it: index.js only
+// answers requests addressed to this machine, and workers_dev is off so a mistaken
+// `wrangler deploy` gets no public address. Set CLOUDFLARE_ACCOUNT_ID if you have several accounts.
+{
+  "name": "fwd-moderation-eval-proxy",
+  "main": "index.js",
+  "compatibility_date": "2026-09-01",
+  "workers_dev": false,
+  "ai": { "binding": "AI" }
+}
