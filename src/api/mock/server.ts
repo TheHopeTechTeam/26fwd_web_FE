@@ -183,13 +183,21 @@ export function createMockServer(options: MockServerOptions = {}) {
       return error(400, 'VALIDATION_ERROR', 'status must be pending, approved or hidden');
     }
     const matching = cards.filter((c) => c.status === status).sort(newestFirst);
-    const items: AdminCard[] = matching.slice(0, ADMIN_LIST_LIMIT).map((c) => ({ ...toPublic(c), status: c.status }));
+    // The mock never runs the model, so no card carries a judgment.
+    const items: AdminCard[] = matching.slice(0, ADMIN_LIST_LIMIT).map((c) => ({ ...toPublic(c), status: c.status, moderation: null }));
     return { status: 200, body: { items, has_more: matching.length > ADMIN_LIST_LIMIT }, headers: { 'Cache-Control': 'no-store' } };
   }
 
-  function updateStatus(id: string, status: CardStatus): MockResponse {
+  // `from`, when sent, is the status the reviewer saw: if the card has changed since, 409.
+  function updateStatus(id: string, status: CardStatus, from?: unknown): MockResponse {
+    if (from !== undefined && from !== 'pending' && from !== 'approved' && from !== 'hidden') {
+      return error(400, 'VALIDATION_ERROR', 'from must be pending, approved or hidden', { fields: { from: 'invalid' } });
+    }
     const card = cards.find((c) => c.id === id);
     if (!card) return error(404, 'NOT_FOUND', 'Card not found');
+    if (from !== undefined && card.status !== from) {
+      return error(409, 'CARD_STATUS_CHANGED', 'The card was changed by someone else', { current_status: card.status });
+    }
     card.status = status;
     return { status: 200, body: { success: true, card_id: card.id, status: card.status }, headers: { 'Cache-Control': 'no-store' } };
   }
@@ -224,17 +232,25 @@ export function createMockServer(options: MockServerOptions = {}) {
       if (match && method === 'PATCH') {
         const id = decodeURIComponent(match[1] ?? '');
         if (!ID_PATTERN.test(id)) return error(400, 'VALIDATION_ERROR', 'Invalid card id');
-        if (match[2] === 'hide') return updateStatus(id, 'hidden');
-        let next: unknown;
-        try {
-          next = (JSON.parse(bodyText || '{}') as { status?: unknown }).status;
-        } catch {
-          next = undefined;
+        // Like the backend: null when a body is there but is not a JSON object.
+        let body: { status?: unknown; from?: unknown } | null = {};
+        if (bodyText) {
+          try {
+            const parsed: unknown = JSON.parse(bodyText);
+            body = parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as { status?: unknown; from?: unknown }) : null;
+          } catch {
+            body = null;
+          }
         }
+        if (match[2] === 'hide') {
+          if (!body) return error(400, 'VALIDATION_ERROR', 'Body must be a JSON object', { fields: { from: 'invalid' } });
+          return updateStatus(id, 'hidden', body.from);
+        }
+        const next = body?.status;
         if (next !== 'approved' && next !== 'hidden') {
           return error(400, 'VALIDATION_ERROR', 'status must be approved or hidden', { fields: { status: 'invalid' } });
         }
-        return updateStatus(id, next);
+        return updateStatus(id, next, body?.from);
       }
     }
 

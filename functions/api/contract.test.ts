@@ -3,6 +3,8 @@ import { ApiError, createApiClient, describeError, type FetchLike } from '../../
 import { createMockFetch } from '../../src/api/mock/server'
 import type { Env } from '../_lib/cards'
 import { createTestDb, sqliteAvailable } from '../_test/d1'
+import { onRequestPatch as hideHandler } from './admin/cards/[id]/hide'
+import { onRequestPatch as statusHandler } from './admin/cards/[id]/status'
 import { onRequestPost as submitCardHandler } from './cards'
 import { onRequestPost as clientTokenHandler } from './client-token'
 
@@ -256,5 +258,60 @@ describe.skipIf(!sqliteAvailable)('POST /api/cards — visitor-facing result thr
     stubSiteverify({}, 500)
     const error = await failure(makeEnv())
     expect(error.message).not.toMatch(/test-secret|test-salt|client-token-test-secret|siteverify|HTTP 500/i)
+  })
+})
+
+describe.skipIf(!sqliteAvailable)('two reviewers on one card — mock and real backend give the same answer (409, Ian 10/23)', () => {
+  const ADMIN = 'a'.repeat(32)
+  const ID = 'c_contract_1'
+
+  // The real admin handlers behind the browser client, with one pending card.
+  function backend(): FetchLike {
+    const { db, query } = createTestDb()
+    query(`INSERT INTO forward_cards VALUES ('${ID}', 'n', 'g', 'a', 'pending', 1, '2026-11-14T12:00:00.000Z')`)
+    const env: Env = { FORWARD_DB: db, ADMIN_API_TOKEN: ADMIN }
+    return async (input, init = {}) => {
+      const request = new Request(`https://${HOST}${input}`, { method: init.method, headers: init.headers, body: init.body as string | undefined })
+      const [, id = '', action] = /^\/api\/admin\/cards\/([^/]+)\/(status|hide)$/.exec(input) ?? []
+      return (action === 'hide' ? hideHandler : statusHandler)({ request, env, params: { id: decodeURIComponent(id) } })
+    }
+  }
+  const mock = () => createMockFetch({ latency: [0, 0], seed: [{ id: ID, nickname: 'n', text_gratitude: 'g', text_anticipate: 'a', status: 'pending', created_at: '2026-11-14T12:00:00.000Z' }] })
+
+  // A hides the card, then B acts on the stale list, then B again after refreshing, and two bad requests.
+  async function review(fetch: FetchLike) {
+    const api = createApiClient({ baseUrl: '', fetch })
+    const outcome = (promise: Promise<unknown>) => promise.then(
+      (value) => ({ ok: value }),
+      (error: ApiError) => ({ status: error.status, code: error.code, currentStatus: error.currentStatus, fields: error.fields }),
+    )
+    return [
+      await outcome(api.adminHide(ADMIN, ID, 'pending')),
+      await outcome(api.adminSetStatus(ADMIN, ID, 'approved', 'pending')),
+      await outcome(api.adminSetStatus(ADMIN, ID, 'approved', 'hidden')),
+      await outcome(api.adminSetStatus(ADMIN, ID, 'hidden', 'published' as never)),
+      await outcome(api.adminHide(ADMIN, 'c_missing', 'pending')),
+    ]
+  }
+
+  it('same status, code and current status for every step', async () => {
+    const fromMock = await review(mock())
+    expect(await review(backend())).toEqual(fromMock)
+    expect(fromMock[1]).toEqual({ status: 409, code: 'CARD_STATUS_CHANGED', currentStatus: 'hidden', fields: undefined })
+    expect(fromMock[2]).toEqual({ ok: { success: true, card_id: ID, status: 'approved' } })
+  })
+
+  it('a hide request whose body is not a JSON object gets the same 400 from both', async () => {
+    const send = async (fetch: FetchLike) => {
+      const response = await fetch(`/api/admin/cards/${ID}/hide`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${ADMIN}`, 'Content-Type': 'application/json' },
+        body: '{"from":',
+      })
+      return { status: response.status, error: ((await response.json()) as { error: unknown }).error }
+    }
+    const fromMock = await send(mock())
+    expect(await send(backend())).toEqual(fromMock)
+    expect(fromMock).toEqual({ status: 400, error: { code: 'VALIDATION_ERROR', message: 'Body must be a JSON object', fields: { from: 'invalid' } } })
   })
 })
