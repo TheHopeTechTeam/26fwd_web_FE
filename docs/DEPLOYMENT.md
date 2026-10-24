@@ -56,12 +56,15 @@ npx wrangler d1 create forward_cards_prod
 # 執行 Schema 遷移（依編號順序，每個資料庫各執行一次）
 npx wrangler d1 execute forward_cards_staging --remote --file=./migrations/0001_initial.sql
 npx wrangler d1 execute forward_cards_staging --remote --file=./migrations/0002_client_token_rate_limits.sql
+npx wrangler d1 execute forward_cards_staging --remote --file=./migrations/0004_moderation.sql
 npx wrangler d1 execute forward_cards_prod --remote --file=./migrations/0001_initial.sql
 npx wrangler d1 execute forward_cards_prod --remote --file=./migrations/0002_client_token_rate_limits.sql
+npx wrangler d1 execute forward_cards_prod --remote --file=./migrations/0004_moderation.sql
 ```
 
 > - 已經套用過的 migration 不可修改，之後的變更一律新增下一個編號。
 > - `0002` 會把限流表的鍵欄位改名，**舊版程式在套用後無法送卡**。對已上線的資料庫，套用 `0002` 後要立刻部署包含 Client Token 的版本；新建的資料庫（例如 M4 的正式庫）則在第一次部署前套用即可。
+> - `0004` 新增自動公開開關（預設關閉）與模型判斷紀錄表。**要在部署 M1.6 的程式之前套用**：後台列表會讀判斷紀錄表，未套用時後台列表會失敗。套用後舊版程式不受影響。
 
 ### 2. 環境變數綁定清單
 
@@ -97,6 +100,33 @@ CARD_SUBMISSIONS_ENABLED=true
 > - `TURNSTILE_SECRET_KEY`、`ADMIN_API_TOKEN`、`RATE_LIMIT_SALT`、`CLIENT_TOKEN_SECRET` 在 Cloudflare Pages 要設為 **Secret（加密）**類型，不要用明文變數。`CLIENT_TOKEN_SECRET` 至少 32 字元，可用 `openssl rand -base64 48` 產生；staging 與正式環境要用不同的值。更換它會讓所有 Client Token 立即失效（前端會自動重領）。
 > - `VITE_*` 在 build 時寫入前端 bundle，修改後需重新部署才會生效。
 > - Turnstile 的 hostname 檢查只接受主網址；Pages 每次部署的預覽網址（`<hash>.26fwd-staging.pages.dev`）會被拒絕，驗收請使用主網址。
+
+#### 模型判斷與自動公開（M1.6）
+
+| 設定 | 位置 | 說明 |
+| --- | --- | --- |
+| Workers AI 綁定 `AI` | Pages 專案 → Settings → Bindings | 呼叫 `@cf/cloudflare/clef`。沒有綁定時，每張卡都記錄 `model_error` 並維持待審 |
+| `MODERATION_QUESTIONS` | **Secret（加密）** | 題目（prompt）JSON，內容只放在私有 repo `26fwd-moderation-eval`，**不可放進本 repo、PR 或任何公開留言**。沒有設定或格式不對時，每張卡都記錄 `questions_missing` 並維持待審。修改後要重新部署才會生效 |
+| 自動公開開關 | D1 `app_settings` 表的 `auto_publish` | `0004` 建立時為 `off`。**只有值剛好是 `on` 才會自動公開**；改值後下一張卡就生效，不需重新部署 |
+
+```bash
+# 設定題目（從私有 repo 的檔案讀入，不要貼在指令列上）
+npx wrangler pages secret put MODERATION_QUESTIONS --project-name 26fwd-staging < ../26fwd-moderation-eval/questions.json
+
+# 查看開關
+npx wrangler d1 execute forward_cards_staging --remote --command "SELECT value, updated_at FROM app_settings WHERE key = 'auto_publish'"
+# 關閉（切回全人工，下一張卡起生效）
+npx wrangler d1 execute forward_cards_staging --remote --command "UPDATE app_settings SET value = 'off', updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE key = 'auto_publish'"
+# 開啟（只在 Ian 同意後執行）
+npx wrangler d1 execute forward_cards_staging --remote --command "UPDATE app_settings SET value = 'on', updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE key = 'auto_publish'"
+
+# 列出某段時間內被自動公開的卡（例如切回全人工後，需要逐張檢查時）
+npx wrangler d1 execute forward_cards_staging --remote --command "SELECT m.card_id, m.judged_at, c.status FROM card_moderations m JOIN forward_cards c ON c.id = m.card_id WHERE m.auto_published = 1 AND m.judged_at BETWEEN '<開始 ISO 時間>' AND '<結束 ISO 時間>' ORDER BY m.judged_at"
+```
+
+> - 判斷在回覆送卡請求之後於背景執行（`waitUntil`），使用者不用等待模型；判斷失敗、逾時（5 秒）或背景工作沒有執行完，卡片都維持待審。
+> - 自動公開只在卡片仍是待審時發生：審核者已經處理過的卡，不會被模型覆蓋。
+> - 開關關閉時完全不呼叫模型，不使用 Workers AI 額度。開啟時若額度用完，之後的卡會記錄 `model_error` 並留給審核人員。
 
 #### Staging 壓測模式 `LOAD_TEST_MODE`（只用於 #5 的 300 人壓測）
 

@@ -1,4 +1,4 @@
-import { ADMIN_TOKEN_MIN_LENGTH, MAX_BODY_BYTES, type ApiErrorBody, type ApiErrorCode } from '../../src/api/types'
+import { ADMIN_TOKEN_MIN_LENGTH, MAX_BODY_BYTES, type ApiErrorBody, type ApiErrorCode, type CardStatus } from '../../src/api/types'
 import { LIMITS, normalizeNewlines, validateField, type CardField } from '../../src/lib/text'
 
 export interface Env {
@@ -11,6 +11,9 @@ export interface Env {
   CARD_SUBMISSIONS_ENABLED?: string
   // Staging only; see loadTestActive().
   LOAD_TEST_MODE?: string
+  // M1.6 (_lib/moderation.ts): the Workers AI binding and the questions (an encrypted secret).
+  AI?: { run(model: string, inputs: Record<string, unknown>): Promise<unknown> }
+  MODERATION_QUESTIONS?: string
 }
 
 export type CardSubmission = {
@@ -22,13 +25,14 @@ export type CardSubmission = {
   turnstile_token: string
 }
 
-type ErrorExtra = { fields?: Record<string, string>; retryAfterSeconds?: number }
+type ErrorExtra = { fields?: Record<string, string>; retryAfterSeconds?: number; currentStatus?: CardStatus }
 
 export class ApiError extends Error {
   status: number
   code: ApiErrorCode
   fields?: Record<string, string>
   retryAfterSeconds?: number
+  currentStatus?: CardStatus
 
   constructor(status: number, code: ApiErrorCode, message: string, extra: ErrorExtra = {}) {
     super(message)
@@ -36,6 +40,7 @@ export class ApiError extends Error {
     this.code = code
     this.fields = extra.fields
     this.retryAfterSeconds = extra.retryAfterSeconds
+    this.currentStatus = extra.currentStatus
   }
 }
 const jsonHeaders = {
@@ -47,10 +52,11 @@ const jsonHeaders = {
 export const json = (data: unknown, status = 200, headers: HeadersInit = {}) =>
   new Response(JSON.stringify(data), { status, headers: { ...jsonHeaders, ...headers } })
 
-// Every non-2xx body follows docs/api/openapi.yaml: { success: false, error: { code, message, fields?, retry_after_seconds? } }.
+// Every non-2xx body follows docs/api/openapi.yaml: { success: false, error: { code, message, fields?, retry_after_seconds?, current_status? } }.
 export function errorResponse(status: number, code: ApiErrorCode, message: string, extra: ErrorExtra = {}): Response {
   const error: ApiErrorBody['error'] = { code, message }
   if (extra.fields) error.fields = extra.fields
+  if (extra.currentStatus) error.current_status = extra.currentStatus
   const headers: Record<string, string> = {}
   if (extra.retryAfterSeconds !== undefined) {
     error.retry_after_seconds = extra.retryAfterSeconds
@@ -142,7 +148,7 @@ export function validateCardId(value: string): string {
 }
 
 export function handleError(error: unknown): Response {
-  if (error instanceof ApiError) return errorResponse(error.status, error.code, error.message, { fields: error.fields, retryAfterSeconds: error.retryAfterSeconds })
+  if (error instanceof ApiError) return errorResponse(error.status, error.code, error.message, { fields: error.fields, retryAfterSeconds: error.retryAfterSeconds, currentStatus: error.currentStatus })
   console.error('Card API failure', error)
   return errorResponse(500, 'INTERNAL_ERROR', 'Unexpected server error')
 }

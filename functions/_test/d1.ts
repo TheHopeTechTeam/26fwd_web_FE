@@ -4,7 +4,7 @@
 // typechecked with the Workers types, which have no Node types.
 
 type SqliteStatement = {
-  run(...params: unknown[]): unknown
+  run(...params: unknown[]): { changes: number | bigint }
   all(...params: unknown[]): unknown[]
   get(...params: unknown[]): unknown
 }
@@ -54,18 +54,33 @@ function requireModules(): NodeModules {
   return modules
 }
 
-// Only the D1 calls the functions use: prepare().bind() then run(), all() or first().
+// Only the D1 calls the functions use: prepare().bind() then run(), all() or first(), and batch().
 function asD1(database: SqliteDatabase): D1Database {
   return {
     prepare(sql: string) {
       let params: unknown[] = []
       const statement = {
         bind(...values: unknown[]) { params = values; return statement },
-        async run() { database.prepare(sql).run(...params); return { success: true, meta: {}, results: [] } },
+        // meta.changes as D1 reports it: the admin endpoints answer 404 when nothing changed.
+        async run() { return { success: true, meta: { changes: Number(database.prepare(sql).run(...params).changes) }, results: [] } },
         async all() { return { success: true, meta: {}, results: database.prepare(sql).all(...params) } },
         async first() { return database.prepare(sql).get(...params) ?? null },
       }
       return statement
+    },
+    // Like D1, a batch runs as one transaction on one connection, so changes() in a statement sees
+    // the statement before it, and a failure rolls the whole batch back.
+    async batch(statements: Array<{ all(): Promise<unknown> }>) {
+      database.exec('BEGIN')
+      try {
+        const results = []
+        for (const statement of statements) results.push(await statement.all())
+        database.exec('COMMIT')
+        return results
+      } catch (error) {
+        database.exec('ROLLBACK')
+        throw error
+      }
     },
   } as unknown as D1Database
 }

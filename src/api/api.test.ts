@@ -243,4 +243,39 @@ describe('admin API', () => {
     const { client } = setup();
     await expectError(client.adminHide(ADMIN_TOKEN, 'c_missing'), 404, 'NOT_FOUND');
   });
+
+  it('two reviewers on one card: the second, acting on a stale list, gets CARD_STATUS_CHANGED and the card is not overwritten', async () => {
+    const { client } = setup();
+    const target = (await client.adminListCards(ADMIN_TOKEN, 'pending')).items[0]!;
+    // A and B both saw it as pending. A hides it first.
+    await client.adminHide(ADMIN_TOKEN, target.id, 'pending');
+    const error = await expectError(client.adminSetStatus(ADMIN_TOKEN, target.id, 'approved', 'pending'), 409, 'CARD_STATUS_CHANGED');
+    expect(error.currentStatus).toBe('hidden');
+    expect(describeError(error)).toBe('這張卡已被其他人處理，請重新整理後再操作。');
+    expect((await client.listCards({ page: 1, limit: 12 })).items.some((c) => c.id === target.id)).toBe(false);
+  });
+
+  it('sends `from` only when given, and lists every card with its model judgment (none in the mock)', async () => {
+    const calls: Array<{ path: string; body?: string }> = [];
+    const ok = { success: true, card_id: 'c_1', status: 'hidden' };
+    const fetch: FetchLike = async (input, init = {}) => {
+      calls.push({ path: input, body: init.body as string | undefined });
+      return new Response(JSON.stringify(ok), { status: 200 });
+    };
+    const client = createApiClient({ baseUrl: '', fetch });
+    await client.adminSetStatus(ADMIN_TOKEN, 'c_1', 'approved', 'pending');
+    await client.adminSetStatus(ADMIN_TOKEN, 'c_1', 'approved');
+    await client.adminHide(ADMIN_TOKEN, 'c_1', 'approved');
+    await client.adminHide(ADMIN_TOKEN, 'c_1');
+    expect(calls.map((c) => c.body)).toEqual([
+      JSON.stringify({ status: 'approved', from: 'pending' }),
+      JSON.stringify({ status: 'approved' }),
+      JSON.stringify({ from: 'approved' }),
+      undefined,
+    ]);
+
+    const { client: mocked } = setup();
+    const pending = await mocked.adminListCards(ADMIN_TOKEN, 'pending');
+    expect(pending.items.every((c) => c.moderation === null)).toBe(true);
+  });
 });
