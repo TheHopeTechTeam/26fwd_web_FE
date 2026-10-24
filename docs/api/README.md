@@ -13,7 +13,7 @@
 | 字數 | 一律以 **trim 後的 Unicode code point** 計算（emoji 算 1），前後端規則一致 |
 | 換行 | 前端送出前會把 `\r\n`／`\r` 正規化為 `\n` |
 | Cookie | 只有領取 Client Token 與送卡兩個請求使用 `credentials: 'same-origin'`（帶 Client Token cookie），其餘請求 `credentials: 'omit'`。Client Token cookie 為 `__Host-` 前綴且 `SameSite=Strict`，**API 必須與網站同網域**（目前即是：Pages Functions 與網站同一個網域） |
-| 快取 | 公開 `GET /api/cards` 可設 `Cache-Control: public, max-age=15`（下架最多延遲約 15 秒生效）；所有 admin 端點 `Cache-Control: no-store` |
+| 快取 | 公開 `GET /api/cards` 由 Cloudflare 各資料中心快取 10 秒（每個 `page`＋`limit` 一份，其他參數不影響），所以核准或下架最多約 10 秒才反映（目標 15 秒內）；回給瀏覽器的是 `Cache-Control: public, max-age=0, must-revalidate`，瀏覽器不另外保留副本。所有 admin 端點 `Cache-Control: no-store` |
 
 ### 錯誤格式（所有非 2xx）
 
