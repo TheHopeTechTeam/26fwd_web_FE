@@ -173,7 +173,7 @@ export function createMockServer(options: MockServerOptions = {}) {
         items: approved.slice(start, start + limit).map(toPublic),
         pagination: { page, limit, has_more: start + limit < approved.length, total_count: approved.length },
       },
-      headers: { 'Cache-Control': 'public, max-age=15' },
+      headers: { 'Cache-Control': 'public, max-age=0, must-revalidate' },
     };
   }
 

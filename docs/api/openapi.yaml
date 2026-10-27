@@ -91,7 +91,8 @@ paths:
           description: One page of approved cards
           headers:
             Cache-Control:
-              schema: { type: string, example: 'public, max-age=15' }
+              description: Browsers revalidate every time. Each Cloudflare data center caches a page (one entry per page and limit) for 10 seconds, so approvals and takedowns show within about 10 seconds.
+              schema: { type: string, example: 'public, max-age=0, must-revalidate' }
           content:
             application/json:
               schema:
