@@ -17,6 +17,8 @@
     "assets:portraits": "node scripts/gen-portraits.mjs",
     "assets:audio": "python3 scripts/gen-audio.py",
     "assets:font": "python3 scripts/subset-font.py",
+    "assets:kv-fonts": "python3 scripts/convert-kv-fonts.py",
+    "assets:kv": "python3 scripts/gen-kv-images.py",
     "assets:brand": "python3 scripts/gen-brand.py"
   },
   "dependencies": {

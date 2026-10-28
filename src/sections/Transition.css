@@ -102,7 +102,7 @@ html.motion-ok .transition__backdrop.is-on {
 }
 
 .mood__index {
-  font-family: var(--font-display);
+  font-family: var(--font-info);
   font-weight: 800;
   font-size: 0.8125rem;
   color: var(--accent);

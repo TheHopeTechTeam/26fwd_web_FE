@@ -48,15 +48,15 @@
 }
 
 .site-header__brand img {
-  height: 24px;
+  height: 36px;
   width: auto;
 }
 
 .site-header__wordmark {
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 0.9375rem;
-  letter-spacing: 0.08em;
+  font-size: 1.25rem;
+  letter-spacing: 0.06em;
   white-space: nowrap;
 }
 
@@ -96,8 +96,11 @@
 }
 
 @media (max-width: 420px) {
+  .site-header__brand img {
+    height: 30px;
+  }
   .site-header__wordmark {
-    font-size: 0.8125rem;
+    font-size: 1rem;
   }
   .site-header__give {
     padding-inline: 0.95em;
