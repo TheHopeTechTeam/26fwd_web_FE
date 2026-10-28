@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { assignColumns, columnsForWidth } from './masonry';
+import { graphemes } from './text';
 import { tokenize, wrapText } from './wrapText';
 
 describe('assignColumns', () => {
@@ -43,5 +44,12 @@ describe('wrapText', () => {
   it('respects explicit newlines and hard-breaks very long words', () => {
     expect(wrapText('第一行\n第二行', 10, measure)).toEqual(['第一行', '第二行']);
     expect(wrapText('abcdefghij', 4, measure)).toEqual(['abcd', 'efgh', 'ij']);
+  });
+
+  it('never splits a composed emoji across lines (#16)', () => {
+    // Each 👨‍👩‍👧 is 5 code points; with a 1-unit-per-grapheme measure, 2 fit on a line.
+    const perGrapheme = (str: string) => graphemes(str).length;
+    expect(wrapText('👨‍👩‍👧👨‍👩‍👧👨‍👩‍👧', 2, perGrapheme)).toEqual(['👨‍👩‍👧👨‍👩‍👧', '👨‍👩‍👧']);
+    expect(wrapText('🇹🇼🇹🇼🇹🇼', 2, perGrapheme)).toEqual(['🇹🇼🇹🇼', '🇹🇼']);
   });
 });

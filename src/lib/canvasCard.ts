@@ -63,6 +63,8 @@ export const PROMPTS = { gratitude: '我感謝神…', anticipate: '跟神一起
 
 const BODY = '"Noto Sans", "PingFang TC", "Hiragino Sans TC", "Noto Sans TC", "Noto Sans CJK TC", "Microsoft JhengHei", sans-serif';
 const HEADING = '"FWD Heading TC", "PingFang TC", "Noto Sans TC", "Noto Sans CJK TC", "Microsoft JhengHei", sans-serif';
+/** Smallest body size on the image (px at 1080 wide). */
+const MIN_SIZE = 22;
 const DISPLAY = 'Montserrat, "Noto Sans", sans-serif';
 
 /** Canvas can't wait for web fonts by itself, so load the ones it uses first. */
@@ -143,21 +145,33 @@ export function drawCard(ctx: CanvasRenderingContext2D, content: CardContent, fo
   const maxWidth = w - pad * 2;
   const measure = (s: string) => ctx.measureText(s).width;
 
-  let size = story ? 52 : 44;
-  let layout: { a: string[]; b: string[]; label: number; line: number; gap: number; sign: number; total: number } | null = null;
-  for (; size >= 22; size -= 2) {
+  const layoutAt = (size: number, gratitude: string, anticipate: string) => {
     ctx.font = `400 ${size}px ${BODY}`;
-    const a = wrapText(content.text_gratitude, maxWidth, measure);
-    const b = wrapText(content.text_anticipate, maxWidth, measure);
+    const a = wrapText(gratitude, maxWidth, measure);
+    const b = wrapText(anticipate, maxWidth, measure);
     const label = Math.round(size * 0.78);
     const line = Math.round(size * 1.6);
     const gap = Math.round(size * 1.3);
     const sign = Math.round(size * 0.9);
     const total = label * 1.9 * 2 + (a.length + b.length) * line + gap * 2 + sign * 1.4;
-    layout = { a, b, label, line, gap, sign, total };
-    if (total <= bottom - top) break;
-  }
-  if (!layout) return;
+    return { size, a, b, label, line, gap, sign, total };
+  };
+  // Shrink the type until everything fits. A newline counts as one character (#16), so an
+  // answer can be up to ~70 short lines; if even the smallest size cannot hold them, the
+  // answers' line breaks become spaces on the image rather than spilling over the footer.
+  const fit = (gratitude: string, anticipate: string) => {
+    for (let size = story ? 52 : 44; size >= MIN_SIZE; size -= 2) {
+      const candidate = layoutAt(size, gratitude, anticipate);
+      if (candidate.total <= bottom - top) return candidate;
+    }
+    return null;
+  };
+  const flat = (text: string) => text.replace(/\s*\n\s*/g, ' ');
+  const layout =
+    fit(content.text_gratitude, content.text_anticipate) ??
+    fit(flat(content.text_gratitude), flat(content.text_anticipate)) ??
+    layoutAt(MIN_SIZE, flat(content.text_gratitude), flat(content.text_anticipate));
+  const { size } = layout;
 
   let y = story ? top + Math.max(0, (bottom - top - layout.total) / 2) : top;
   const block = (prompt: string, lines: string[]) => {
