@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import logoUrl from '../assets/brand/hope-h-white.png';
 import { config, pageUrl } from '../config/env';
 import { GiveButton } from './GiveButton';
+import { MusicToggle } from './MusicToggle';
 import './SiteHeader.css';
 
 interface SiteHeaderProps {
@@ -67,6 +68,7 @@ export function SiteHeader({ progress = false, backLabel }: SiteHeaderProps) {
           </span>
         )}
         <div className="site-header__actions">
+          <MusicToggle />
           <GiveButton
             placement="header"
             label={

@@ -4,7 +4,7 @@
  * Keep content edits here rather than in the components.
  */
 
-export type ChapterId = 'appreciate' | 'transition' | 'anticipate' | 'respond';
+export type ChapterId = 'appreciate' | 'anticipate' | 'respond';
 
 export interface Chapter {
   id: ChapterId;
@@ -13,12 +13,14 @@ export interface Chapter {
   zh: string;
 }
 
-/** The four journey stops the right-hand rail tracks (US-01). */
+/**
+ * The three journey stops the right-hand rail tracks (US-01, #17). The separate Transition
+ * stop is gone; English names stay until BB／Ian confirm the Chinese ones.
+ */
 export const CHAPTERS: Chapter[] = [
   { id: 'appreciate', index: '01', en: 'Appreciate', zh: '感謝' },
-  { id: 'transition', index: '02', en: 'Transition', zh: '轉身' },
-  { id: 'anticipate', index: '03', en: 'Anticipate', zh: '期待' },
-  { id: 'respond', index: '04', en: 'Respond', zh: '回應' },
+  { id: 'anticipate', index: '02', en: 'Anticipate', zh: '期待' },
+  { id: 'respond', index: '03', en: 'Respond', zh: '回應' },
 ];
 
 /**
@@ -41,54 +43,29 @@ export const APPRECIATE = {
   note: '示意人物為合成插畫與虛構故事（synthetic），正式見證素材與授權待 Online Campus 交付。',
 };
 
-export interface Mood {
-  id: 'still' | 'turning' | 'hope';
-  zh: string;
-  en: string;
-  description: string;
-  track: {
-    title: string;
-    artist: string;
-    src: string;
-    /** Seconds; used until the audio metadata loads. */
-    duration: number;
-    sourceUrl: string;
-    license: string;
-  };
+export interface Track {
+  title: string;
+  artist: string;
+  src: string;
+  sourceUrl: string;
+  license: string;
 }
 
-/** Resolved against the deploy base, so it works on every preview URL. */
-const AUDIO_SOURCE = 'audio/ATTRIBUTION.md';
-
-export const TRANSITION = {
-  title: '從感謝，轉身向前',
-  lead: '我們回頭看見神的信實，也誠實面對仍在路上的自己。選一段最貼近此刻的心情，按下播放，安靜幾分鐘，再一起往前走。',
+/**
+ * Site-wide background music behind the header toggle (#17 interim; GLB-02). Until #25 picks
+ * the songs and how they change by chapter, it plays one test track and never autoplays.
+ */
+export const MUSIC: { track: Track; note: string } = {
+  track: {
+    title: 'Still Waters',
+    artist: 'FORWARD Synth Lab（測試音訊）',
+    src: 'audio/still-waters.m4a',
+    // Resolved against the deploy base, so it works on every preview URL.
+    sourceUrl: 'audio/ATTRIBUTION.md',
+    license: 'CC0（本專案自製）',
+  },
   note: '測試音樂為本專案自製的合成曲目，正式選曲與授權待 COMMS 確認。',
 };
-
-export const MOODS: Mood[] = [
-  {
-    id: 'still',
-    zh: '沉靜感謝',
-    en: 'Still Gratitude',
-    description: '安靜下來，一件一件數算這一年的恩典。',
-    track: { title: 'Still Waters', artist: 'FORWARD Synth Lab（測試音訊）', src: 'audio/still-waters.m4a', duration: 90, sourceUrl: AUDIO_SOURCE, license: 'CC0（本專案自製）' },
-  },
-  {
-    id: 'turning',
-    zh: '誠實轉身',
-    en: 'Honest Turning',
-    description: '把遺憾、疲憊與還沒解決的問題，誠實地交給神。',
-    track: { title: 'Turning', artist: 'FORWARD Synth Lab（測試音訊）', src: 'audio/turning.m4a', duration: 72, sourceUrl: AUDIO_SOURCE, license: 'CC0（本專案自製）' },
-  },
-  {
-    id: 'hope',
-    zh: '盼望向前',
-    en: 'Hope Forward',
-    description: '抬起頭來，相信還有更多。There is more.',
-    track: { title: 'Daybreak', artist: 'FORWARD Synth Lab（測試音訊）', src: 'audio/daybreak.m4a', duration: 91, sourceUrl: AUDIO_SOURCE, license: 'CC0（本專案自製）' },
-  },
-];
 
 export interface Stat {
   value: number;

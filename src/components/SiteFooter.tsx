@@ -1,5 +1,6 @@
 import logoUrl from '../assets/brand/hope-h-white.png';
-import { config, pageUrl } from '../config/env';
+import { asset, config, pageUrl } from '../config/env';
+import { MUSIC } from '../data/content';
 import './SiteFooter.css';
 
 export function SiteFooter({ railSpace = true }: { railSpace?: boolean }) {
@@ -33,6 +34,13 @@ export function SiteFooter({ railSpace = true }: { railSpace?: boolean }) {
             </li>
           </ul>
         </nav>
+        {/* Credit for the header's background music (MusicToggle). */}
+        <p className="site-footer__notice">
+          背景音樂：{MUSIC.track.title}・{MUSIC.track.artist}。{MUSIC.note} 授權：{MUSIC.track.license}・
+          <a href={asset(MUSIC.track.sourceUrl)} target="_blank" rel="noopener noreferrer">
+            來源說明
+          </a>
+        </p>
         {config.showPreviewBadge && (
           <p className="site-footer__notice">
             本網站目前為開發預覽版：人物、見證、數據與卡片皆為合成示意內容（synthetic），不代表真實人物或正式數字。
