@@ -81,13 +81,16 @@ export interface Ministry {
   en: string;
   headline: string;
   body: string;
+  /** Empty until approved figures exist; the block then shows `pendingNote` instead. */
   stats: Stat[];
-  art: 'building' | 'missions' | 'outreach' | 'online';
+  /** Replaces the synthetic-stats note for an item whose figures are still pending. */
+  pendingNote?: string;
+  art: 'building' | 'missions' | 'outreach' | 'online' | 'cities';
 }
 
 export const ANTICIPATE = {
   title: '神要帶我們去的地方',
-  lead: '四項事工，加上一面代禱的牆。這是我們一起期待、也一起預備的未來。',
+  lead: '五項事工，加上一面代禱的牆。這是我們一起期待、也一起預備的未來。',
   statsNote: '示意數據，正式數字與統計口徑待 COMMS 交付。',
   artNote: '圖像待 COMMS 交付',
 };
@@ -147,10 +150,26 @@ export const MINISTRIES: Ministry[] = [
     ],
     art: 'online',
   },
+  /*
+   * The fifth ministry (#18). Name is provisional and nothing here is invented: copy,
+   * figures and imagery all wait for Comms. The online item's 「觸及城市」 is a
+   * different figure and must not stand in for this one.
+   */
+  {
+    id: 'cities',
+    index: '05',
+    zh: '其他城市分布',
+    en: 'Other Cities',
+    headline: '標題待 COMMS 提供',
+    body: '其他城市分布的介紹文字、照片與數據，待 COMMS 提供後替換（名稱為暫稱）。',
+    stats: [],
+    pendingNote: '城市數據待 COMMS 交付。',
+    art: 'cities',
+  },
 ];
 
+/** Prayer Map is not one of the five ministries, so it carries no number (#18; #19 moves it). */
 export const ONE_WALL = {
-  index: '05',
   en: 'The One Wall',
   zh: '代禱牆',
   headline: '一起為彼此禱告',
