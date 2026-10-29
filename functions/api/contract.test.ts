@@ -123,7 +123,7 @@ describe.skipIf(!sqliteAvailable)('POST /api/cards — mock and real backend giv
     { name: 'body is a JSON array', body: '[]' },
     { name: 'body is JSON null', body: 'null' },
     { name: 'malformed JSON', body: '{"nickname":' },
-    { name: 'body over 4 KiB', body: card({ text_gratitude: 'x'.repeat(5000) }) },
+    { name: 'body over 8 KiB', body: card({ text_gratitude: 'x'.repeat(9000) }) },
     { name: 'second card within 60 seconds', body: card({}), cardsAlreadySent: 1 },
     { name: 'no Client Token', body: card({}), withToken: false },
     { name: 'invalid fields and no Client Token (fields are checked first)', body: card({ nickname: '' }), withToken: false },

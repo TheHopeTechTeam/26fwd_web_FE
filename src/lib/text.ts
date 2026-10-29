@@ -1,6 +1,15 @@
 /**
- * Forward Card text rules (US-07, DATA-01～03). Lengths count Unicode code points after
- * trim, matching what the backend enforces, so an emoji counts the same on both sides.
+ * Forward Card text rules (US-07, DATA-01～03). The form, the mock API and the backend
+ * (functions/_lib/cards.ts) all import this file, so the count on screen is the count the
+ * server enforces. Every length is measured after trim.
+ *
+ * The two prompts use the weighted count Ian approved in #16 (10/23), per grapheme (what a
+ * reader sees as one character): half-width letters, digits, symbols and spaces 0.5;
+ * everything else 1 (CJK, full-width characters and punctuation, a whole emoji such as 👨‍👩‍👧
+ * or 🇹🇼, accented letters, a newline). At most 140 weighted, at most 280 code points so
+ * long runs of half-width characters cannot flood the card, and at most 10 line breaks so one
+ * answer cannot become a 70-line card on the wall (Jessie, per Alvis's #16 proposal, point 3).
+ * The nickname stays 1–20 code points.
  */
 export const LIMITS = {
   nickname: 20,
@@ -8,7 +17,15 @@ export const LIMITS = {
   text_anticipate: 140,
 } as const;
 
+/** Hard cap on the prompts' raw length, in code points (#16). */
+export const PROMPT_MAX_CODE_POINTS = 280;
+
+/** Most line breaks one prompt may contain (#16). */
+export const PROMPT_MAX_LINE_BREAKS = 10;
+
 export type CardField = keyof typeof LIMITS;
+
+const isPrompt = (field: CardField) => field !== 'nickname';
 
 export function codePointLength(value: string): number {
   let n = 0;
@@ -16,9 +33,73 @@ export function codePointLength(value: string): number {
   return n;
 }
 
-export function truncateCodePoints(value: string, max: number): string {
-  if (codePointLength(value) <= max) return value;
-  return Array.from(value).slice(0, max).join('');
+// Intl.Segmenter is in every current browser and in Workers; code points are the fallback,
+// which can only over-count a multi-part emoji, never let text past the limit.
+const segmenter = typeof Intl !== 'undefined' && 'Segmenter' in Intl ? new Intl.Segmenter(undefined, { granularity: 'grapheme' }) : null;
+
+export function graphemes(value: string): string[] {
+  return segmenter ? Array.from(segmenter.segment(value), (s) => s.segment) : Array.from(value);
+}
+
+/** 0.5 for one printable ASCII character or a tab, 1 for any other grapheme. */
+export function graphemeWeight(grapheme: string): number {
+  return /^[\t\x20-\x7E]$/.test(grapheme) ? 0.5 : 1;
+}
+
+export function weightedLength(value: string): number {
+  let total = 0;
+  for (const g of graphemes(value)) total += graphemeWeight(g);
+  return total;
+}
+
+/** The length a field is limited by: weighted for the prompts, code points for the nickname. */
+export function fieldLength(field: CardField, value: string): number {
+  return isPrompt(field) ? weightedLength(value) : codePointLength(value);
+}
+
+/** What the counter shows: whole numbers, rounded up (#16), so "140.5" never reads as fitting. */
+export function displayLength(field: CardField, value: string): number {
+  return Math.ceil(fieldLength(field, normalizeNewlines(value).trim()));
+}
+
+export function lineBreakCount(value: string): number {
+  return value.split('\n').length - 1;
+}
+
+function overLimit(field: CardField, value: string): boolean {
+  if (fieldLength(field, value) > LIMITS[field]) return true;
+  if (!isPrompt(field)) return false;
+  return codePointLength(value) > PROMPT_MAX_CODE_POINTS || lineBreakCount(value) > PROMPT_MAX_LINE_BREAKS;
+}
+
+/**
+ * Cuts a typed or pasted value down to the field's limits, only ever between graphemes, so a
+ * composed emoji is kept whole or dropped whole. Line breaks past the tenth are dropped but
+ * the text after them is kept, so a pasted poem loses its extra breaks, not its words.
+ * Leading whitespace is free, as in validateField, which trims; a single pass keeps a very
+ * long paste cheap.
+ */
+export function truncateToLimit(field: CardField, value: string): string {
+  if (!overLimit(field, value.trim())) return value;
+  const lead = value.length - value.trimStart().length;
+  const prompt = isPrompt(field);
+  let kept = value.slice(0, lead);
+  let length = 0;
+  let points = 0;
+  let breaks = 0;
+  for (const g of graphemes(value.slice(lead))) {
+    if (prompt && g === '\n') {
+      if (breaks === PROMPT_MAX_LINE_BREAKS) continue;
+      breaks++;
+    }
+    const p = codePointLength(g);
+    const w = prompt ? graphemeWeight(g) : p;
+    if (length + w > LIMITS[field] || (prompt && points + p > PROMPT_MAX_CODE_POINTS)) break;
+    length += w;
+    points += p;
+    kept += g;
+  }
+  return kept;
 }
 
 /** Browsers may hand back \r\n from textareas; the API stores bare \n. */
@@ -36,7 +117,7 @@ export type FieldError = 'required' | 'too_long' | 'invalid_chars';
 export function validateField(field: CardField, raw: string): FieldError | null {
   const value = normalizeNewlines(raw).trim();
   if (!value) return 'required';
-  if (codePointLength(value) > LIMITS[field]) return 'too_long';
+  if (overLimit(field, value)) return 'too_long';
   const blocked = field === 'nickname' ? SINGLE_LINE_BLOCKED : MULTI_LINE_BLOCKED;
   if (blocked.test(value)) return 'invalid_chars';
   return null;

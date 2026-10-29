@@ -12,9 +12,11 @@ import { CARD_FORMATS, CARD_THEMES, PROMPTS, renderCardBlob, type CardContent, t
 import {
   FIELD_ERROR_TEXT,
   LIMITS,
-  codePointLength,
+  PROMPT_MAX_LINE_BREAKS,
+  displayLength,
+  lineBreakCount,
   normalizeNewlines,
-  truncateCodePoints,
+  truncateToLimit,
   validateDraft,
   type CardField,
   type DraftErrors,
@@ -45,11 +47,15 @@ export function Respond() {
 
 const EMPTY = { nickname: '', text_gratitude: '', text_anticipate: '' };
 
+/** How the prompts are counted (#16), so a half-width-heavy text does not look miscounted. */
+const PROMPT_HINT = '英文、數字、半形符號與空格算半字';
+
 function ForwardCardForm() {
   const [values, setValues] = useState<Record<CardField, string>>(EMPTY);
   const [agreed, setAgreed] = useState(false);
   const [honeypot, setHoneypot] = useState('');
-  const [exceeded, setExceeded] = useState<Partial<Record<CardField, boolean>>>({});
+  // Why the last input was cut: too long, or too many line breaks (#16).
+  const [exceeded, setExceeded] = useState<Partial<Record<CardField, 'length' | 'breaks'>>>({});
   const [errors, setErrors] = useState<DraftErrors>({});
   const [status, setStatus] = useState<'idle' | 'submitting'>('idle');
   const [formError, setFormError] = useState<string | null>(null);
@@ -61,9 +67,10 @@ function ForwardCardForm() {
 
   const onChange = (field: CardField) => (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const normalized = normalizeNewlines(event.target.value);
-    const capped = truncateCodePoints(normalized, LIMITS[field]);
+    const capped = truncateToLimit(field, normalized);
     setValues((v) => ({ ...v, [field]: capped }));
-    setExceeded((x) => ({ ...x, [field]: capped !== normalized }));
+    const cut = capped === normalized ? undefined : field !== 'nickname' && lineBreakCount(normalized) > PROMPT_MAX_LINE_BREAKS ? 'breaks' : 'length';
+    setExceeded((x) => ({ ...x, [field]: cut }));
     if (errors[field]) setErrors((e) => ({ ...e, [field]: undefined }));
   };
 
@@ -119,7 +126,7 @@ function ForwardCardForm() {
   };
 
   const field = (name: CardField, label: string, multiline: boolean, hint?: string) => {
-    const count = codePointLength(values[name]);
+    const count = displayLength(name, values[name]);
     const max = LIMITS[name];
     const error = errors[name];
     const describedBy = [`${name}-count`, hint ? `${name}-hint` : '', error ? `${name}-error` : ''].filter(Boolean).join(' ');
@@ -168,7 +175,11 @@ function ForwardCardForm() {
               {FIELD_ERROR_TEXT[error]}
             </span>
           )}
-          {exceeded[name] && !error && <span className="cardform__error">已達 {max} 字上限，超出的部分沒有輸入</span>}
+          {exceeded[name] && !error && (
+            <span className="cardform__error">
+              {exceeded[name] === 'breaks' ? `最多換行 ${PROMPT_MAX_LINE_BREAKS} 次，多的換行沒有輸入` : '已達字數上限，超出的部分沒有輸入'}
+            </span>
+          )}
           <span id={`${name}-count`} className={`cardform__count ${count >= max ? 'is-full' : ''}`}>
             <span className="sr-only">已輸入字數</span>
             {count} / {max}
@@ -187,8 +198,8 @@ function ForwardCardForm() {
               <span>FORWARD CARD</span>
               <span>2026</span>
             </p>
-            {field('text_gratitude', PROMPTS.gratitude, true)}
-            {field('text_anticipate', PROMPTS.anticipate, true)}
+            {field('text_gratitude', PROMPTS.gratitude, true, PROMPT_HINT)}
+            {field('text_anticipate', PROMPTS.anticipate, true, PROMPT_HINT)}
             {field('nickname', '署名', false, '可以用暱稱，不需要真實姓名')}
 
             {/* Bot trap: invisible to people and assistive tech; bots tend to fill it. */}

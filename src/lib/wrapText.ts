@@ -1,3 +1,5 @@
+import { graphemes } from './text';
+
 // Characters that should not start a line (CJK closing punctuation and friends).
 const NO_LINE_START = new Set(Array.from('，。、！？；：」』）》〉】〕…—,.!?;:)]}%'));
 
@@ -5,12 +7,13 @@ const CJK = /[\u2E80-\u9FFF\uAC00-\uD7AF\uF900-\uFAFF\uFF00-\uFFEF\u3000-\u303F]
 
 /**
  * Splits text into breakable units: each CJK character on its own, Latin words kept
- * together with their trailing space, so both scripts wrap naturally.
+ * together with their trailing space, so both scripts wrap naturally. Works on graphemes,
+ * so a composed emoji (👨‍👩‍👧, 🇹🇼) is never split.
  */
 export function tokenize(text: string): string[] {
   const tokens: string[] = [];
   let word = '';
-  for (const ch of text) {
+  for (const ch of graphemes(text)) {
     if (CJK.test(ch)) {
       if (word) tokens.push(word);
       word = '';
@@ -38,8 +41,8 @@ export function wrapText(text: string, maxWidth: number, measure: (s: string) =>
       const candidate = line + token;
       if (measure(candidate.trimEnd()) <= maxWidth || line === '') {
         if (line === '' && measure(token.trimEnd()) > maxWidth) {
-          // A single word longer than the line: break it by character.
-          for (const ch of token) {
+          // A single word longer than the line: break it by grapheme.
+          for (const ch of graphemes(token)) {
             if (line && measure(line + ch) > maxWidth) {
               lines.push(line);
               line = '';
