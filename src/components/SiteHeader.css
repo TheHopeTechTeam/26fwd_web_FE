@@ -114,8 +114,11 @@
 }
 
 .site-nav .site-nav__list a {
-  font-size: 0.9375rem;
-  letter-spacing: 0.04em;
+  font-family: var(--font-heading-zh);
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.06em;
+  color: var(--text);
 }
 
 .site-header__menu-btn {
@@ -189,6 +192,7 @@
   min-height: 52px;
   border-bottom: 1px solid var(--line);
   font-family: var(--font-heading-zh);
+  font-weight: 700;
   font-size: 1.125rem;
   color: var(--text);
 }
