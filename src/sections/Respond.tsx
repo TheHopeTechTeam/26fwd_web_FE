@@ -194,6 +194,7 @@ function ForwardCardForm() {
 
             <div id="cardform-guide" className="cardform__guide tone-dark">
               <p className="cardform__guide-title">寫卡小提醒</p>
+              <p className="cardform__guide-lead">只下載保存的卡片不會送出；打算公開到卡片牆的話，請留意：</p>
               <ul>
                 <li>請勿寫下自己或他人的電話、地址、LINE ID 等聯絡方式。</li>
                 <li>提到家人、孩子、健康等私密細節時，請斟酌描述。</li>
