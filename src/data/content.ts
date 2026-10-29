@@ -90,7 +90,7 @@ export interface Ministry {
 
 export const ANTICIPATE = {
   title: '神要帶我們去的地方',
-  lead: '五項事工，加上一面代禱的牆。這是我們一起期待、也一起預備的未來。',
+  lead: '五項事工，是我們一起期待、也一起預備的未來。',
   statsNote: '示意數據，正式數字與統計口徑待 COMMS 交付。',
   artNote: '圖像待 COMMS 交付',
 };
