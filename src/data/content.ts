@@ -33,7 +33,7 @@ export const HERO = {
   series: '2026 FORWARD',
   zh: '系列講道',
   date: '11/14 起',
-  lead: '感謝神過去七年的信實，一起期待祂要成就的更多。',
+  lead: '感謝過去的信實，\n一起期待未來的更多。',
   cta: '開始旅程',
 };
 
@@ -65,6 +65,14 @@ export const MUSIC: { track: Track; note: string } = {
     license: 'CC0（本專案自製）',
   },
   note: '測試音樂為本專案自製的合成曲目，正式選曲與授權待 COMMS 確認。',
+};
+
+/** Hero prompt for the same player as the header switch. */
+export const HERO_MUSIC = {
+  start: '開啟音樂，邊聽邊走這趟旅程',
+  stop: '暫停音樂',
+  hint: '也可以在右上角 ♪ 隨時開關',
+  error: '音樂暫時無法播放，再試一次',
 };
 
 export interface Stat {

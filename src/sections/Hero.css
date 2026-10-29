@@ -7,7 +7,9 @@
 .hero {
   position: relative;
   padding-top: var(--header-h);
-  padding-bottom: clamp(48px, 8svh, 96px);
+  /* Room and a hairline before 01 Appreciate, so the Hero reads as its own block. */
+  padding-bottom: clamp(88px, 14svh, 160px);
+  border-bottom: 1px solid var(--line);
   background: var(--bg);
   isolation: isolate;
 }
@@ -56,6 +58,7 @@
 
 .hero__lead {
   margin-top: clamp(12px, 2svh, 20px);
+  white-space: pre-line; /* the copy breaks after the first clause */
   max-width: 28em;
   font-size: clamp(1rem, 0.9rem + 0.5vw, 1.25rem);
   line-height: 1.8;
@@ -149,4 +152,52 @@ html.motion-ok .hero__actions {
     opacity: 0;
     transform: translateY(32px);
   }
+}
+
+/* Listen-along prompt under the CTA: quieter than the button, same player as the header. */
+.hero__music {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  margin-top: 14px;
+  font-size: 0.9375rem;
+}
+
+.hero__music-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-2);
+  font: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--line-strong);
+  text-underline-offset: 0.3em;
+  cursor: pointer;
+  transition: color 0.2s var(--ease-standard);
+}
+
+.hero__music-btn:hover,
+.hero__music-btn[aria-pressed='true'] {
+  color: var(--accent);
+}
+
+.hero__music-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  font-size: 0.75rem;
+  text-decoration: none;
+}
+
+.hero__music-hint {
+  color: var(--text-3);
+  font-size: 0.875rem;
 }
