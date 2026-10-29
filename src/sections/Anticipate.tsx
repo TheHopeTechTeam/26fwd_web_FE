@@ -6,7 +6,7 @@ import { config } from '../config/env';
 import { ANTICIPATE, MINISTRIES, ONE_WALL, type Ministry } from '../data/content';
 import './Anticipate.css';
 
-/** 03 · Anticipate (US-06): four ministries plus The One Wall / Prayer Map as item 05. */
+/** 02 · Anticipate (US-06): the five ministries, then The One Wall / Prayer Map (not one of the five). */
 export function Anticipate() {
   return (
     <section id="anticipate" className="chapter anticipate" tabIndex={-1} aria-labelledby="anticipate-title">
@@ -50,17 +50,19 @@ function MinistryBlock({ ministry, flip }: { ministry: Ministry; flip: boolean }
           <Phrases text={ministry.headline} />
         </p>
         <p className="ministry__body">{ministry.body}</p>
-        <dl className="ministry__stats">
-          {ministry.stats.map((s) => (
-            <div key={s.label} className="ministry__stat">
-              <dt>{s.label}</dt>
-              <dd>
-                <CountUp value={s.value} suffix={s.suffix} />
-              </dd>
-            </div>
-          ))}
-        </dl>
-        <p className="note">{ANTICIPATE.statsNote}</p>
+        {ministry.stats.length > 0 && (
+          <dl className="ministry__stats">
+            {ministry.stats.map((s) => (
+              <div key={s.label} className="ministry__stat">
+                <dt>{s.label}</dt>
+                <dd>
+                  <CountUp value={s.value} suffix={s.suffix} />
+                </dd>
+              </div>
+            ))}
+          </dl>
+        )}
+        <p className="note">{ministry.pendingNote ?? ANTICIPATE.statsNote}</p>
       </Reveal>
     </article>
   );
@@ -112,6 +114,30 @@ function MinistryArt({ kind }: { kind: Ministry['art'] }) {
           <circle cx="200" cy="150" r="80" fill="none" className="art-line" opacity=".25" strokeDasharray="4 8" />
         </svg>
       );
+    case 'cities':
+      return (
+        <svg {...common}>
+          <rect width="400" height="300" className="art-bg" />
+          <g className="art-light" opacity=".1">
+            {Array.from({ length: 7 }, (_, i) => (
+              <path key={i} d={`M0 ${60 + i * 30}h400`} strokeWidth="1" className="art-line-light" />
+            ))}
+          </g>
+          <g fill="none" className="art-line" strokeWidth="2" strokeDasharray="3 7" strokeLinecap="round" opacity=".55">
+            <path d="M200 150L95 95M200 150L310 85M200 150L120 225M200 150L300 215M310 85L300 215" />
+          </g>
+          {[
+            [95, 95], [310, 85], [120, 225], [300, 215],
+          ].map(([x, y], i) => (
+            <g key={i}>
+              <circle cx={x} cy={y} r="18" className="art-light" opacity=".14" />
+              <circle cx={x} cy={y} r="6" className="art-fill" opacity=".7" />
+            </g>
+          ))}
+          <path d="M200 120c-14 0-24 10-24 23 0 18 24 39 24 39s24-21 24-39c0-13-10-23-24-23z" className="art-fill" />
+          <circle cx="200" cy="143" r="8" className="art-bg" />
+        </svg>
+      );
     case 'online':
     default:
       return (
@@ -146,7 +172,6 @@ function OneWall() {
   return (
     <article className="one-wall" aria-labelledby="one-wall-title">
       <Reveal className="one-wall__head">
-        <p className="ministry__index">{ONE_WALL.index}</p>
         <h3 id="one-wall-title" className="ministry__title">
           <span className="one-wall__en">{ONE_WALL.en}</span>
           <span className="display-zh one-wall__zh">{ONE_WALL.zh}</span>
