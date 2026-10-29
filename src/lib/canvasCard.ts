@@ -14,8 +14,6 @@ export const CARD_FORMATS: Record<CardFormat, { width: number; height: number; l
 };
 
 interface Theme {
-  label: string;
-  swatch: string;
   background: [string, string];
   text: string;
   accent: string;
@@ -23,35 +21,60 @@ interface Theme {
   line: string;
 }
 
-export const CARD_THEMES: Record<CardTheme, Theme> = {
-  gold: {
-    label: '金色',
-    swatch: '#ffc946',
-    background: ['#ffd873', '#ffc233'],
-    text: '#1c272b',
-    accent: '#1c272b',
-    muted: 'rgba(28, 39, 43, 0.62)',
-    line: 'rgba(28, 39, 43, 0.22)',
-  },
-  night: {
-    label: '深藍',
-    swatch: '#1c272b',
-    background: ['#2a3c44', '#141c1f'],
-    text: '#ffffff',
-    accent: '#ffc946',
-    muted: 'rgba(255, 255, 255, 0.62)',
-    line: 'rgba(255, 255, 255, 0.18)',
-  },
-  paper: {
-    label: '米白',
-    swatch: '#f4efe4',
-    background: ['#faf6ee', '#ebe3d2'],
-    text: '#1c272b',
-    accent: '#9a6b12',
-    muted: 'rgba(28, 39, 43, 0.58)',
-    line: 'rgba(28, 39, 43, 0.16)',
-  },
+/** Labels stay colour-neutral so they still fit once the theme colours change. */
+export const CARD_THEMES: Record<CardTheme, { label: string; swatch: string }> = {
+  gold: { label: '強調色', swatch: 'var(--accent)' },
+  night: { label: '深色', swatch: 'var(--bg)' },
+  paper: { label: '淺色', swatch: 'var(--paper)' },
 };
+
+type Channel = 'base' | 'base-deep' | 'base-raised' | 'accent' | 'accent-bright' | 'accent-on-light' | 'paper' | 'light' | 'card-sand';
+
+/**
+ * Canvas cannot resolve CSS var(), so card colours are read from the theme channels in
+ * tokens.css at draw time (#22). The card therefore always matches the site theme.
+ */
+export function readChannel(name: Channel, root?: Element): [number, number, number] {
+  const el = root ?? (typeof document === 'undefined' ? null : document.documentElement);
+  const raw = el ? getComputedStyle(el).getPropertyValue(`--rgb-${name}`) : '';
+  const parts = raw.trim().split(/\s+/).map(Number);
+  return parts.length === 3 && parts.every(Number.isFinite) ? [parts[0]!, parts[1]!, parts[2]!] : [0, 0, 0];
+}
+
+function color(name: Channel, alpha = 1): string {
+  const [r, g, b] = readChannel(name);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function resolveTheme(id: CardTheme): Theme {
+  switch (id) {
+    case 'night':
+      return {
+        background: [color('base-raised'), color('base-deep')],
+        text: color('light'),
+        accent: color('accent'),
+        muted: color('light', 0.62),
+        line: color('light', 0.18),
+      };
+    case 'paper':
+      return {
+        background: [color('paper'), color('card-sand')],
+        text: color('base'),
+        accent: color('accent-on-light'),
+        muted: color('base', 0.58),
+        line: color('base', 0.16),
+      };
+    case 'gold':
+    default:
+      return {
+        background: [color('accent-bright'), color('accent')],
+        text: color('base'),
+        accent: color('base'),
+        muted: color('base', 0.62),
+        line: color('base', 0.22),
+      };
+  }
+}
 
 export interface CardContent {
   nickname: string;
@@ -88,7 +111,7 @@ function spaced(ctx: CanvasRenderingContext2D, text: string, x: number, y: numbe
 
 export function drawCard(ctx: CanvasRenderingContext2D, content: CardContent, format: CardFormat, themeId: CardTheme): void {
   const { width: w, height: h } = CARD_FORMATS[format];
-  const theme = CARD_THEMES[themeId];
+  const theme = resolveTheme(themeId);
   const story = format === 'story';
   const pad = story ? 104 : 88;
 
