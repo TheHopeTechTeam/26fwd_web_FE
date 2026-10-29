@@ -21,11 +21,16 @@ export const CHAPTERS: Chapter[] = [
   { id: 'respond', index: '04', en: 'Respond', zh: '回應' },
 ];
 
+/**
+ * Hero copy (#26). On desktop the title is baked into the KV, so `title` and the series line
+ * are read by screen readers only; on phones they are the visible title. The date is live
+ * text, never burned into the image (#26 A-2: 活動起始日 11/14).
+ */
 export const HERO = {
-  kicker: 'THE HOPE · SINCE 2019',
-  title: 'FORWARD',
-  year: '2026',
-  tagline: 'There is more',
+  title: 'THERE IS MORE',
+  series: '2026 FORWARD',
+  zh: '系列講道',
+  date: '11/14 起',
   lead: '感謝神過去七年的信實，一起期待祂要成就的更多。',
   cta: '開始旅程',
 };

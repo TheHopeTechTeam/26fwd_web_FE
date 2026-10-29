@@ -13,7 +13,7 @@
   font-family: var(--font-display);
   font-weight: 800;
   font-size: clamp(2.5rem, 1.5rem + 5vw, 5.5rem);
-  letter-spacing: -0.03em;
+  letter-spacing: 0;
   line-height: 1;
 }
 
@@ -29,7 +29,7 @@
 }
 
 .cards-page__count strong {
-  font-family: var(--font-display);
+  font-family: var(--font-info);
   font-size: 1.5rem;
   color: var(--accent);
 }

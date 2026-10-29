@@ -48,7 +48,7 @@ export function SiteHeader({ progress = false, backLabel }: SiteHeaderProps) {
       )}
       <div className="site-header__inner">
         <a className="site-header__brand" href={pageUrl()} aria-label="FORWARD 2026 首頁">
-          <img src={logoUrl} alt="" width="19" height="24" />
+          <img src={logoUrl} alt="" width="28" height="36" />
           <span className="site-header__wordmark">
             {backLabel ? (
               <>

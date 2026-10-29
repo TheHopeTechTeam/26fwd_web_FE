@@ -107,7 +107,7 @@
 }
 
 .journey-tags__count {
-  font-family: var(--font-display);
+  font-family: var(--font-info);
   font-size: 0.75rem;
   font-weight: 700;
   opacity: 0.7;
@@ -324,7 +324,7 @@
 }
 
 .testimony__name {
-  font-family: var(--font-display);
+  font-family: var(--font-info);
   font-weight: 800;
   font-size: clamp(1.75rem, 1.3rem + 2vw, 2.5rem);
   line-height: 1.1;

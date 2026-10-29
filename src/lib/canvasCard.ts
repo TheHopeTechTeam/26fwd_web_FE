@@ -85,15 +85,14 @@ export interface CardContent {
 export const PROMPTS = { gratitude: '我感謝神…', anticipate: '跟神一起期待…' } as const;
 
 const BODY = '"Noto Sans", "PingFang TC", "Hiragino Sans TC", "Noto Sans TC", "Noto Sans CJK TC", "Microsoft JhengHei", sans-serif';
-const HEADING = '"FWD Heading TC", "PingFang TC", "Noto Sans TC", "Noto Sans CJK TC", "Microsoft JhengHei", sans-serif';
-const DISPLAY = 'Montserrat, "Noto Sans", sans-serif';
+const HEADING = '"FWD Heading TC", "Noto Serif TC", "Songti TC", "PingFang TC", "Microsoft JhengHei", serif';
+const DISPLAY = '"Recia Serif Display", "Noto Serif TC", serif';
 
 /** Canvas can't wait for web fonts by itself, so load the ones it uses first. */
 export async function ensureCardFonts(): Promise<void> {
   if (typeof document === 'undefined' || !document.fonts) return;
   await Promise.allSettled([
-    document.fonts.load(`800 40px Montserrat`, 'FORWARD'),
-    document.fonts.load(`700 40px Montserrat`, 'There is more'),
+    document.fonts.load(`40px "Recia Serif Display"`, 'FORWARD There is more'),
     document.fonts.load(`40px "FWD Heading TC"`, `${PROMPTS.gratitude}${PROMPTS.anticipate}`),
     document.fonts.load(`40px "Noto Sans"`, 'Aa'),
   ]);
