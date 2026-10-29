@@ -39,7 +39,7 @@ export const HERO = {
 
 export const APPRECIATE = {
   title: '神的信實，寫在每一張臉上',
-  lead: '七年來，神在一個又一個生命裡留下記號。選一個信仰歷程聚焦，或直接點開一張臉，讀一段故事。',
+  lead: '七年來，神在一個又一個生命裡留下記號。點開任何一張臉，讀一段故事。',
   note: '示意人物為合成插畫與虛構故事（synthetic），正式見證素材與授權待 Online Campus 交付。',
 };
 

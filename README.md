@@ -29,7 +29,7 @@ npm run preview    # 預覽 build 結果
 | --- | --- | --- |
 | 右側旅程導覽（桌機／手機皆固定右側） | FEAT-01 / US-01 | `src/components/JourneyRail.tsx` |
 | 00 Hero＋右上常駐奉獻 | FEAT-02 / US-02 | `src/sections/Hero.tsx`, `src/components/SiteHeader.tsx` |
-| 01 Appreciate 漂浮見證＋Tag 聚焦＋見證彈窗 | FEAT-03/04 / US-03/04 | `src/sections/Appreciate.tsx`, `src/data/testimonies.ts` |
+| 01 Appreciate 同尺寸見證方格＋見證彈窗 | FEAT-03/04 / US-03/04 | `src/sections/Appreciate.tsx`, `src/data/testimonies.ts` |
 | 02 Transition 三情境＋手動播放音樂 | FEAT-05 / US-05 | `src/sections/Transition.tsx`, `public/audio/` |
 | 03 Anticipate 四項事工＋Count-up＋The One Wall／Prayer Map | FEAT-06/07/12 / US-06/11 | `src/sections/Anticipate.tsx`, `src/data/content.ts` |
 | 04 Respond 寫卡表單 | FEAT-08 / US-07 | `src/sections/Respond.tsx` |
