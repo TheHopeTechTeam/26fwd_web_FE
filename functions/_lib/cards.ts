@@ -65,7 +65,7 @@ export async function parseCardSubmission(request: Request): Promise<CardSubmiss
   const mediaType = request.headers.get('content-type')?.split(';', 1)[0]?.trim().toLowerCase()
   if (mediaType !== 'application/json') throw new ApiError(400, 'VALIDATION_ERROR', 'Content-Type must be application/json')
   const raw = await request.text()
-  if (new TextEncoder().encode(raw).byteLength > MAX_BODY_BYTES) throw new ApiError(413, 'PAYLOAD_TOO_LARGE', 'Request body exceeds 4 KiB')
+  if (new TextEncoder().encode(raw).byteLength > MAX_BODY_BYTES) throw new ApiError(413, 'PAYLOAD_TOO_LARGE', 'Request body exceeds 8 KiB')
   let body: Record<string, unknown>
   try {
     const parsed: unknown = JSON.parse(raw)

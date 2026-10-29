@@ -95,4 +95,4 @@ export interface ApiErrorBody {
 export const PUBLIC_PAGE_LIMIT = 12;
 export const ADMIN_LIST_LIMIT = 100;
 export const ADMIN_TOKEN_MIN_LENGTH = 32;
-export const MAX_BODY_BYTES = 4096;
+export const MAX_BODY_BYTES = 8192;
