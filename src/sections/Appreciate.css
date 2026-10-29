@@ -160,8 +160,8 @@
 .testimony__tags li {
   padding: 4px 12px;
   border-radius: var(--radius-full);
-  border: 1px solid rgb(var(--rgb-accent) / 0.5);
-  color: var(--accent);
+  border: 1px solid var(--accent-text);
+  color: var(--accent-text);
   font-size: 0.8125rem;
 }
 

@@ -83,7 +83,7 @@
   height: 48px;
   padding: 0 14px;
   border-radius: var(--radius-sm);
-  background: rgb(var(--rgb-light) / 0.55);
+  background: rgb(var(--rgb-white) / 0.55);
   border: 1px solid rgb(var(--rgb-base) / 0.18);
   line-height: normal;
 }
@@ -198,7 +198,7 @@
 
 .cardform__consent a {
   margin-left: 6px;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .cardform__submit {
@@ -242,7 +242,7 @@
   padding: 10px 14px;
   border-radius: var(--radius-sm);
   background: rgb(var(--rgb-accent) / 0.12);
-  color: var(--accent);
+  color: var(--accent-text);
   font-weight: 600;
 }
 
@@ -421,7 +421,7 @@
   display: inline-flex;
   align-items: center;
   min-height: 44px;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .card-result .toast-region {

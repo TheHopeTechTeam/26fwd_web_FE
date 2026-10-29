@@ -30,7 +30,7 @@ import './Respond.css';
  */
 export function Respond() {
   return (
-    <section id="respond" className="chapter respond" tabIndex={-1} aria-labelledby="respond-title">
+    <section id="respond" className="chapter respond tone-light" tabIndex={-1} aria-labelledby="respond-title">
       <div className="wrap">
         <Reveal className="chapter__head">
           <p className="kicker">

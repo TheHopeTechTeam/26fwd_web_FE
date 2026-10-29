@@ -67,8 +67,10 @@
   --rgb-accent-dim: 196 164 67; /* #c4a443 */
   --rgb-accent-on-light: 122 92 14; /* #7a5c0e 金黃 dark enough to read on paper (5.4:1) */
   --rgb-earth: 62 37 30; /* #3e251e 深褐: text on 金黃 (the Give buttons) */
+  --rgb-mist: 221 229 234; /* #dde5ea 淺藍: 淺灰 leaned toward 藍灰, ground of the light sections */
   --rgb-paper: 244 239 228; /* #f4efe4 */
-  --rgb-light: 255 255 255;
+  --rgb-light: 255 255 255; /* light ink; flips to 深藍 inside .tone-light */
+  --rgb-white: 255 255 255; /* stays white in every section */
   --rgb-text-2: 188 189 191; /* #bcbdbf 淺灰 */
   --rgb-text-3: 180 181 183; /* #b4b5b7 淺灰, one step dimmer (4.6:1 on raised) */
   --rgb-card-mist: 227 232 235; /* #e3e8eb card wall tint (藍灰) */
@@ -88,6 +90,8 @@
   --accent-bright: rgb(var(--rgb-accent-bright));
   --accent-dim: rgb(var(--rgb-accent-dim));
   --accent-on-light: rgb(var(--rgb-accent-on-light));
+  /* 金黃 when it is text or a thin line; swaps to the darker gold on light sections. */
+  --accent-text: var(--accent);
   --paper: rgb(var(--rgb-paper));
   --ink: rgb(var(--rgb-base));
   --on-accent: rgb(var(--rgb-earth));
@@ -146,4 +150,48 @@
     --rail-space: 200px;
     --header-h: 72px;
   }
+}
+
+/*
+ * Light sections (10/29, team choice: 淺深淺 — 感謝 and 回應 on 淺藍, 期待 on 深藍). Same
+ * semantic names, light values, so components need no section-specific colours. Dialogs and
+ * other dark panels inside a light section put .tone-dark back.
+ */
+.tone-light {
+  --rgb-light: var(--rgb-base);
+  --bg: rgb(var(--rgb-mist));
+  --bg-deep: rgb(var(--rgb-mist));
+  --surface: rgb(var(--rgb-white) / 0.5);
+  --surface-raised: rgb(var(--rgb-white) / 0.75);
+  --accent-text: var(--accent-on-light);
+  --text: rgb(var(--rgb-base));
+  --text-2: rgb(var(--rgb-base) / 0.86);
+  --text-3: rgb(var(--rgb-base) / 0.76);
+  --line: rgb(var(--rgb-base) / 0.14);
+  --line-strong: rgb(var(--rgb-base) / 0.3);
+  --focus: rgb(var(--rgb-base));
+  --danger: var(--danger-on-light);
+  --danger-text: var(--danger-on-light);
+  --shadow-card: 0 18px 40px rgb(var(--rgb-base) / 0.18);
+  background-color: var(--bg);
+  color: var(--text);
+}
+
+.tone-dark {
+  --rgb-light: var(--rgb-white);
+  --bg: rgb(var(--rgb-base));
+  --bg-deep: rgb(var(--rgb-base-deep));
+  --surface: rgb(var(--rgb-base-soft));
+  --surface-raised: rgb(var(--rgb-base-raised));
+  --accent-text: var(--accent);
+  --text: rgb(var(--rgb-white));
+  --text-2: rgb(var(--rgb-text-2));
+  --text-3: rgb(var(--rgb-text-3));
+  --line: rgb(var(--rgb-white) / 0.12);
+  --line-strong: rgb(var(--rgb-white) / 0.22);
+  --focus: var(--accent-bright);
+  --danger: rgb(var(--rgb-danger));
+  --danger-text: rgb(255 210 203);
+  --shadow-card: 0 18px 44px rgba(0, 0, 0, 0.34);
+  color: var(--text);
 }
