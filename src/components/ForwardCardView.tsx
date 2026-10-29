@@ -3,7 +3,8 @@ import { PROMPTS } from '../lib/canvasCard';
 import { relativeTime } from '../lib/format';
 import './ForwardCardView.css';
 
-const TINTS = ['gold', 'paper', 'mist', 'sand'] as const;
+/** 淺藍 is the ground of the 回應 section, so the wall rotates the other swatch colours. */
+const TINTS = ['gold', 'paper', 'earth', 'sand'] as const;
 
 /** One card on the public wall. All user text renders as plain text (no innerHTML). */
 export function ForwardCardView({ card, index, now }: { card: PublicCard; index: number; now: number }) {

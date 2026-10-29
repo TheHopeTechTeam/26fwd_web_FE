@@ -73,7 +73,6 @@
   --rgb-white: 255 255 255; /* stays white in every section */
   --rgb-text-2: 188 189 191; /* #bcbdbf 淺灰 */
   --rgb-text-3: 180 181 183; /* #b4b5b7 淺灰, one step dimmer (4.6:1 on raised) */
-  --rgb-card-mist: 227 232 235; /* #e3e8eb card wall tint (藍灰) */
   --rgb-card-sand: 246 237 207; /* #f6edcf card wall tint (金黃) */
   /* Status colours are functional, not brand; they normally stay as they are. */
   --rgb-danger: 255 154 140; /* #ff9a8c on dark (lightened from #ff8a7a for the raised surfaces) */
@@ -92,6 +91,8 @@
   --accent-on-light: rgb(var(--rgb-accent-on-light));
   /* 金黃 when it is text or a thin line; swaps to the darker gold on light sections. */
   --accent-text: var(--accent);
+  /* Chapter labels (01 · Appreciate…): 金黃 on dark, 深褐 on light sections. */
+  --chapter-label: var(--accent);
   --paper: rgb(var(--rgb-paper));
   --ink: rgb(var(--rgb-base));
   --on-accent: rgb(var(--rgb-earth));
@@ -164,6 +165,7 @@
   --surface: rgb(var(--rgb-white) / 0.5);
   --surface-raised: rgb(var(--rgb-white) / 0.75);
   --accent-text: var(--accent-on-light);
+  --chapter-label: rgb(var(--rgb-earth));
   --text: rgb(var(--rgb-base));
   --text-2: rgb(var(--rgb-base) / 0.86);
   --text-3: rgb(var(--rgb-base) / 0.76);
@@ -184,6 +186,7 @@
   --surface: rgb(var(--rgb-base-soft));
   --surface-raised: rgb(var(--rgb-base-raised));
   --accent-text: var(--accent);
+  --chapter-label: var(--accent);
   --text: rgb(var(--rgb-white));
   --text-2: rgb(var(--rgb-text-2));
   --text-3: rgb(var(--rgb-text-3));

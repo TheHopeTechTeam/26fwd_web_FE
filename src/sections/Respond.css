@@ -477,7 +477,7 @@
 .finale__inner {
   display: grid;
   gap: clamp(28px, 4vw, 64px);
-  align-items: end;
+  align-items: start;
 }
 
 @media (min-width: 900px) {
@@ -527,7 +527,7 @@
   color: rgb(var(--rgb-base) / 0.72);
 }
 
-/* Prayer Map (#19): same size as Give, but outlined so Give stays the main action. */
+/* Prayer Map (#19): same size and colours as Give (深藍 with 金黃 text, 10/29). */
 .finale__prayer {
   display: grid;
   gap: 14px;
@@ -537,16 +537,12 @@
   border-top: 1px solid rgb(var(--rgb-base) / 0.18);
 }
 
-.finale__prayer-link {
-  border-color: var(--ink);
-  color: var(--ink);
-  background: transparent;
-}
-
-.finale__prayer-link:hover {
-  background: rgb(var(--rgb-base) / 0.08);
-}
-
 .finale__prayer-link:focus-visible {
   outline-color: var(--ink);
+}
+
+/* Until the Give URL is set the button stays in full colour (the hint below says why);
+   it still can't be clicked. */
+.finale .btn[aria-disabled='true'] {
+  opacity: 1;
 }

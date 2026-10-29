@@ -501,7 +501,7 @@ function Finale() {
           {!config.giveUrl && <p className="finale__hint">{FINALE.disabled}</p>}
           <div className="finale__prayer">
             <p className="finale__body">{PRAYER_LINK.lead}</p>
-            <a className="btn btn--lg finale__prayer-link" href={config.prayerMapUrl} target="_blank" rel="noopener noreferrer">
+            <a className="btn btn--dark btn--lg finale__prayer-link" href={config.prayerMapUrl} target="_blank" rel="noopener noreferrer">
               {PRAYER_LINK.label}
               <span aria-hidden="true">↗</span>
               <span className="sr-only">（在新分頁開啟）</span>
