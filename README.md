@@ -31,7 +31,7 @@ npm run preview    # 預覽 build 結果
 | 00 Hero＋右上常駐奉獻 | FEAT-02 / US-02 | `src/sections/Hero.tsx`, `src/components/SiteHeader.tsx` |
 | 01 Appreciate 同尺寸見證方格＋見證彈窗 | FEAT-03/04 / US-03/04 | `src/sections/Appreciate.tsx`, `src/data/testimonies.ts` |
 | 02 Transition 三情境＋手動播放音樂 | FEAT-05 / US-05 | `src/sections/Transition.tsx`, `public/audio/` |
-| 03 Anticipate 四項事工＋Count-up＋The One Wall／Prayer Map | FEAT-06/07/12 / US-06/11 | `src/sections/Anticipate.tsx`, `src/data/content.ts` |
+| 03 Anticipate 五項事工＋Count-up（Prayer Map 改為奉獻區後的外連，#19） | FEAT-06/07/12 / US-06/11 | `src/sections/Anticipate.tsx`, `src/data/content.ts` |
 | 04 Respond 寫卡表單 | FEAT-08 / US-07 | `src/sections/Respond.tsx` |
 | 卡片圖片下載／分享（1080×1080、1080×1920、三主題） | FEAT-10 / US-09 | `src/lib/canvasCard.ts` |
 | 公開卡片牆（獨立頁、Masonry、每批 12 張） | FEAT-11 / US-10 | `src/pages/cards/` |
@@ -61,7 +61,6 @@ npm run preview    # 預覽 build 結果
 | `VITE_GIVE_URL` | 正式奉獻網址（https）。未設定時奉獻按鈕維持安全停用 |
 | `VITE_GA4_MEASUREMENT_ID` | GA4 ID（`G-XXXX`）。未設定則不載入 GA |
 | `VITE_TURNSTILE_SITE_KEY` | Turnstile site key（接上真後端後再設） |
-| `VITE_PRAYER_MAP_EMBED_ENABLED` | Prayer Map 開放內嵌後設為 `true` |
 
 ## 素材產生腳本
 
@@ -80,5 +79,5 @@ npm run preview    # 預覽 build 結果
 
 - **Comms／Online**：正式見證照片、故事、影片與授權紀錄；Tag 正式字詞；01–05 文案與統計數據；正式選曲與授權；主視覺與色票（Q-33）；隱私說明正式文字
 - **BB**：正式 Forward 奉獻網址與 UTM 命名；審核負責人（Q-29）
-- **Prayer Map 維運方**：開放 FWD 網域內嵌（目前 `frame-ancestors 'none'`、`X-Frame-Options: DENY`）
+- **BB／Comms／Ian**：Prayer Map 正式網址與按鈕文字（#19）
 - **後端（Alvis）**：依 `docs/api` 實作；風險辨識、退件／改寫、保存期限與取回待 Q-29～Q-32

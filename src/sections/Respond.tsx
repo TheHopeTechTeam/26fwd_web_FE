@@ -7,7 +7,7 @@ import { Reveal } from '../components/Reveal';
 import { useToast } from '../components/Toast';
 import { Turnstile } from '../components/Turnstile';
 import { config, pageUrl } from '../config/env';
-import { FINALE, RESPOND } from '../data/content';
+import { FINALE, PRAYER_LINK, RESPOND } from '../data/content';
 import { CARD_FORMATS, CARD_THEMES, PROMPTS, renderCardBlob, type CardContent, type CardFormat, type CardTheme } from '../lib/canvasCard';
 import {
   FIELD_ERROR_TEXT,
@@ -434,6 +434,14 @@ function Finale() {
           <p className="finale__body">{FINALE.body}</p>
           <GiveButton placement="respond_finale" label={FINALE.cta} className="btn btn--dark btn--lg finale__give" disabledHint={FINALE.disabled} />
           {!config.giveUrl && <p className="finale__hint">{FINALE.disabled}</p>}
+          <p className="finale__prayer">
+            {PRAYER_LINK.lead}
+            <a href={config.prayerMapUrl} target="_blank" rel="noopener noreferrer">
+              {PRAYER_LINK.label}
+              <span aria-hidden="true"> ↗</span>
+              <span className="sr-only">（在新分頁開啟）</span>
+            </a>
+          </p>
         </Reveal>
       </div>
     </div>

@@ -9,10 +9,7 @@ export function SiteFooter({ railSpace = true }: { railSpace?: boolean }) {
       <div className={`wrap ${railSpace ? '' : 'wrap--no-rail'} site-footer__inner`}>
         <div className="site-footer__brand">
           <img src={logoUrl} alt="The Hope" width="22" height="28" />
-          <div>
-            <p className="site-footer__title">FORWARD · There is more</p>
-            <p className="site-footer__sub">The Hope · 2026 年末 Campaign</p>
-          </div>
+          <p className="site-footer__title">FORWARD · There is more</p>
         </div>
         <nav aria-label="頁尾連結">
           <ul className="site-footer__links">
@@ -21,11 +18,6 @@ export function SiteFooter({ railSpace = true }: { railSpace?: boolean }) {
             </li>
             <li>
               <a href={pageUrl('privacy/')}>隱私與資料說明</a>
-            </li>
-            <li>
-              <a href={config.prayerMapUrl} target="_blank" rel="noopener noreferrer">
-                Prayer Map ↗
-              </a>
             </li>
             <li>
               <a href="https://thehope.co" target="_blank" rel="noopener noreferrer">
