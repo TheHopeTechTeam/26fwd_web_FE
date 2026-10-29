@@ -200,23 +200,8 @@
   }
 }
 
-/* Two columns: the side stretches to the card's height, steps at the top and the tips
-   with the button at the bottom, level with the end of the card. */
+/* Two columns: the steps, then the tips and the button, from the top of the card. */
 @media (min-width: 980px) {
-  .cardform {
-    align-items: stretch;
-  }
-
-  .cardform__side {
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-  }
-
-  .cardform__side .cardform__guide {
-    margin-top: auto;
-  }
-
   .cardform__steps {
     gap: 0;
   }
