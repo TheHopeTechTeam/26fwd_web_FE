@@ -13,7 +13,7 @@ export function Anticipate() {
       <div className="wrap">
         <Reveal className="chapter__head">
           <p className="kicker">
-            <span className="eyebrow-index">03</span> · Anticipate 期待
+            <span className="eyebrow-index">02</span> · Anticipate 期待
           </p>
           <h2 id="anticipate-title" className="chapter__title display-zh">
             <Phrases text={ANTICIPATE.title} />

@@ -28,7 +28,7 @@ export function Respond() {
       <div className="wrap">
         <Reveal className="chapter__head">
           <p className="kicker">
-            <span className="eyebrow-index">04</span> · Respond 回應
+            <span className="eyebrow-index">03</span> · Respond 回應
           </p>
           <h2 id="respond-title" className="chapter__title respond__title">
             {RESPOND.title}

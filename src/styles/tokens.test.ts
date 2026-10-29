@@ -13,7 +13,6 @@ const sources = import.meta.glob(['/src/**/*.{css,ts,tsx}', '!/src/**/*.test.ts'
 // Deliberate exceptions, each with a reason.
 const ALLOWED_FILES: Record<string, string> = {
   '/src/styles/tokens.css': 'the single source of theme colours',
-  '/src/sections/Transition.css': 'painted mood scenes; chapter is removed by #17／#25',
 };
 // Neutral black for shadows, masks and the video letterbox is not a brand colour.
 const NEUTRAL = /^(rgba\(0, 0, 0, [0-9.]+\)|#000)$/;
