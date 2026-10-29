@@ -7,9 +7,9 @@ import { Reveal } from '../components/Reveal';
 import { useToast } from '../components/Toast';
 import { Turnstile } from '../components/Turnstile';
 import { config, pageUrl } from '../config/env';
-import { FINALE, PRAYER_LINK, RESPOND } from '../data/content';
+import { DECLARATIONS, FINALE, PRAYER_LINK, RESPOND } from '../data/content';
 import { trackEvent } from '../lib/analytics';
-import { CARD_FORMATS, CARD_THEMES, PROMPTS, renderCardBlob, type CardContent, type CardFormat, type CardTheme } from '../lib/canvasCard';
+import { CARD_FORMATS, PALETTE_SWATCH, PROMPTS, renderCardBlob, type CardContent, type CardFormat } from '../lib/canvasCard';
 import {
   FIELD_ERROR_TEXT,
   LIMITS,
@@ -210,7 +210,7 @@ function ForwardCardForm() {
 
 function CardResult({ content }: { content: CardContent }) {
   const [format, setFormat] = useState<CardFormat>('square');
-  const [theme, setTheme] = useState<CardTheme>('gold');
+  const [declaration, setDeclaration] = useState(DECLARATIONS[0]!);
   const [image, setImage] = useState<{ url: string; blob: Blob } | null>(null);
   const [rendering, setRendering] = useState(true);
   const { show: showToast, element: toastElement } = useToast();
@@ -220,7 +220,7 @@ function CardResult({ content }: { content: CardContent }) {
   useEffect(() => {
     let cancelled = false;
     setRendering(true);
-    renderCardBlob(content, format, theme)
+    renderCardBlob(content, format, declaration)
       .then((blob) => {
         if (cancelled) return;
         if (urlRef.current) URL.revokeObjectURL(urlRef.current);
@@ -236,7 +236,7 @@ function CardResult({ content }: { content: CardContent }) {
     return () => {
       cancelled = true;
     };
-  }, [content, format, theme, showToast]);
+  }, [content, format, declaration, showToast]);
 
   useEffect(
     () => () => {
@@ -295,6 +295,20 @@ function CardResult({ content }: { content: CardContent }) {
         )}
       </div>
 
+      <fieldset className="declarations">
+        <legend className="declarations__legend display-zh">選一段信心宣告</legend>
+        {DECLARATIONS.map((d) => (
+          <label key={d.id} className={`declarations__item ${declaration.id === d.id ? 'is-on' : ''}`}>
+            <input type="radio" name="card-declaration" value={d.id} checked={declaration.id === d.id} onChange={() => setDeclaration(d)} />
+            <span className="declarations__swatch" style={{ background: PALETTE_SWATCH[d.palette] }} aria-hidden="true" />
+            <span className="declarations__text">
+              <strong>{d.title}</strong>
+              <span>{d.text}</span>
+            </span>
+          </label>
+        ))}
+      </fieldset>
+
       <div className="card-result__controls">
         <fieldset className="segmented">
           <legend className="sr-only">圖片尺寸</legend>
@@ -302,16 +316,6 @@ function CardResult({ content }: { content: CardContent }) {
             <label key={f} className={format === f ? 'is-on' : ''}>
               <input type="radio" name="card-format" value={f} checked={format === f} onChange={() => setFormat(f)} />
               {CARD_FORMATS[f].label}
-            </label>
-          ))}
-        </fieldset>
-        <fieldset className="swatches">
-          <legend className="sr-only">卡片配色</legend>
-          {(Object.keys(CARD_THEMES) as CardTheme[]).map((t) => (
-            <label key={t} className={theme === t ? 'is-on' : ''} title={CARD_THEMES[t].label}>
-              <input type="radio" name="card-theme" value={t} checked={theme === t} onChange={() => setTheme(t)} />
-              <span style={{ background: CARD_THEMES[t].swatch }} aria-hidden="true" />
-              <span className="sr-only">{CARD_THEMES[t].label}</span>
             </label>
           ))}
         </fieldset>

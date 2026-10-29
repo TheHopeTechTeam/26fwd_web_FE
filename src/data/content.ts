@@ -190,6 +190,52 @@ export const RESPOND = {
   lead: '寫下一張屬於你的 Forward Card：一句感謝，一個期待。做好的卡片可以下載保存，也可以選擇公開到卡片牆，與全 Hope Nation 分享。',
 };
 
+/** Ground colours a declaration card can use; canvasCard maps them to the KV swatch. */
+export type DeclarationPalette = 'navy' | 'gold' | 'earth';
+/** How the frame on the card is drawn, so each declaration has its own look (#23). */
+export type DeclarationFrame = 'line' | 'double' | 'arch';
+
+export interface Declaration {
+  id: string;
+  title: string;
+  en: string;
+  text: string;
+  palette: DeclarationPalette;
+  frame: DeclarationFrame;
+}
+
+/**
+ * Declarations of faith for the result card (#23): each has its own header, colours and
+ * frame. Demo wording from Ian's meeting preview until BB sends the final set; visitors
+ * only pick one, never write their own, and the choice is not stored.
+ */
+export const DECLARATIONS: Declaration[] = [
+  {
+    id: 'love-in-action',
+    title: '向世界走去',
+    en: 'LOVE IN ACTION',
+    text: '我願意多走一步，把愛與盼望帶進日常。',
+    palette: 'navy',
+    frame: 'line',
+  },
+  {
+    id: 'there-is-more',
+    title: '相信還有更多',
+    en: 'THERE IS MORE',
+    text: '我相信神的信實，也期待祂要成就的更多。',
+    palette: 'gold',
+    frame: 'double',
+  },
+  {
+    id: 'hope-for-tomorrow',
+    title: '一起成為祝福',
+    en: 'HOPE FOR TOMORROW',
+    text: '我願意與教會同行，讓更多人找到盼望。',
+    palette: 'earth',
+    frame: 'arch',
+  },
+];
+
 export const FINALE = {
   kicker: 'FORWARD 2026 · GIVE',
   title: ['There is', 'more'],
