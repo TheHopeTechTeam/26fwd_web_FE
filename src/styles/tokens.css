@@ -13,13 +13,6 @@
  *   - favicon, apple-touch-icon and og-image (public/, scripts/gen-brand.py)
  */
 @font-face {
-  font-family: 'Montserrat';
-  src: url('../assets/fonts/montserrat-var.woff2') format('woff2');
-  font-weight: 100 900;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
   font-family: 'Noto Sans';
   src: url('../assets/fonts/noto-sans-400.woff2') format('woff2');
   font-weight: 400;
@@ -31,35 +24,56 @@
   font-weight: 600 700;
   font-display: swap;
 }
-/* Chinese headings only: a woff2 subset of Noto Sans CJK TC (scripts/subset-font.py). */
+/* KV faces (#26, Comms 字體.png). Recia and the heading subset ship a single weight, so they
+   claim the whole weight range: the browser then never fakes a bolder version. */
+@font-face {
+  font-family: 'Recia Serif Display';
+  src: url('../assets/fonts/recia-serif-display-bold.woff2') format('woff2');
+  font-weight: 100 900;
+  font-display: swap;
+}
+/* Variable weight, height fixed at Regular (scripts/convert-kv-fonts.py); 700 = "Bold Regular". */
+@font-face {
+  font-family: 'Awesome Serif';
+  src: url('../assets/fonts/awesome-serif-var.woff2') format('woff2');
+  font-weight: 1 700;
+  font-display: swap;
+}
+/* Chinese headings only: a woff2 subset of Noto Serif TC Bold (scripts/subset-font.py). */
 @font-face {
   font-family: 'FWD Heading TC';
   src: url('../assets/fonts/fwd-heading-tc.woff2') format('woff2');
-  font-weight: 400;
+  font-weight: 100 900;
   font-display: swap;
   unicode-range: U+2E80-9FFF, U+F900-FAFF, U+FF00-FFEF, U+3000-303F, U+2014, U+2026, U+00B7;
 }
 
 :root {
-  /* ── 1. THEME ── interim palette = The Hope design system (prototype _ds/tokens/colors.css).
-     Not the official FORWARD KV; replace once Comms confirms the church standard colours. */
-  --rgb-base: 28 39 43; /* #1c272b page background and dark text */
-  --rgb-base-deep: 20 28 31; /* #141c1f */
-  --rgb-base-soft: 35 47 52; /* #232f34 */
-  --rgb-base-raised: 44 58 64; /* #2c3a40 */
-  --rgb-tint: 49 82 100; /* #315264 cool glow behind sections */
-  --rgb-accent: 255 201 70; /* #ffc946 */
-  --rgb-accent-bright: 255 216 115; /* #ffd873 */
-  --rgb-accent-dim: 201 154 46; /* #c99a2e */
-  --rgb-accent-on-light: 154 107 18; /* #9a6b12 accent that stays readable on paper */
+  /* ── 1. THEME ── FORWARD 2026 KV palette (#26, Comms 色票.png): #0f3b59 深藍, #7d929e 藍灰,
+     #bcbdbf 淺灰, #edcc5f 金黃, #3e251e 深褐. The sheet gives no roles; the page background is
+     深褐, the closest to the KV photo's warm dark tones (team choice, 10/27, over 深藍).
+     Values as labelled on the swatch sheet; the PNG's sampled pixels differ slightly (#36211c…),
+     so Comms still has to confirm which set is final. Other channels are shades or tints of
+     those five, chosen so every text pair stays ≥ 4.5:1. Paper, white and the status colours
+     are not in the KV and stay pending Comms (#26 F-3). */
+  --rgb-base: 62 37 30; /* #3e251e 深褐: page background and dark text */
+  --rgb-base-deep: 44 26 21; /* #2c1a15 */
+  --rgb-base-soft: 71 43 35; /* #472b23 */
+  --rgb-base-raised: 82 50 41; /* #523229 */
+  --rgb-tint: 125 146 158; /* #7d929e 藍灰: glow behind sections; never body text */
+  --rgb-accent: 237 204 95; /* #edcc5f 金黃 */
+  --rgb-accent-bright: 244 220 140; /* #f4dc8c */
+  --rgb-accent-dim: 196 164 67; /* #c4a443 */
+  --rgb-accent-on-light: 122 92 14; /* #7a5c0e 金黃 dark enough to read on paper (5.4:1) */
+  --rgb-earth: 62 37 30; /* #3e251e 深褐: text on 金黃 */
   --rgb-paper: 244 239 228; /* #f4efe4 */
   --rgb-light: 255 255 255;
-  --rgb-text-2: 212 210 205; /* #d4d2cd */
-  --rgb-text-3: 169 167 161; /* #a9a7a1 */
-  --rgb-card-mist: 228 235 232; /* #e4ebe8 card wall tint */
-  --rgb-card-sand: 239 227 211; /* #efe3d3 card wall tint */
+  --rgb-text-2: 188 189 191; /* #bcbdbf 淺灰 */
+  --rgb-text-3: 169 167 161; /* #a9a7a1 淺灰, one step dimmer (4.7:1 on raised) */
+  --rgb-card-mist: 227 232 235; /* #e3e8eb card wall tint (藍灰) */
+  --rgb-card-sand: 246 237 207; /* #f6edcf card wall tint (金黃) */
   /* Status colours are functional, not brand; they normally stay as they are. */
-  --rgb-danger: 255 138 122; /* #ff8a7a on dark */
+  --rgb-danger: 255 154 140; /* #ff9a8c on dark (lightened from #ff8a7a for the raised surfaces) */
   --rgb-danger-on-light: 179 38 30; /* #b3261e */
   --rgb-danger-strong: 201 74 59; /* #c94a3b destructive button */
   --rgb-success: 143 212 168; /* #8fd4a8 */
@@ -75,7 +89,7 @@
   --accent-on-light: rgb(var(--rgb-accent-on-light));
   --paper: rgb(var(--rgb-paper));
   --ink: rgb(var(--rgb-base));
-  --on-accent: var(--ink);
+  --on-accent: rgb(var(--rgb-earth));
 
   --text: rgb(var(--rgb-light));
   --text-2: rgb(var(--rgb-text-2));
@@ -90,9 +104,12 @@
   --danger-strong: rgb(var(--rgb-danger-strong));
   --success: rgb(var(--rgb-success));
 
-  /* Latin display face; Chinese inside buttons/labels falls through to bold system fonts. */
-  --font-display: 'Montserrat', -apple-system, 'PingFang TC', 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
-  --font-heading-zh: 'FWD Heading TC', 'PingFang TC', 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+  /* 字體.png: 標題 Recia Serif Display (Latin only); 副標 Awesome Serif Bold Regular (英) +
+     Noto Serif TC Bold (中); 資訊 Awesome Serif. Neither Latin face has CJK, so Chinese in a
+     display title falls through to the heading subset, then to system serif fonts. */
+  --font-display: 'Recia Serif Display', 'FWD Heading TC', 'Noto Serif TC', 'Songti TC', serif;
+  --font-info: 'Awesome Serif', 'FWD Heading TC', 'Noto Serif TC', 'Songti TC', serif;
+  --font-heading-zh: 'Awesome Serif', 'FWD Heading TC', 'Noto Serif TC', 'Songti TC', serif;
   --font-body: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'PingFang TC', 'Hiragino Sans TC', 'Noto Sans TC',
     'Microsoft JhengHei', sans-serif;
   --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;

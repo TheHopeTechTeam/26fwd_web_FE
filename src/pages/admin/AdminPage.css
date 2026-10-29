@@ -140,7 +140,7 @@
 }
 
 .review__tab-count {
-  font-family: var(--font-display);
+  font-family: var(--font-info);
   font-size: 0.75rem;
 }
 

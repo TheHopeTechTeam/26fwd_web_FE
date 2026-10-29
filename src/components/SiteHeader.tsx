@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import logoUrl from '../assets/brand/hope-h-white.png';
 import { config, pageUrl } from '../config/env';
 import { GiveButton } from './GiveButton';
+import { MusicToggle } from './MusicToggle';
 import './SiteHeader.css';
 
 interface SiteHeaderProps {
@@ -48,7 +49,7 @@ export function SiteHeader({ progress = false, backLabel }: SiteHeaderProps) {
       )}
       <div className="site-header__inner">
         <a className="site-header__brand" href={pageUrl()} aria-label="FORWARD 2026 首頁">
-          <img src={logoUrl} alt="" width="19" height="24" />
+          <img src={logoUrl} alt="" width="28" height="36" />
           <span className="site-header__wordmark">
             {backLabel ? (
               <>
@@ -67,6 +68,7 @@ export function SiteHeader({ progress = false, backLabel }: SiteHeaderProps) {
           </span>
         )}
         <div className="site-header__actions">
+          <MusicToggle />
           <GiveButton
             placement="header"
             label={

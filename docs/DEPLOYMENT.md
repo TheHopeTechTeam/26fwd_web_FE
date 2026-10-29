@@ -111,12 +111,14 @@ RATE_LIMIT_SALT=<production-high-entropy-salt>
 CLIENT_TOKEN_SECRET=<production-random-secret-32-chars-or-more>
 VITE_GIVE_URL=<official-forward-give-url-from-finance>
 VITE_GA4_MEASUREMENT_ID=<official-ga4-measurement-id>
+VITE_SHOW_PREVIEW_BADGE=false
 CARD_SUBMISSIONS_ENABLED=true
 ```
 
 > **設定注意事項**
 > - `TURNSTILE_SECRET_KEY`、`ADMIN_API_TOKEN`、`RATE_LIMIT_SALT`、`CLIENT_TOKEN_SECRET` 在 Cloudflare Pages 要設為 **Secret（加密）**類型，不要用明文變數。`CLIENT_TOKEN_SECRET` 至少 32 字元，可用 `openssl rand -base64 48` 產生；staging 與正式環境要用不同的值。更換它會讓所有 Client Token 立即失效（前端會自動重領）。
 > - `VITE_*` 在 build 時寫入前端 bundle，修改後需重新部署才會生效。
+> - `VITE_SHOW_PREVIEW_BADGE` 沒設定時**預設為顯示**：header 的 PREVIEW 標籤與頁尾「本網站目前為開發預覽版…」的說明。staging 與 GitHub Pages 保持預設；**正式專案 `26fwd-prod` 一定要設為 `false`**，M4 上線檢查要確認正式站看不到這兩處。
 > - Turnstile 的 hostname 檢查只接受主網址；Pages 每次部署的預覽網址（`<hash>.26fwd-staging.pages.dev`）會被拒絕，驗收請使用主網址。
 
 #### 模型判斷與自動公開（M1.6）

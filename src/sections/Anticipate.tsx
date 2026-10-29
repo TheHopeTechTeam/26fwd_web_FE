@@ -1,19 +1,17 @@
-import { useState } from 'react';
 import { CountUp } from '../components/CountUp';
 import { Phrases } from '../components/Phrases';
 import { Reveal } from '../components/Reveal';
-import { config } from '../config/env';
-import { ANTICIPATE, MINISTRIES, ONE_WALL, type Ministry } from '../data/content';
+import { ANTICIPATE, MINISTRIES, type Ministry } from '../data/content';
 import './Anticipate.css';
 
-/** 03 · Anticipate (US-06): four ministries plus The One Wall / Prayer Map as item 05. */
+/** 02 · Anticipate (US-06): the five ministries. Prayer Map is a link at the end of the journey (#19). */
 export function Anticipate() {
   return (
     <section id="anticipate" className="chapter anticipate" tabIndex={-1} aria-labelledby="anticipate-title">
       <div className="wrap">
         <Reveal className="chapter__head">
           <p className="kicker">
-            <span className="eyebrow-index">03</span> · Anticipate 期待
+            <span className="eyebrow-index">02</span> · Anticipate 期待
           </p>
           <h2 id="anticipate-title" className="chapter__title display-zh">
             <Phrases text={ANTICIPATE.title} />
@@ -26,8 +24,6 @@ export function Anticipate() {
             <MinistryBlock key={m.id} ministry={m} flip={i % 2 === 1} />
           ))}
         </div>
-
-        <OneWall />
       </div>
     </section>
   );
@@ -50,17 +46,19 @@ function MinistryBlock({ ministry, flip }: { ministry: Ministry; flip: boolean }
           <Phrases text={ministry.headline} />
         </p>
         <p className="ministry__body">{ministry.body}</p>
-        <dl className="ministry__stats">
-          {ministry.stats.map((s) => (
-            <div key={s.label} className="ministry__stat">
-              <dt>{s.label}</dt>
-              <dd>
-                <CountUp value={s.value} suffix={s.suffix} />
-              </dd>
-            </div>
-          ))}
-        </dl>
-        <p className="note">{ANTICIPATE.statsNote}</p>
+        {ministry.stats.length > 0 && (
+          <dl className="ministry__stats">
+            {ministry.stats.map((s) => (
+              <div key={s.label} className="ministry__stat">
+                <dt>{s.label}</dt>
+                <dd>
+                  <CountUp value={s.value} suffix={s.suffix} />
+                </dd>
+              </div>
+            ))}
+          </dl>
+        )}
+        <p className="note">{ministry.pendingNote ?? ANTICIPATE.statsNote}</p>
       </Reveal>
     </article>
   );
@@ -112,6 +110,30 @@ function MinistryArt({ kind }: { kind: Ministry['art'] }) {
           <circle cx="200" cy="150" r="80" fill="none" className="art-line" opacity=".25" strokeDasharray="4 8" />
         </svg>
       );
+    case 'cities':
+      return (
+        <svg {...common}>
+          <rect width="400" height="300" className="art-bg" />
+          <g className="art-light" opacity=".1">
+            {Array.from({ length: 7 }, (_, i) => (
+              <path key={i} d={`M0 ${60 + i * 30}h400`} strokeWidth="1" className="art-line-light" />
+            ))}
+          </g>
+          <g fill="none" className="art-line" strokeWidth="2" strokeDasharray="3 7" strokeLinecap="round" opacity=".55">
+            <path d="M200 150L95 95M200 150L310 85M200 150L120 225M200 150L300 215M310 85L300 215" />
+          </g>
+          {[
+            [95, 95], [310, 85], [120, 225], [300, 215],
+          ].map(([x, y], i) => (
+            <g key={i}>
+              <circle cx={x} cy={y} r="18" className="art-light" opacity=".14" />
+              <circle cx={x} cy={y} r="6" className="art-fill" opacity=".7" />
+            </g>
+          ))}
+          <path d="M200 120c-14 0-24 10-24 23 0 18 24 39 24 39s24-21 24-39c0-13-10-23-24-23z" className="art-fill" />
+          <circle cx="200" cy="143" r="8" className="art-bg" />
+        </svg>
+      );
     case 'online':
     default:
       return (
@@ -131,71 +153,4 @@ function MinistryArt({ kind }: { kind: Ministry['art'] }) {
         </svg>
       );
   }
-}
-
-/**
- * Item 05 (US-06 / US-11). Prayer Map currently sends frame-ancestors 'none' and
- * X-Frame-Options: DENY, so the iframe stays behind VITE_PRAYER_MAP_EMBED_ENABLED
- * and the default is a clear fallback with a new-tab link. No data from this site is
- * sent to Prayer Map (no query params, no-referrer).
- */
-function OneWall() {
-  const [iframeLoaded, setIframeLoaded] = useState(false);
-  const embed = config.prayerMapEmbedEnabled;
-
-  return (
-    <article className="one-wall" aria-labelledby="one-wall-title">
-      <Reveal className="one-wall__head">
-        <p className="ministry__index">{ONE_WALL.index}</p>
-        <h3 id="one-wall-title" className="ministry__title">
-          <span className="one-wall__en">{ONE_WALL.en}</span>
-          <span className="display-zh one-wall__zh">{ONE_WALL.zh}</span>
-        </h3>
-        <p className="ministry__headline display-zh">{ONE_WALL.headline}</p>
-        <p className="ministry__body">{ONE_WALL.body}</p>
-      </Reveal>
-
-      <Reveal className="one-wall__frame" delay={0.08}>
-        {embed ? (
-          <div className="one-wall__embed">
-            {!iframeLoaded && (
-              <div className="one-wall__loading">
-                <span className="spinner" /> 載入 Prayer Map…
-              </div>
-            )}
-            <iframe
-              src={config.prayerMapUrl}
-              title="Prayer Map 代禱地圖"
-              loading="lazy"
-              referrerPolicy="no-referrer"
-              sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
-              onLoad={() => setIframeLoaded(true)}
-            />
-          </div>
-        ) : (
-          <div className="one-wall__fallback">
-            <div className="one-wall__map" aria-hidden="true">
-              {Array.from({ length: 14 }, (_, i) => (
-                <span key={i} style={{ left: `${(i * 37) % 92 + 4}%`, top: `${(i * 53) % 80 + 10}%`, animationDelay: `${-i * 0.7}s` }} />
-              ))}
-            </div>
-            <div className="one-wall__fallback-text">
-              <p className="one-wall__blocked">{ONE_WALL.blocked}</p>
-            </div>
-          </div>
-        )}
-        <div className="one-wall__actions">
-          <a className="btn btn--gold" href={config.prayerMapUrl} target="_blank" rel="noopener noreferrer">
-            開啟 Prayer Map
-            <span aria-hidden="true">↗</span>
-            <span className="sr-only">（在新分頁開啟）</span>
-          </a>
-          <a className="one-wall__privacy" href={config.prayerMapPrivacyUrl} target="_blank" rel="noopener noreferrer">
-            Prayer Map 隱私權政策
-          </a>
-        </div>
-        <p className="note">{ONE_WALL.privacy}</p>
-      </Reveal>
-    </article>
-  );
 }

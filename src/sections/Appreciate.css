@@ -22,259 +22,77 @@
   padding-top: clamp(40px, 7svh, 88px);
 }
 
-/* Journey tag selector: reads as a path (決志 → 受洗 → 課程 → 小組), not a filter bar. */
-.journey-tags {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px 16px;
-  margin-bottom: 16px;
-}
-
-.journey-tags__path {
+/* Same-size portrait grid (#20): everyone visible at once, names always shown so touch
+   screens never depend on hover. */
+.portrait-grid {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px 0;
-}
-
-.journey-tags__path li {
-  display: flex;
-  align-items: center;
-}
-
-.journey-tags__path li + li::before {
-  content: '';
-  width: 18px;
-  height: 2px;
-  margin-inline: 4px;
-  background: linear-gradient(90deg, var(--line-strong), var(--accent-dim));
-  border-radius: 1px;
-}
-
-.journey-tags__all,
-.journey-tags__step {
-  flex-shrink: 0;
-  white-space: nowrap;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 8px 14px;
-  border-radius: var(--radius-full);
-  border: 1px solid var(--line-strong);
-  background: rgb(var(--rgb-light) / 0.03);
-  color: var(--text-2);
-  font-size: 0.9375rem;
-  transition:
-    background-color 0.25s var(--ease-standard),
-    color 0.25s var(--ease-standard),
-    border-color 0.25s var(--ease-standard);
-}
-
-.journey-tags__all:hover,
-.journey-tags__step:hover {
-  border-color: var(--accent);
-  color: var(--text);
-}
-
-.journey-tags__all.is-on,
-.journey-tags__step.is-on {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--ink);
-}
-
-.journey-tags__num {
   display: grid;
-  place-items: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: 1px solid currentColor;
-  font-family: var(--font-display);
-  font-size: 0.6875rem;
-  font-weight: 700;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(16px, 2.4vw, 28px) clamp(12px, 2vw, 24px);
 }
 
-.journey-tags__en {
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  letter-spacing: 0.08em;
-  opacity: 0.75;
-}
-
-.journey-tags__count {
-  font-family: var(--font-display);
-  font-size: 0.75rem;
-  font-weight: 700;
-  opacity: 0.7;
-}
-
-@media (max-width: 560px) {
-  .journey-tags__en,
-  .journey-tags__num,
-  .journey-tags__step .journey-tags__count {
-    display: none;
-  }
-  .journey-tags__path {
-    flex-wrap: nowrap;
-  }
-  .journey-tags__path li + li::before {
-    width: 8px;
-    margin-inline: 2px;
-  }
-  .journey-tags__step,
-  .journey-tags__all {
-    padding-inline: 12px;
+@media (min-width: 640px) {
+  .portrait-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 360px) {
-  .journey-tags__step,
-  .journey-tags__all {
-    padding-inline: 10px;
-  }
-  .journey-tags__path li + li::before {
-    width: 6px;
+@media (min-width: 1000px) {
+  .portrait-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
 
-/* Floating stage */
-.float-stage {
-  position: relative;
-  margin-top: 8px;
-  min-height: 360px;
-}
-
-.float-stage__list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.floater {
-  position: absolute;
-  z-index: 1;
-  translate: -50% -50%;
-  animation: float-drift 20s ease-in-out infinite;
-}
-
-.float-stage.is-paused .floater,
-.floater:hover,
-.floater:focus-within {
-  animation-play-state: paused;
-}
-
-.floater.is-match {
-  z-index: 3;
-}
-
-.floater:hover,
-.floater:focus-within {
-  z-index: 4;
-}
-
-.floater__button {
-  position: relative;
-  display: block;
+.portrait {
+  display: grid;
+  gap: 10px;
   width: 100%;
   padding: 0;
   border: 0;
   background: none;
-  border-radius: 50%;
-  transition:
-    transform 0.6s var(--ease-out),
-    opacity 0.5s var(--ease-standard),
-    filter 0.5s var(--ease-standard);
+  color: var(--text);
+  text-align: center;
+  border-radius: var(--radius-md);
 }
 
-.floater__img {
+.portrait__img {
   width: 100%;
   height: auto;
   aspect-ratio: 1;
-  border-radius: 50%;
-  box-shadow:
-    0 10px 30px rgba(0, 0, 0, 0.35),
-    0 0 0 2px rgb(var(--rgb-light) / 0.1);
-  transition: box-shadow 0.4s var(--ease-standard);
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  background: var(--paper);
+  box-shadow: 0 0 0 1px rgb(var(--rgb-light) / 0.1);
+  transition:
+    box-shadow 0.3s var(--ease-standard),
+    transform 0.4s var(--ease-out);
 }
 
-.floater__button:hover .floater__img,
-.floater__button:focus-visible .floater__img {
-  box-shadow:
-    0 14px 36px rgba(0, 0, 0, 0.45),
-    0 0 0 3px var(--accent);
+.portrait:hover .portrait__img,
+.portrait:focus-visible .portrait__img {
+  box-shadow: 0 0 0 3px var(--accent);
+  transform: translateY(-3px);
 }
 
-.floater__button:focus-visible {
+.portrait:focus-visible {
   outline-offset: 6px;
 }
 
-.floater__name {
-  position: absolute;
-  left: 50%;
-  top: calc(100% + 6px);
-  translate: -50% 0;
-  padding: 2px 10px;
-  border-radius: var(--radius-full);
-  background: rgb(var(--rgb-base-deep) / 0.82);
-  font-size: 0.75rem;
-  white-space: nowrap;
-  color: var(--text);
-  opacity: 0;
-  transition: opacity 0.3s var(--ease-standard);
-  pointer-events: none;
-}
-
-.floater__button:hover .floater__name,
-.floater__button:focus-visible .floater__name,
-.floater.is-match .floater__name {
-  opacity: 1;
-}
-
-/* Focus mode: matches grow and get a gold ring; the rest shrink and fade but stay
-   in place and clickable (聚焦而不過濾, Q-23). */
-.floater.is-match .floater__button {
-  transform: scale(1.28);
-}
-
-.floater.is-match .floater__img {
-  box-shadow:
-    0 16px 40px rgba(0, 0, 0, 0.45),
-    0 0 0 3px var(--accent);
-}
-
-.floater.is-muted .floater__button {
-  transform: scale(0.74);
-  opacity: 0.38;
-  filter: grayscale(0.7);
-}
-
-.floater.is-muted .floater__button:hover,
-.floater.is-muted .floater__button:focus-visible {
-  opacity: 0.85;
-  filter: none;
-}
-
-@keyframes float-drift {
-  0%,
-  100% {
-    transform: translate(0, 0);
-  }
-  33% {
-    transform: translate(var(--dx1), var(--dy1));
-  }
-  66% {
-    transform: translate(var(--dx2), var(--dy2));
-  }
+.portrait__name {
+  font-size: 0.875rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .floater {
-    animation: none;
+  .portrait__img {
+    transition: box-shadow 0.3s var(--ease-standard);
+  }
+  .portrait:hover .portrait__img,
+  .portrait:focus-visible .portrait__img {
+    transform: none;
   }
 }
 
@@ -324,7 +142,7 @@
 }
 
 .testimony__name {
-  font-family: var(--font-display);
+  font-family: var(--font-info);
   font-weight: 800;
   font-size: clamp(1.75rem, 1.3rem + 2vw, 2.5rem);
   line-height: 1.1;

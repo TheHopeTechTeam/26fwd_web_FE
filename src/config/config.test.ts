@@ -8,7 +8,6 @@ describe('readConfig', () => {
     expect(config.apiMode).toBe('mock');
     expect(config.giveUrl).toBeNull();
     expect(config.ga4MeasurementId).toBeNull();
-    expect(config.prayerMapEmbedEnabled).toBe(false);
     expect(config.prayerMapUrl).toBe(DEFAULT_PRAYER_MAP_URL);
     expect(config.prayerMapPrivacyUrl).toBe('https://prayer-map-omega.vercel.app/privacy');
   });
@@ -25,7 +24,6 @@ describe('readConfig', () => {
   });
 
   it('parses boolean flags', () => {
-    expect(readConfig({ VITE_PRAYER_MAP_EMBED_ENABLED: 'true' }).prayerMapEmbedEnabled).toBe(true);
     expect(readConfig({ VITE_SHOW_PREVIEW_BADGE: 'false' }).showPreviewBadge).toBe(false);
   });
 

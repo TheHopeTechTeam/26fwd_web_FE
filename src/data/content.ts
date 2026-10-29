@@ -4,7 +4,7 @@
  * Keep content edits here rather than in the components.
  */
 
-export type ChapterId = 'appreciate' | 'transition' | 'anticipate' | 'respond';
+export type ChapterId = 'appreciate' | 'anticipate' | 'respond';
 
 export interface Chapter {
   id: ChapterId;
@@ -13,77 +13,59 @@ export interface Chapter {
   zh: string;
 }
 
-/** The four journey stops the right-hand rail tracks (US-01). */
+/**
+ * The three journey stops the right-hand rail tracks (US-01, #17). The separate Transition
+ * stop is gone; English names stay until BB／Ian confirm the Chinese ones.
+ */
 export const CHAPTERS: Chapter[] = [
   { id: 'appreciate', index: '01', en: 'Appreciate', zh: '感謝' },
-  { id: 'transition', index: '02', en: 'Transition', zh: '轉身' },
-  { id: 'anticipate', index: '03', en: 'Anticipate', zh: '期待' },
-  { id: 'respond', index: '04', en: 'Respond', zh: '回應' },
+  { id: 'anticipate', index: '02', en: 'Anticipate', zh: '期待' },
+  { id: 'respond', index: '03', en: 'Respond', zh: '回應' },
 ];
 
+/**
+ * Hero copy (#26). On desktop the title is baked into the KV, so `title` and the series line
+ * are read by screen readers only; on phones they are the visible title. The date is live
+ * text, never burned into the image (#26 A-2: 活動起始日 11/14).
+ */
 export const HERO = {
-  kicker: 'THE HOPE · SINCE 2019',
-  title: 'FORWARD',
-  year: '2026',
-  tagline: 'There is more',
+  title: 'THERE IS MORE',
+  series: '2026 FORWARD',
+  zh: '系列講道',
+  date: '11/14 起',
   lead: '感謝神過去七年的信實，一起期待祂要成就的更多。',
   cta: '開始旅程',
 };
 
 export const APPRECIATE = {
   title: '神的信實，寫在每一張臉上',
-  lead: '七年來，神在一個又一個生命裡留下記號。選一個信仰歷程聚焦，或直接點開一張臉，讀一段故事。',
+  lead: '七年來，神在一個又一個生命裡留下記號。點開任何一張臉，讀一段故事。',
   note: '示意人物為合成插畫與虛構故事（synthetic），正式見證素材與授權待 Online Campus 交付。',
 };
 
-export interface Mood {
-  id: 'still' | 'turning' | 'hope';
-  zh: string;
-  en: string;
-  description: string;
-  track: {
-    title: string;
-    artist: string;
-    src: string;
-    /** Seconds; used until the audio metadata loads. */
-    duration: number;
-    sourceUrl: string;
-    license: string;
-  };
+export interface Track {
+  title: string;
+  artist: string;
+  src: string;
+  sourceUrl: string;
+  license: string;
 }
 
-/** Resolved against the deploy base, so it works on every preview URL. */
-const AUDIO_SOURCE = 'audio/ATTRIBUTION.md';
-
-export const TRANSITION = {
-  title: '從感謝，轉身向前',
-  lead: '我們回頭看見神的信實，也誠實面對仍在路上的自己。選一段最貼近此刻的心情，按下播放，安靜幾分鐘，再一起往前走。',
+/**
+ * Site-wide background music behind the header toggle (#17 interim; GLB-02). Until #25 picks
+ * the songs and how they change by chapter, it plays one test track and never autoplays.
+ */
+export const MUSIC: { track: Track; note: string } = {
+  track: {
+    title: 'Still Waters',
+    artist: 'FORWARD Synth Lab（測試音訊）',
+    src: 'audio/still-waters.m4a',
+    // Resolved against the deploy base, so it works on every preview URL.
+    sourceUrl: 'audio/ATTRIBUTION.md',
+    license: 'CC0（本專案自製）',
+  },
   note: '測試音樂為本專案自製的合成曲目，正式選曲與授權待 COMMS 確認。',
 };
-
-export const MOODS: Mood[] = [
-  {
-    id: 'still',
-    zh: '沉靜感謝',
-    en: 'Still Gratitude',
-    description: '安靜下來，一件一件數算這一年的恩典。',
-    track: { title: 'Still Waters', artist: 'FORWARD Synth Lab（測試音訊）', src: 'audio/still-waters.m4a', duration: 90, sourceUrl: AUDIO_SOURCE, license: 'CC0（本專案自製）' },
-  },
-  {
-    id: 'turning',
-    zh: '誠實轉身',
-    en: 'Honest Turning',
-    description: '把遺憾、疲憊與還沒解決的問題，誠實地交給神。',
-    track: { title: 'Turning', artist: 'FORWARD Synth Lab（測試音訊）', src: 'audio/turning.m4a', duration: 72, sourceUrl: AUDIO_SOURCE, license: 'CC0（本專案自製）' },
-  },
-  {
-    id: 'hope',
-    zh: '盼望向前',
-    en: 'Hope Forward',
-    description: '抬起頭來，相信還有更多。There is more.',
-    track: { title: 'Daybreak', artist: 'FORWARD Synth Lab（測試音訊）', src: 'audio/daybreak.m4a', duration: 91, sourceUrl: AUDIO_SOURCE, license: 'CC0（本專案自製）' },
-  },
-];
 
 export interface Stat {
   value: number;
@@ -99,13 +81,16 @@ export interface Ministry {
   en: string;
   headline: string;
   body: string;
+  /** Empty until approved figures exist; the block then shows `pendingNote` instead. */
   stats: Stat[];
-  art: 'building' | 'missions' | 'outreach' | 'online';
+  /** Replaces the synthetic-stats note for an item whose figures are still pending. */
+  pendingNote?: string;
+  art: 'building' | 'missions' | 'outreach' | 'online' | 'cities';
 }
 
 export const ANTICIPATE = {
   title: '神要帶我們去的地方',
-  lead: '四項事工，加上一面代禱的牆。這是我們一起期待、也一起預備的未來。',
+  lead: '五項事工，加上一面代禱的牆。這是我們一起期待、也一起預備的未來。',
   statsNote: '示意數據，正式數字與統計口徑待 COMMS 交付。',
   artNote: '圖像待 COMMS 交付',
 };
@@ -165,16 +150,31 @@ export const MINISTRIES: Ministry[] = [
     ],
     art: 'online',
   },
+  /*
+   * The fifth ministry (#18). Name is provisional and nothing here is invented: copy,
+   * figures and imagery all wait for Comms. The online item's 「觸及城市」 is a
+   * different figure and must not stand in for this one.
+   */
+  {
+    id: 'cities',
+    index: '05',
+    zh: '其他城市分布',
+    en: 'Other Cities',
+    headline: '標題待 COMMS 提供',
+    body: '其他城市分布的介紹文字、照片與數據，待 COMMS 提供後替換（名稱為暫稱）。',
+    stats: [],
+    pendingNote: '城市數據待 COMMS 交付。',
+    art: 'cities',
+  },
 ];
 
-export const ONE_WALL = {
-  index: '05',
-  en: 'The One Wall',
-  zh: '代禱牆',
-  headline: '一起為彼此禱告',
-  body: 'The One Wall 直接連到 Prayer Map：在地圖上為城市、為彼此代禱。往前走的路上，沒有人需要獨自禱告。',
-  blocked: 'Prayer Map 目前尚未開放在其他網站內嵌顯示，請在新分頁開啟。',
-  privacy: '本頁不會把你在 FORWARD 網站填寫的任何資料傳送到 Prayer Map。',
+/**
+ * Low-key Prayer Map link after the Give finale (#19, US-11). Wording and URL await
+ * BB / Comms / Ian; nothing from this site is sent along (no query, no referrer).
+ */
+export const PRAYER_LINK = {
+  lead: '也想為城市與彼此禱告？',
+  label: '前往 Prayer Map 代禱',
 };
 
 export const RESPOND = {
