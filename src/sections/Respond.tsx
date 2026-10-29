@@ -8,6 +8,7 @@ import { useToast } from '../components/Toast';
 import { Turnstile } from '../components/Turnstile';
 import { config, pageUrl } from '../config/env';
 import { FINALE, PRAYER_LINK, RESPOND } from '../data/content';
+import { trackEvent } from '../lib/analytics';
 import { CARD_FORMATS, CARD_THEMES, PROMPTS, renderCardBlob, type CardContent, type CardFormat, type CardTheme } from '../lib/canvasCard';
 import {
   FIELD_ERROR_TEXT,
@@ -15,13 +16,18 @@ import {
   codePointLength,
   normalizeNewlines,
   truncateCodePoints,
-  validateDraft,
+  validateFields,
   type CardField,
   type DraftErrors,
 } from '../lib/text';
 import './Respond.css';
 
-/** 04 · Respond: Forward Card (US-07/09), a peek at the wall (US-10), and Give (US-12). */
+/**
+ * 04 · Respond: Forward Card (US-07/09), a peek at the wall (US-10), and Give (US-12).
+ * Making the personal card and publishing it are separate steps (#23: an unpublished card
+ * can still be saved): the card is drawn in the browser first, and only a visitor who then
+ * agrees to publish sends it to the server for review.
+ */
 export function Respond() {
   return (
     <section id="respond" className="chapter respond" tabIndex={-1} aria-labelledby="respond-title">
@@ -47,16 +53,10 @@ const EMPTY = { nickname: '', text_gratitude: '', text_anticipate: '' };
 
 function ForwardCardForm() {
   const [values, setValues] = useState<Record<CardField, string>>(EMPTY);
-  const [agreed, setAgreed] = useState(false);
   const [honeypot, setHoneypot] = useState('');
   const [exceeded, setExceeded] = useState<Partial<Record<CardField, boolean>>>({});
   const [errors, setErrors] = useState<DraftErrors>({});
-  const [status, setStatus] = useState<'idle' | 'submitting'>('idle');
-  const [formError, setFormError] = useState<string | null>(null);
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const [turnstileReset, setTurnstileReset] = useState(0);
   const [result, setResult] = useState<CardContent | null>(null);
-  const submitting = useRef(false);
   const fieldRefs = useRef<Partial<Record<CardField, HTMLInputElement | HTMLTextAreaElement | null>>>({});
 
   const onChange = (field: CardField) => (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -67,55 +67,35 @@ function ForwardCardForm() {
     if (errors[field]) setErrors((e) => ({ ...e, [field]: undefined }));
   };
 
-  const onSubmit = async (event: FormEvent) => {
-    event.preventDefault();
-    if (submitting.current) return;
-    setFormError(null);
+  const focusFirstError = (found: DraftErrors) => {
+    const first = (['text_gratitude', 'text_anticipate', 'nickname'] as CardField[]).find((f) => found[f]);
+    if (first) fieldRefs.current[first]?.focus();
+  };
 
-    const found = validateDraft({ ...values, agreed_to_publish: agreed });
+  // Making the card is local: nothing is sent until the visitor chooses to publish it.
+  const onSubmit = (event: FormEvent) => {
+    event.preventDefault();
+    const found = validateFields(values);
     if (Object.values(found).some(Boolean)) {
       setErrors(found);
-      const first = (['text_gratitude', 'text_anticipate', 'nickname'] as CardField[]).find((f) => found[f]);
-      if (first) fieldRefs.current[first]?.focus();
+      focusFirstError(found);
       return;
     }
-    if (config.turnstileSiteKey && !turnstileToken) {
-      setFormError('請先完成下方的人機驗證。');
-      return;
-    }
+    trackEvent('create_card');
+    setResult({ nickname: values.nickname.trim(), text_gratitude: values.text_gratitude.trim(), text_anticipate: values.text_anticipate.trim() });
+  };
 
-    submitting.current = true;
-    setStatus('submitting');
-    const payload = {
-      nickname: values.nickname.trim(),
-      text_gratitude: values.text_gratitude.trim(),
-      text_anticipate: values.text_anticipate.trim(),
-      agreed_to_publish: true as const,
-      honeypot,
-      ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
-    };
-    try {
-      await api.submitCard(payload);
-      setResult({ nickname: payload.nickname, text_gratitude: payload.text_gratitude, text_anticipate: payload.text_anticipate });
-      setValues(EMPTY);
-      setAgreed(false);
-      setExceeded({});
-      setErrors({});
-    } catch (error) {
-      setFormError(describeError(error));
-      if (error instanceof ApiError && error.fields) {
-        const mapped: DraftErrors = {};
-        for (const field of Object.keys(LIMITS) as CardField[]) {
-          const code = error.fields[field];
-          if (code) mapped[field] = code === 'too_long' || code === 'invalid_chars' ? code : 'required';
-        }
-        setErrors(mapped);
-      }
-    } finally {
-      submitting.current = false;
-      setStatus('idle');
-      if (config.turnstileSiteKey) setTurnstileReset((n) => n + 1);
-    }
+  const onPublished = () => {
+    setValues(EMPTY);
+    setExceeded({});
+    setErrors({});
+  };
+
+  // The server rejected a field: close the card so the visitor can fix the form.
+  const onFieldErrors = (found: DraftErrors) => {
+    setResult(null);
+    setErrors(found);
+    requestAnimationFrame(() => focusFirstError(found));
   };
 
   const field = (name: CardField, label: string, multiline: boolean, hint?: string) => {
@@ -130,7 +110,6 @@ function ForwardCardForm() {
       onChange: onChange(name),
       'aria-invalid': error ? true : undefined,
       'aria-describedby': describedBy,
-      disabled: status === 'submitting',
     };
     return (
       <div className={`cardform__field ${multiline ? 'cardform__field--text' : ''} ${error ? 'has-error' : ''}`}>
@@ -204,49 +183,26 @@ function ForwardCardForm() {
               <ul>
                 <li>請勿寫下自己或他人的電話、地址、LINE ID 等聯絡方式。</li>
                 <li>提到家人、孩子、健康等私密細節時，請斟酌描述。</li>
-                <li>卡片會先由團隊審閱，通過後才會公開；不符合主題的內容可能不會刊出。</li>
+                <li>做好的卡片可以先下載保存；要不要公開到卡片牆，之後再決定。</li>
               </ul>
             </div>
 
-            <label className={`cardform__consent ${errors.agreed_to_publish ? 'has-error' : ''}`}>
-              <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} disabled={status === 'submitting'} />
-              <span>
-                我同意將這張卡片（署名與兩段內容）公開分享於 FORWARD 網站的卡片牆，並了解卡片需經團隊審閱後才會公開。
-                <a href={pageUrl('privacy/')} target="_blank" rel="noopener">
-                  隱私與資料說明
-                </a>
-              </span>
-            </label>
-
-            {config.turnstileSiteKey && (
-              <Turnstile siteKey={config.turnstileSiteKey} onToken={setTurnstileToken} resetKey={turnstileReset} />
-            )}
-
             <div className="cardform__submit">
-              <button type="submit" className="btn btn--gold btn--lg" disabled={!agreed || status === 'submitting'} aria-describedby={!agreed ? 'consent-needed' : undefined}>
-                {status === 'submitting' ? (
-                  <>
-                    <span className="spinner" /> 送出中…
-                  </>
-                ) : (
-                  '送出卡片'
-                )}
+              <button type="submit" className="btn btn--gold btn--lg">
+                製作我的卡片
               </button>
-              {!agreed && (
-                <span id="consent-needed" className="cardform__hint">
-                  勾選同意後即可送出
-                </span>
-              )}
-            </div>
-            <div role="alert" className="cardform__alert">
-              {formError}
             </div>
           </div>
         </form>
       </Reveal>
 
       <Modal open={result !== null} onClose={() => setResult(null)} labelledBy="card-result-title" className="card-result-modal">
-        {result && <CardResult content={result} />}
+        {result && (
+          <>
+            <CardResult content={result} />
+            <PublishCard content={result} honeypot={honeypot} onPublished={onPublished} onFieldErrors={onFieldErrors} />
+          </>
+        )}
       </Modal>
     </>
   );
@@ -323,11 +279,10 @@ function CardResult({ content }: { content: CardContent }) {
   return (
     <div className="card-result" ref={hostRef}>
       <div className="card-result__intro">
-        <p className="kicker">Sent · 已送出</p>
+        <p className="kicker">Your Card · 你的卡片</p>
         <h3 id="card-result-title" className="card-result__title display-zh">
           謝謝你寫下這張卡片！
         </h3>
-        <p className="card-result__status">卡片已送出，將由團隊審閱後公開在 Forward Cards 卡片牆。</p>
         <p className="card-result__cta">恭喜完成！立即下載專屬 Forward Card 保存，或分享到社群！</p>
       </div>
 
@@ -370,11 +325,117 @@ function CardResult({ content }: { content: CardContent }) {
           分享
         </button>
       </div>
-      <p className="note">手機可長按上方圖片儲存到相簿。下載或分享個人卡片，不代表卡片已出現在公開卡片牆。</p>
-      <a className="card-result__wall" href={pageUrl('cards/')}>
-        看看大家寫的卡片 →
-      </a>
+      <p className="note">手機可長按上方圖片儲存到相簿。下載或分享個人卡片，不會公開到卡片牆。</p>
       {toastElement}
+    </div>
+  );
+}
+
+interface PublishCardProps {
+  content: CardContent;
+  honeypot: string;
+  onPublished: () => void;
+  onFieldErrors: (errors: DraftErrors) => void;
+}
+
+/** The optional second step: consent, then send the card for review (US-07). */
+function PublishCard({ content, honeypot, onPublished, onFieldErrors }: PublishCardProps) {
+  const [agreed, setAgreed] = useState(false);
+  const [status, setStatus] = useState<'idle' | 'submitting' | 'done'>('idle');
+  const [error, setError] = useState<string | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileReset, setTurnstileReset] = useState(0);
+  const submitting = useRef(false);
+
+  const publish = async () => {
+    if (submitting.current || !agreed) return;
+    setError(null);
+    if (config.turnstileSiteKey && !turnstileToken) {
+      setError('請先完成上方的人機驗證。');
+      return;
+    }
+    submitting.current = true;
+    setStatus('submitting');
+    try {
+      await api.submitCard({
+        ...content,
+        agreed_to_publish: true,
+        honeypot,
+        ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
+      });
+      setStatus('done');
+      onPublished();
+    } catch (err) {
+      setStatus('idle');
+      if (err instanceof ApiError && err.fields) {
+        const mapped: DraftErrors = {};
+        for (const field of Object.keys(LIMITS) as CardField[]) {
+          const code = err.fields[field];
+          if (code) mapped[field] = code === 'too_long' || code === 'invalid_chars' ? code : 'required';
+        }
+        if (Object.keys(mapped).length) {
+          onFieldErrors(mapped);
+          return;
+        }
+      }
+      setError(describeError(err));
+    } finally {
+      submitting.current = false;
+      if (config.turnstileSiteKey) setTurnstileReset((n) => n + 1);
+    }
+  };
+
+  if (status === 'done') {
+    return (
+      <div className="card-publish card-publish--done" role="status">
+        <p className="card-publish__title display-zh">已送出到卡片牆！</p>
+        <p>卡片會先經過審核，通過後就會出現在 Forward Cards 卡片牆。</p>
+        <a className="card-publish__wall" href={pageUrl('cards/')}>
+          看看大家寫的卡片 →
+        </a>
+      </div>
+    );
+  }
+
+  return (
+    <div className="card-publish">
+      <p className="card-publish__title display-zh">也想公開到卡片牆嗎？</p>
+      <p className="card-publish__lead">和大家一起分享你的感謝與期待。不公開也沒關係，你的卡片已經可以下載保存。</p>
+      <label className="cardform__consent">
+        <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} disabled={status === 'submitting'} />
+        <span>
+          我同意將這張卡片（署名與兩段內容）公開分享於 FORWARD 網站的卡片牆，並了解卡片需經審核後才會公開。
+          <a href={pageUrl('privacy/')} target="_blank" rel="noopener">
+            隱私與資料說明
+          </a>
+        </span>
+      </label>
+      {config.turnstileSiteKey && <Turnstile siteKey={config.turnstileSiteKey} onToken={setTurnstileToken} resetKey={turnstileReset} />}
+      <div className="cardform__submit">
+        <button
+          type="button"
+          className="btn btn--outline"
+          onClick={publish}
+          disabled={!agreed || status === 'submitting'}
+          aria-describedby={!agreed ? 'publish-consent-needed' : undefined}
+        >
+          {status === 'submitting' ? (
+            <>
+              <span className="spinner" /> 送出中…
+            </>
+          ) : (
+            '公開到卡片牆'
+          )}
+        </button>
+        {!agreed && (
+          <span id="publish-consent-needed" className="cardform__hint">
+            勾選同意後即可送出
+          </span>
+        )}
+      </div>
+      <div role="alert" className="cardform__alert">
+        {error}
+      </div>
     </div>
   );
 }
@@ -434,14 +495,14 @@ function Finale() {
           <p className="finale__body">{FINALE.body}</p>
           <GiveButton placement="respond_finale" label={FINALE.cta} className="btn btn--dark btn--lg finale__give" disabledHint={FINALE.disabled} />
           {!config.giveUrl && <p className="finale__hint">{FINALE.disabled}</p>}
-          <p className="finale__prayer">
-            {PRAYER_LINK.lead}
-            <a href={config.prayerMapUrl} target="_blank" rel="noopener noreferrer">
+          <div className="finale__prayer">
+            <p className="finale__body">{PRAYER_LINK.lead}</p>
+            <a className="btn btn--lg finale__prayer-link" href={config.prayerMapUrl} target="_blank" rel="noopener noreferrer">
               {PRAYER_LINK.label}
-              <span aria-hidden="true"> ↗</span>
+              <span aria-hidden="true">↗</span>
               <span className="sr-only">（在新分頁開啟）</span>
             </a>
-          </p>
+          </div>
         </Reveal>
       </div>
     </div>

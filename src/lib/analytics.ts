@@ -28,7 +28,9 @@ export function initAnalytics(measurementId: string | null): void {
 }
 
 /** Event names only — no nickname, card text or any other custom payload. */
-export type TrackedEvent = 'click_give_cta';
+// create_card counts people who made a card, including those who never publish it (those
+// cards never reach the server, so this is the only participation count for them).
+export type TrackedEvent = 'click_give_cta' | 'create_card';
 
 export function trackEvent(name: TrackedEvent): void {
   window.gtag?.('event', name);

@@ -179,7 +179,7 @@ export const PRAYER_LINK = {
 
 export const RESPOND = {
   title: 'Write it forward',
-  lead: '寫下一張屬於你的 Forward Card：一句感謝，一個期待。送出後由團隊審閱，再公開到卡片牆與全 Hope Nation 分享。',
+  lead: '寫下一張屬於你的 Forward Card：一句感謝，一個期待。做好的卡片可以下載保存，也可以選擇公開到卡片牆，與全 Hope Nation 分享。',
 };
 
 export const FINALE = {

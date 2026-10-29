@@ -238,10 +238,6 @@
   font-size: clamp(1.5rem, 1.2rem + 1.4vw, 2.125rem);
 }
 
-.card-result__status {
-  color: var(--text-2);
-}
-
 .card-result__cta {
   padding: 10px 14px;
   border-radius: var(--radius-sm);
@@ -363,11 +359,30 @@
   gap: 12px;
 }
 
-.card-result__wall {
-  justify-self: center;
+.card-publish {
+  display: grid;
+  gap: 14px;
+  margin: 0 clamp(24px, 4vw, 40px) clamp(24px, 4vw, 40px);
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+
+.card-publish__title {
+  font-family: var(--font-heading-zh);
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+
+.card-publish__lead,
+.card-publish--done p:not(.card-publish__title) {
+  color: var(--text-2);
+}
+
+.card-publish__wall {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
+  color: var(--accent);
 }
 
 .card-result .toast-region {
@@ -473,27 +488,26 @@
   color: rgb(var(--rgb-base) / 0.72);
 }
 
-/* Prayer Map (#19): text only, well below the Give button so it never competes with it. */
+/* Prayer Map (#19): same size as Give, but outlined so Give stays the main action. */
 .finale__prayer {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0 10px;
-  margin-top: 6px;
-  font-size: 0.9375rem;
-  color: rgb(var(--rgb-base) / 0.78);
+  display: grid;
+  gap: 14px;
+  justify-items: start;
+  margin-top: 18px;
+  padding-top: 26px;
+  border-top: 1px solid rgb(var(--rgb-base) / 0.18);
 }
 
-.finale__prayer a {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
+.finale__prayer-link {
+  border-color: var(--ink);
   color: var(--ink);
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
+  background: transparent;
 }
 
-.finale__prayer a:focus-visible {
+.finale__prayer-link:hover {
+  background: rgb(var(--rgb-base) / 0.08);
+}
+
+.finale__prayer-link:focus-visible {
   outline-color: var(--ink);
 }
