@@ -11,7 +11,8 @@ const TABS: Array<{ status: CardStatus; label: string }> = [
   { status: 'hidden', label: '已隱藏' },
 ];
 
-type Action = { id: string; next: 'approved' | 'hidden' };
+// `from`: the status the card was listed with; if someone has changed it since, the API answers 409.
+type Action = { id: string; next: 'approved' | 'hidden'; from: CardStatus };
 
 const ACTION_LABEL: Record<Action['next'], { verb: string; confirm: string; done: string }> = {
   approved: { verb: '核准公開', confirm: '確認公開這張卡片？', done: '已核准，卡片將出現在公開卡片牆（快取最長約 15 秒）。' },
@@ -166,8 +167,8 @@ function ReviewConsole({ token, onUnauthorized }: { token: string; onUnauthorize
     setBusyId(action.id);
     setMessage(null);
     try {
-      if (action.next === 'hidden') await api.adminHide(token, action.id);
-      else await api.adminSetStatus(token, action.id, 'approved');
+      if (action.next === 'hidden') await api.adminHide(token, action.id, action.from);
+      else await api.adminSetStatus(token, action.id, 'approved', action.from);
       setItems((list) => list.filter((c) => c.id !== action.id));
       setMessage({ tone: 'ok', text: ACTION_LABEL[action.next].done });
       setConfirming(null);
@@ -271,7 +272,7 @@ function ReviewConsole({ token, onUnauthorized }: { token: string; onUnauthorize
                         key={next}
                         type="button"
                         className={`btn btn--sm ${next === 'approved' ? 'btn--gold' : 'btn--outline'}`}
-                        onClick={() => setConfirming({ id: card.id, next })}
+                        onClick={() => setConfirming({ id: card.id, next, from: card.status })}
                         disabled={!!busyId}
                       >
                         {card.status === 'hidden' && next === 'approved' ? '重新公開' : ACTION_LABEL[next].verb}

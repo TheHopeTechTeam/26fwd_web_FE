@@ -51,14 +51,47 @@ export interface ListCardsResponse {
   pagination: Pagination;
 }
 
+/**
+ * The model's judgment of a card (M1.6). `outcome`: clear = no reason to hold it, flagged = some
+ * reason, the rest = no usable answer (the card stays pending). Never contains card text.
+ */
+export interface AdminModeration {
+  model: string;
+  /** 12-character version of the questions used; null when none were configured. */
+  questions_version: string | null;
+  outcome: 'clear' | 'flagged' | 'questions_missing' | 'timeout' | 'model_error' | 'invalid_output';
+  reason: string | null;
+  reason_probability: number | null;
+  needs_attention_probability: number | null;
+  /** True only when this judgment published the card. */
+  auto_published: boolean;
+  judged_at: string;
+}
+
 export interface AdminCard extends PublicCard {
   status: CardStatus;
+  /** Null when the card was not judged, e.g. while auto-publish is off. */
+  moderation?: AdminModeration | null;
 }
 
 /** GET /api/admin/cards?status=pending — newest first, at most 100 rows. */
 export interface AdminListResponse {
   items: AdminCard[];
   has_more: boolean;
+}
+
+/**
+ * PATCH /api/admin/cards/:id/status body. `from` (required) is the status the reviewer saw: the
+ * change applies only while the card still has that status, otherwise 409 CARD_STATUS_CHANGED.
+ */
+export interface AdminStatusRequest {
+  status: Exclude<CardStatus, 'pending'>;
+  from: CardStatus;
+}
+
+/** PATCH /api/admin/cards/:id/hide body: `from` as in AdminStatusRequest. */
+export interface AdminHideRequest {
+  from: CardStatus;
 }
 
 /** PATCH /api/admin/cards/:id/status and PATCH /api/admin/cards/:id/hide */
@@ -78,10 +111,15 @@ export type ApiErrorCode =
   | 'UNAUTHORIZED'
   | 'NOT_FOUND'
   | 'METHOD_NOT_ALLOWED'
+  /** 409 on the admin status and hide endpoints: someone else changed the card first. */
+  | 'CARD_STATUS_CHANGED'
   | 'SERVICE_UNAVAILABLE'
   | 'INTERNAL_ERROR';
 
-/** Every non-2xx response body. `fields` only appears on VALIDATION_ERROR. */
+/**
+ * Every non-2xx response body. `fields` only appears on VALIDATION_ERROR, `current_status` only on
+ * CARD_STATUS_CHANGED.
+ */
 export interface ApiErrorBody {
   success: false;
   error: {
@@ -89,6 +127,7 @@ export interface ApiErrorBody {
     message: string;
     fields?: Record<string, string>;
     retry_after_seconds?: number;
+    current_status?: CardStatus;
   };
 }
 

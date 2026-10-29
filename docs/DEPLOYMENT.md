@@ -57,14 +57,17 @@ npx wrangler d1 create forward_cards_prod
 npx wrangler d1 execute forward_cards_staging --remote --file=./migrations/0001_initial.sql
 npx wrangler d1 execute forward_cards_staging --remote --file=./migrations/0002_client_token_rate_limits.sql
 npx wrangler d1 execute forward_cards_staging --remote --file=./migrations/0003_approved_card_count.sql
+npx wrangler d1 execute forward_cards_staging --remote --file=./migrations/0004_moderation.sql
 npx wrangler d1 execute forward_cards_prod --remote --file=./migrations/0001_initial.sql
 npx wrangler d1 execute forward_cards_prod --remote --file=./migrations/0002_client_token_rate_limits.sql
 npx wrangler d1 execute forward_cards_prod --remote --file=./migrations/0003_approved_card_count.sql
+npx wrangler d1 execute forward_cards_prod --remote --file=./migrations/0004_moderation.sql
 ```
 
 > - 已經套用過的 migration 不可修改，之後的變更一律新增下一個編號。
 > - `0002` 會把限流表的鍵欄位改名，**舊版程式在套用後無法送卡**。對已上線的資料庫，套用 `0002` 後要立刻部署包含 Client Token 的版本；新建的資料庫（例如 M4 的正式庫）則在第一次部署前套用即可。
 > - `0003` 新增「已核准總數」小表與三個觸發器，以當下已核准的張數為起點。與部署的先後順序不影響運作：尚未套用時，卡片牆會改為逐張計數並在 log 記錄錯誤。重新執行一次會依實際卡片重新計算總數，可用來修正總數。
+> - `0004` 新增自動公開開關（預設關閉）、模型判斷紀錄表與狀態變更紀錄表。**要在部署 M1.6 的程式之前套用**：後台列表會讀判斷紀錄表，核准與隱藏會寫入狀態變更紀錄，未套用時這些操作都會失敗。套用後舊版程式不受影響。
 
 #### `0003` 的對帳與回復
 
@@ -115,6 +118,50 @@ CARD_SUBMISSIONS_ENABLED=true
 > - `TURNSTILE_SECRET_KEY`、`ADMIN_API_TOKEN`、`RATE_LIMIT_SALT`、`CLIENT_TOKEN_SECRET` 在 Cloudflare Pages 要設為 **Secret（加密）**類型，不要用明文變數。`CLIENT_TOKEN_SECRET` 至少 32 字元，可用 `openssl rand -base64 48` 產生；staging 與正式環境要用不同的值。更換它會讓所有 Client Token 立即失效（前端會自動重領）。
 > - `VITE_*` 在 build 時寫入前端 bundle，修改後需重新部署才會生效。
 > - Turnstile 的 hostname 檢查只接受主網址；Pages 每次部署的預覽網址（`<hash>.26fwd-staging.pages.dev`）會被拒絕，驗收請使用主網址。
+
+#### 模型判斷與自動公開（M1.6）
+
+| 設定 | 位置 | 說明 |
+| --- | --- | --- |
+| Workers AI 綁定 `AI` | Pages 專案 → Settings → Bindings | 呼叫 `@cf/cloudflare/clef`。沒有綁定時，每張卡都記錄 `model_error` 並維持待審 |
+| `MODERATION_QUESTIONS` | **Secret（加密）** | 題目（prompt）JSON，內容只放在私有 repo `26fwd-moderation-eval`，**不可放進本 repo、PR 或任何公開留言**。沒有設定或格式不對時，每張卡都記錄 `questions_missing` 並維持待審。修改後要重新部署才會生效 |
+| 自動公開開關 | D1 `app_settings` 表的 `auto_publish` | `0004` 建立時為 `off`。**只有值剛好是 `on` 才會自動公開**；改值後下一張卡就生效，不需重新部署 |
+
+```bash
+# 設定題目（從私有 repo 的檔案讀入，不要貼在指令列上）
+npx wrangler pages secret put MODERATION_QUESTIONS --project-name 26fwd-staging < ../26fwd-moderation-eval/questions.json
+
+# 查看開關
+npx wrangler d1 execute forward_cards_staging --remote --command "SELECT value, updated_at FROM app_settings WHERE key = 'auto_publish'"
+# 關閉（切回全人工，下一張卡起生效）
+npx wrangler d1 execute forward_cards_staging --remote --command "UPDATE app_settings SET value = 'off', updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE key = 'auto_publish'"
+# 開啟（只在 Ian 同意後執行）
+npx wrangler d1 execute forward_cards_staging --remote --command "UPDATE app_settings SET value = 'on', updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE key = 'auto_publish'"
+
+# 列出某段時間內被自動公開的卡（例如切回全人工後，需要逐張檢查時）
+npx wrangler d1 execute forward_cards_staging --remote --command "SELECT m.card_id, m.judged_at, c.status FROM card_moderations m JOIN forward_cards c ON c.id = m.card_id WHERE m.auto_published = 1 AND m.judged_at BETWEEN '<開始 ISO 時間>' AND '<結束 ISO 時間>' ORDER BY m.judged_at"
+
+# 被模型自動公開、之後又被審核者隱藏的卡數（UAT 用）
+npx wrangler d1 execute forward_cards_staging --remote --command "SELECT COUNT(DISTINCT m.card_id) AS auto_published, COUNT(DISTINCT r.card_id) AS hidden_later FROM card_status_changes m LEFT JOIN card_status_changes r ON r.card_id = m.card_id AND r.id > m.id AND r.actor = 'reviewer' AND r.to_status = 'hidden' WHERE m.actor = 'model'"
+```
+
+> - 判斷在回覆送卡請求之後於背景執行（`waitUntil`），使用者不用等待模型；判斷失敗、逾時（5 秒）或背景工作沒有執行完，卡片都維持待審。
+> - 自動公開只在卡片仍是待審時發生：審核者已經處理過的卡，不會被模型覆蓋。
+> - 開關關閉時完全不呼叫模型，不使用 Workers AI 額度。開啟時若額度用完，之後的卡會記錄 `model_error` 並留給審核人員。
+> - 狀態變更紀錄 `card_status_changes`：模型自動公開，以及審核者的每次核准、隱藏，各記一筆（原狀態、新狀態、`model`／`reviewer`、時間），不含卡片內文，隨卡片刪除。審核者共用管理金鑰，所以無法區分是哪一位。
+> - 這一版的後台畫面在核准、隱藏時會帶上審核者看到的狀態（`from`，後端改為必填）。畫面與後端在同一次部署生效；部署前就開著的後台頁面送出會被拒絕（400），整頁重新整理即可。
+
+**停用與回復**（套用 `0004` 前先記下 Time Travel 書籤：`npx wrangler d1 time-travel info forward_cards_staging`）
+- **只是要停用自動公開**：不需要回復，把開關改成 `off`（上面的指令）即可，下一張卡起生效。
+- **只回復程式**：部署前一版即可。舊程式不會用到 `0004` 的三張表，表留著不影響運作。
+- **回復 `0004`**：**一定要先回復程式**，因為新程式的後台列表、核准與隱藏都會用到這些表，表不存在時會失敗。刪表會一併刪除判斷紀錄與狀態變更紀錄，需要保留時先匯出（匯出檔含判斷結果，不要放進 repo）：
+  ```bash
+  npx wrangler d1 export forward_cards_staging --remote --table card_moderations --output card_moderations.sql
+  npx wrangler d1 export forward_cards_staging --remote --table card_status_changes --output card_status_changes.sql
+  npx wrangler d1 execute forward_cards_staging --remote --command "DROP TABLE IF EXISTS card_status_changes; DROP TABLE IF EXISTS card_moderations; DROP TABLE IF EXISTS app_settings"
+  ```
+  卡片資料不受影響；之後要恢復，重新執行 `0004` 即可，開關會回到 `off`。
+- **Time Travel 還原**（`npx wrangler d1 time-travel restore forward_cards_staging --bookmark=<書籤>`）會連同書籤之後新增或變更的卡片一起還原，只在必要時使用。
 
 #### Staging 壓測模式 `LOAD_TEST_MODE`（只用於 #5 的 300 人壓測）
 

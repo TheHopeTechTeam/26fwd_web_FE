@@ -136,11 +136,13 @@ paths:
           application/json:
             schema:
               type: object
-              required: [status]
+              required: [status, from]
               properties:
                 status:
                   type: string
                   enum: [approved, hidden]
+                from:
+                  $ref: '#/components/schemas/ExpectedStatus'
       responses:
         '200':
           description: Updated
@@ -154,6 +156,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/StatusChanged'
   /api/admin/cards/{id}/hide:
     patch:
       tags: [admin]
@@ -162,6 +166,16 @@ paths:
       security: [{ adminToken: [] }]
       parameters:
         - $ref: '#/components/parameters/CardId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [from]
+              properties:
+                from:
+                  $ref: '#/components/schemas/ExpectedStatus'
       responses:
         '200':
           description: Hidden
@@ -169,10 +183,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AdminStatusResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/StatusChanged'
 components:
   securitySchemes:
     adminToken:
@@ -252,10 +270,43 @@ components:
       allOf:
         - $ref: '#/components/schemas/PublicCard'
         - type: object
-          required: [status]
+          required: [status, moderation]
           properties:
             status:
               $ref: '#/components/schemas/CardStatus'
+            moderation:
+              description: The model's judgment (M1.6); null when the card was not judged, e.g. while auto-publish is off.
+              nullable: true
+              allOf:
+                - $ref: '#/components/schemas/AdminModeration'
+    AdminModeration:
+      type: object
+      description: Never contains card text.
+      required: [model, questions_version, outcome, reason, reason_probability, needs_attention_probability, auto_published, judged_at]
+      properties:
+        model: { type: string, example: '@cf/cloudflare/clef' }
+        questions_version:
+          type: string
+          nullable: true
+          description: 12-character SHA-256 prefix of the questions used; null when none were configured.
+        outcome:
+          type: string
+          enum: [clear, flagged, questions_missing, timeout, model_error, invalid_output]
+          description: clear = no reason to hold the card; flagged = some reason; the rest = no usable answer, so the card stays pending.
+        reason: { type: string, nullable: true }
+        reason_probability: { type: number, nullable: true }
+        needs_attention_probability: { type: number, nullable: true }
+        auto_published:
+          type: boolean
+          description: True only when this judgment published the card.
+        judged_at: { type: string, format: date-time }
+    ExpectedStatus:
+      description: |
+        The status the reviewer saw when acting (required). The change applies only while the card
+        still has that status; if someone else changed it first the answer is 409 CARD_STATUS_CHANGED
+        with the card's status now, and nothing is overwritten. Missing: 400 with fields.from required.
+      allOf:
+        - $ref: '#/components/schemas/CardStatus'
     Pagination:
       type: object
       required: [page, limit, has_more, total_count]
@@ -316,6 +367,7 @@ components:
                 - UNAUTHORIZED
                 - NOT_FOUND
                 - METHOD_NOT_ALLOWED
+                - CARD_STATUS_CHANGED
                 - SERVICE_UNAVAILABLE
                 - INTERNAL_ERROR
             message:
@@ -328,6 +380,10 @@ components:
                 enum: [required, too_long, invalid_chars, must_be_true, invalid]
             retry_after_seconds:
               type: integer
+            current_status:
+              description: Only on CARD_STATUS_CHANGED, the card's status now.
+              allOf:
+                - $ref: '#/components/schemas/CardStatus'
   responses:
     Error:
       description: Error
@@ -384,3 +440,17 @@ components:
               code: RATE_LIMITED
               message: Too many requests
               retry_after_seconds: 42
+    StatusChanged:
+      description: |
+        Someone else changed the card after the reviewer loaded it, so this change was not applied.
+        current_status is the card's status now; refresh before acting again.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            success: false
+            error:
+              code: CARD_STATUS_CHANGED
+              message: The card was changed by someone else
+              current_status: hidden

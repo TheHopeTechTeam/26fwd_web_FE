@@ -31,6 +31,7 @@
 
 - `fields` 只在 `VALIDATION_ERROR` 出現；值為 `required`｜`too_long`｜`invalid_chars`｜`must_be_true`｜`invalid`。
 - `retry_after_seconds` 只在 `RATE_LIMITED` 出現，並同時送 `Retry-After` header。
+- `current_status` 只在 `CARD_STATUS_CHANGED` 出現：卡片目前的狀態。
 - `message` 給工程除錯用（英文即可），**前端不會直接顯示**，也不應包含判斷規則或命中詞（US-16）。
 
 | HTTP | `error.code` | 何時 | 前端顯示 |
@@ -41,6 +42,7 @@
 | 401 | `UNAUTHORIZED` | admin token 缺少或錯誤 | 驗證失敗，請重新輸入管理金鑰。 |
 | 404 | `NOT_FOUND` | 卡片不存在／路徑不存在 | — |
 | 405 | `METHOD_NOT_ALLOWED` | 方法不支援 | — |
+| 409 | `CARD_STATUS_CHANGED` | 審核者載入後，卡片已被其他人改變狀態（見 3.2） | 這張卡已被其他人處理，請重新整理後再操作。 |
 | 413 | `PAYLOAD_TOO_LARGE` | body > 4 KiB | 格式錯誤… |
 | 429 | `RATE_LIMITED` | 超過限流 | 發送太頻繁，請稍後再試。 |
 | 500 | `INTERNAL_ERROR` | 未預期錯誤 | 系統暫時發生問題，請稍後再試。 |
@@ -166,20 +168,42 @@ Cookie：`__Host-fwd_ct=v1.<隨機 ID>.<到期時間（Unix 秒）>.<HMAC-SHA256
       "text_gratitude": "…",
       "text_anticipate": "…",
       "created_at": "2026-11-14T09:12:00.000Z",
-      "status": "pending"
+      "status": "pending",
+      "moderation": null
     }
   ],
   "has_more": false
 }
 ```
 
+`moderation` 是模型的判斷紀錄（M1.6），沒有判斷過的卡（例如自動公開關閉時送出的）為 `null`；判斷過的卡：
+
+```json
+{
+  "model": "@cf/cloudflare/clef",
+  "questions_version": "0123456789ab",
+  "outcome": "clear",
+  "reason": "none",
+  "reason_probability": 0.95,
+  "needs_attention_probability": 0.09,
+  "auto_published": true,
+  "judged_at": "2026-11-14T09:12:01.000Z"
+}
+```
+
+`outcome`：`clear` 沒有疑慮、`flagged` 有疑慮（`reason` 為理由），其餘（`questions_missing`、`timeout`、`model_error`、`invalid_output`）表示沒有可用的判斷，卡片維持待審。`auto_published` 只在這次判斷讓卡片公開時為 `true`。紀錄不含卡片內文。
+
 ### 3.2 變更狀態 `PATCH /api/admin/cards/:id/status`
 
 ```json
-{ "status": "approved" }
+{ "status": "approved", "from": "pending" }
 ```
 
 `status` 只接受 `approved`｜`hidden`。`:id` 需符合 `^[A-Za-z0-9_-]{1,80}$`，否則 400；找不到回 404。
+
+`from`（必填）是審核者載入時看到的狀態（`pending`｜`approved`｜`hidden`）。只有卡片仍是這個狀態才會變更；若已被其他人改變，回 **409 `CARD_STATUS_CHANGED`**，附上 `current_status`，不覆蓋先前的結果，請重新整理後再操作。沒帶回 400（`fields.from: required`），格式不對回 400（`fields.from: invalid`）。
+
+每次變更都會在同一筆交易中寫入狀態變更紀錄 `card_status_changes`（見「資料表建議」），`actor` 為 `reviewer`。改成卡片原本的狀態不算變更，不記錄。
 
 **Response `200`**
 
@@ -189,7 +213,11 @@ Cookie：`__Host-fwd_ct=v1.<隨機 ID>.<到期時間（Unix 秒）>.<HMAC-SHA256
 
 ### 3.3 緊急下架 `PATCH /api/admin/cards/:id/hide`
 
-不需 body，等同把狀態設為 `hidden`。回應同 3.2（`"status": "hidden"`）。`hidden` 是下架，**不是刪除**。
+```json
+{ "from": "approved" }
+```
+
+等同把狀態設為 `hidden`，回應同 3.2（`"status": "hidden"`）。`hidden` 是下架，**不是刪除**。`from` 必填，規則與 3.2 相同：卡片已被其他人改變就回 409；沒帶或 body 不是 JSON 物件回 400。
 
 ---
 
@@ -215,11 +243,40 @@ CREATE TABLE submission_rate_limits (           -- migrations 0001 + 0002
   hour_count     INTEGER NOT NULL,
   last_submit_ms INTEGER                            -- 上一次放行的時間（Unix 毫秒）
 );
+
+CREATE TABLE app_settings (                      -- migration 0004
+  key        TEXT PRIMARY KEY,                     -- 'auto_publish'：值剛好是 'on' 才開啟，其餘一律視為關閉
+  value      TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE card_moderations (                  -- migration 0004：模型的判斷紀錄，不含卡片內文，隨卡片刪除
+  card_id                     TEXT PRIMARY KEY REFERENCES forward_cards (id) ON DELETE CASCADE,
+  model                       TEXT NOT NULL,
+  questions_version           TEXT,              -- 題目 JSON 的 SHA-256 前 12 碼
+  outcome                     TEXT NOT NULL,     -- clear | flagged | questions_missing | timeout | model_error | invalid_output
+  reason                      TEXT,
+  reason_probability          REAL,
+  needs_attention_probability REAL,
+  auto_published              INTEGER NOT NULL,  -- 1 = 這次判斷讓卡片公開
+  input_tokens                INTEGER,
+  latency_ms                  INTEGER,
+  judged_at                   TEXT NOT NULL
+);
+
+CREATE TABLE card_status_changes (               -- migration 0004：狀態變更紀錄，不含卡片內文，隨卡片刪除
+  id          INTEGER PRIMARY KEY,
+  card_id     TEXT NOT NULL REFERENCES forward_cards (id) ON DELETE CASCADE,
+  from_status TEXT NOT NULL,                     -- pending | approved | hidden
+  to_status   TEXT NOT NULL,
+  actor       TEXT NOT NULL,                     -- model（自動公開）| reviewer（持有管理金鑰者，無法區分是哪一位）
+  changed_at  TEXT NOT NULL
+);
 ```
 
 ## 尚未定案、本契約刻意不包含的部分
 
-- 內容風險辨識／LLM、退件、改寫、稽核紀錄（Q-29～Q-31，US-16／US-17）
+- 退件、改寫，以及記錄「哪位審核者做了什麼」的個別稽核紀錄（US-17）。模型的判斷紀錄（見 3.1）與不區分審核者的狀態變更紀錄（見「資料表建議」）已在 M1.6 加入
 - 保存期限、刪除與跨年度取回（Q-32，US-15）
 
 這些拍板後會以**新增欄位／新端點**的方式擴充，不改動上面既有的欄位與回應形狀。

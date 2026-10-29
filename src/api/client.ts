@@ -18,12 +18,14 @@ export class ApiError extends Error {
   readonly code: ClientErrorCode;
   readonly fields?: Record<string, string>;
   readonly retryAfterSeconds?: number;
+  /** On CARD_STATUS_CHANGED: the status the card has now. */
+  readonly currentStatus?: CardStatus;
 
   constructor(
     status: number,
     code: ClientErrorCode,
     message: string,
-    extra: { fields?: Record<string, string>; retryAfterSeconds?: number } = {},
+    extra: { fields?: Record<string, string>; retryAfterSeconds?: number; currentStatus?: CardStatus } = {},
   ) {
     super(message);
     this.name = 'ApiError';
@@ -31,6 +33,7 @@ export class ApiError extends Error {
     this.code = code;
     this.fields = extra.fields;
     this.retryAfterSeconds = extra.retryAfterSeconds;
+    this.currentStatus = extra.currentStatus;
   }
 }
 
@@ -44,6 +47,7 @@ function codeForStatus(status: number): ClientErrorCode {
   if (status === 400) return 'VALIDATION_ERROR';
   if (status === 401 || status === 403) return 'UNAUTHORIZED';
   if (status === 404) return 'NOT_FOUND';
+  if (status === 409) return 'CARD_STATUS_CHANGED';
   if (status === 413) return 'PAYLOAD_TOO_LARGE';
   if (status === 429) return 'RATE_LIMITED';
   if (status === 503) return 'SERVICE_UNAVAILABLE';
@@ -124,6 +128,7 @@ export function createApiClient({ baseUrl, fetch: fetchImpl, timeoutMs = 15000 }
       throw new ApiError(response.status, err?.code ?? codeForStatus(response.status), err?.message ?? response.statusText, {
         fields: err?.fields,
         retryAfterSeconds: err?.retry_after_seconds ?? parseRetryAfter(response.headers.get('Retry-After')),
+        currentStatus: err?.current_status,
       });
     }
     if (response.status === 204) return undefined as T;
@@ -165,14 +170,22 @@ export function createApiClient({ baseUrl, fetch: fetchImpl, timeoutMs = 15000 }
     adminListCards(token: string, status: CardStatus, signal?: AbortSignal) {
       return request<AdminListResponse>('GET', '/api/admin/cards', { query: { status }, token, signal });
     },
-    adminSetStatus(token: string, id: string, status: Exclude<CardStatus, 'pending'>) {
+    /**
+     * `from`: the status the reviewer saw. The change applies only if no one else changed the card
+     * first; otherwise it fails with CARD_STATUS_CHANGED (409) and the card's status now.
+     */
+    adminSetStatus(token: string, id: string, status: Exclude<CardStatus, 'pending'>, from: CardStatus) {
       return request<AdminStatusResponse>('PATCH', `/api/admin/cards/${encodeURIComponent(id)}/status`, {
-        body: { status },
+        body: { status, from },
         token,
       });
     },
-    adminHide(token: string, id: string) {
-      return request<AdminStatusResponse>('PATCH', `/api/admin/cards/${encodeURIComponent(id)}/hide`, { token });
+    /** `from` as in adminSetStatus. */
+    adminHide(token: string, id: string, from: CardStatus) {
+      return request<AdminStatusResponse>('PATCH', `/api/admin/cards/${encodeURIComponent(id)}/hide`, {
+        body: { from },
+        token,
+      });
     },
   };
 }
@@ -198,6 +211,8 @@ export function describeError(error: unknown): string {
       return '無法完成送出驗證，請確認瀏覽器允許 Cookie 後再試一次。';
     case 'UNAUTHORIZED':
       return '驗證失敗，請重新輸入管理金鑰。';
+    case 'CARD_STATUS_CHANGED':
+      return '這張卡已被其他人處理，請重新整理後再操作。';
     case 'NETWORK_ERROR':
     case 'TIMEOUT':
       return '網路連線不穩定，請確認網路後再試一次。';
