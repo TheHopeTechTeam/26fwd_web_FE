@@ -187,7 +187,7 @@ export const PRAYER_LINK = {
 
 /** How the card works, beside the form (#23): write, make and keep, then choose to publish. */
 export const RESPOND_STEPS = [
-  { title: '寫下感謝與期待', text: '一句感謝、一個期待，署名用暱稱就可以。' },
+  { title: '寫下感謝與期待', text: '一句感謝，一個向前的期待。' },
   { title: '製作並保存卡片', text: '選一段信心宣告，下載或分享到社群。' },
   { title: '決定是否公開', text: '想讓大家一起看見，再公開到卡片牆。' },
 ];
