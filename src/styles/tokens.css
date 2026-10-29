@@ -106,11 +106,15 @@
 
   /* 字體.png: 標題 Recia Serif Display (Latin only); 副標 Awesome Serif Bold Regular (英) +
      Noto Serif TC Bold (中); 資訊 Awesome Serif. Neither Latin face has CJK, so Chinese in a
-     display title falls through to the heading subset, then to system serif fonts. */
+     display title falls through to the heading subset, then to system serif fonts.
+     Body (10/29, team choice: the sheet names no body face, so it follows the same family):
+     Awesome Serif for Latin + Noto Serif TC Regular for Chinese, sliced by unicode-range in
+     body-font.css. --font-ui keeps the old sans stack for the admin console's dense tables. */
   --font-display: 'Recia Serif Display', 'FWD Heading TC', 'Noto Serif TC', 'Songti TC', serif;
   --font-info: 'Awesome Serif', 'FWD Heading TC', 'Noto Serif TC', 'Songti TC', serif;
   --font-heading-zh: 'Awesome Serif', 'FWD Heading TC', 'Noto Serif TC', 'Songti TC', serif;
-  --font-body: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'PingFang TC', 'Hiragino Sans TC', 'Noto Sans TC',
+  --font-body: 'Awesome Serif', 'Noto Serif TC', 'Songti TC', 'PMingLiU', serif;
+  --font-ui: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'PingFang TC', 'Hiragino Sans TC', 'Noto Sans TC',
     'Microsoft JhengHei', sans-serif;
   --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
 

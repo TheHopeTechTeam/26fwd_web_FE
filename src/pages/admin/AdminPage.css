@@ -1,4 +1,6 @@
 .admin {
+  --font-body: var(--font-ui);
+  font-family: var(--font-body);
   min-height: 100svh;
   background: var(--bg-deep);
 }

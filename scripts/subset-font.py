@@ -1,5 +1,6 @@
 """Builds the Chinese *heading* font as a small subset woff2 (US-18: 中文標題採子集化
-woff2，內文系統字 — never ship the 6 MB OTF). Body copy keeps using system fonts.
+woff2 — never ship the 6 MB OTF). Body copy uses the sliced Noto Serif TC from
+scripts/fetch-body-font.py instead.
 
 Source: Noto Serif TC Bold, the KV's Chinese subtitle face (#26, Comms 字體.png; OFL, see
 scripts/fonts/OFL.txt).
@@ -20,7 +21,7 @@ OUT = ROOT / "src" / "assets" / "fonts" / "fwd-heading-tc.woff2"
 CJK = re.compile(r"[\u2E80-\u9FFF\uF900-\uFAFF\uFF00-\uFFEF\u3000-\u303F]")
 
 # Only text that is actually set in the heading face: .display-zh elements, the card
-# prompts, and the heading-like content fields. Buttons and body copy use system fonts.
+# prompts, and the heading-like content fields. Buttons and body copy use the body font.
 CONTENT_FIELDS = {
     "src/data/content.ts": r"(?:title|zh|headline|date):\s*'([^']*)'",
     "src/data/testimonies.ts": r"quote:\s*'([^']*)'",
