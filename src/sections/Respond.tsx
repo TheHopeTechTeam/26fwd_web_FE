@@ -7,7 +7,7 @@ import { Reveal } from '../components/Reveal';
 import { useToast } from '../components/Toast';
 import { Turnstile } from '../components/Turnstile';
 import { config, pageUrl } from '../config/env';
-import { DECLARATIONS, FINALE, PRAYER_LINK, RESPOND } from '../data/content';
+import { DECLARATIONS, FINALE, PRAYER_LINK, RESPOND, RESPOND_STEPS } from '../data/content';
 import { trackEvent } from '../lib/analytics';
 import { CARD_FORMATS, PALETTE_SWATCH, PROMPTS, renderCardBlob, type CardContent, type CardFormat } from '../lib/canvasCard';
 import {
@@ -178,12 +178,25 @@ function ForwardCardForm() {
           </div>
 
           <div className="cardform__side">
-            <div id="cardform-guide" className="cardform__guide">
+            <ol className="cardform__steps" aria-label="寫卡三步驟">
+              {RESPOND_STEPS.map((step, i) => (
+                <li key={step.title}>
+                  <span className="cardform__step-num" aria-hidden="true">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <span>
+                    <strong className="cardform__step-title">{step.title}</strong>
+                    <span className="cardform__step-text">{step.text}</span>
+                  </span>
+                </li>
+              ))}
+            </ol>
+
+            <div id="cardform-guide" className="cardform__guide tone-dark">
               <p className="cardform__guide-title">寫卡小提醒</p>
               <ul>
                 <li>請勿寫下自己或他人的電話、地址、LINE ID 等聯絡方式。</li>
                 <li>提到家人、孩子、健康等私密細節時，請斟酌描述。</li>
-                <li>做好的卡片可以先下載保存，接續再決定是否公開到卡片牆。</li>
               </ul>
             </div>
 

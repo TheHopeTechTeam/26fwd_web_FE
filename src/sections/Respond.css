@@ -149,11 +149,62 @@
   color: var(--text-3);
 }
 
+/* Three steps (#23): write, make and keep, then choose to publish. */
+.cardform__steps {
+  display: grid;
+  gap: 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cardform__steps li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.cardform__step-num {
+  font-family: var(--font-info);
+  font-weight: 700;
+  font-size: clamp(1.75rem, 1.4rem + 1.2vw, 2.5rem);
+  line-height: 1;
+  min-width: 1.4em;
+  font-variant-numeric: tabular-nums;
+  color: var(--chapter-label);
+}
+
+.cardform__step-title {
+  display: block;
+  font-family: var(--font-heading-zh);
+  font-weight: 700;
+  font-size: 1.125rem;
+  line-height: 1.4;
+}
+
+.cardform__step-text {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-2);
+}
+
+/* One column: the steps lead, before the card; tips and the button follow it. */
+@media (max-width: 979px) {
+  .cardform__side {
+    display: contents;
+  }
+
+  .cardform__steps {
+    order: -1;
+  }
+}
+
+/* 深藍 box so the tips stand apart from the 淺藍 ground. */
 .cardform__guide {
   padding: 18px 20px;
   border-radius: var(--radius-md);
-  border: 1px solid var(--line);
-  background: rgb(var(--rgb-light) / 0.03);
+  background: var(--bg);
   font-size: 0.875rem;
   color: var(--text-2);
 }
