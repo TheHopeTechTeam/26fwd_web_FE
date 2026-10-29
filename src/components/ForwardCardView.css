@@ -27,9 +27,10 @@
 
 .fcard__prompt {
   font-family: var(--font-heading-zh);
-  font-size: 0.8125rem;
+  font-weight: 700;
+  font-size: 0.875rem;
   letter-spacing: 0.06em;
-  color: rgb(var(--fcard-rgb) / 0.62);
+  color: rgb(var(--fcard-rgb) / 0.82);
 }
 
 .fcard--earth .fcard__prompt {
