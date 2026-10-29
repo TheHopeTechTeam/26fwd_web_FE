@@ -23,11 +23,6 @@ export function SiteFooter({ railSpace = true }: { railSpace?: boolean }) {
               <a href={pageUrl('privacy/')}>隱私與資料說明</a>
             </li>
             <li>
-              <a href={config.prayerMapUrl} target="_blank" rel="noopener noreferrer">
-                Prayer Map ↗
-              </a>
-            </li>
-            <li>
               <a href="https://thehope.co" target="_blank" rel="noopener noreferrer">
                 thehope.co ↗
               </a>

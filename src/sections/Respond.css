@@ -472,3 +472,28 @@
   font-size: 0.875rem;
   color: rgb(var(--rgb-base) / 0.72);
 }
+
+/* Prayer Map (#19): text only, well below the Give button so it never competes with it. */
+.finale__prayer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 10px;
+  margin-top: 6px;
+  font-size: 0.9375rem;
+  color: rgb(var(--rgb-base) / 0.78);
+}
+
+.finale__prayer a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.finale__prayer a:focus-visible {
+  outline-color: var(--ink);
+}

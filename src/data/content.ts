@@ -168,14 +168,13 @@ export const MINISTRIES: Ministry[] = [
   },
 ];
 
-/** Prayer Map is not one of the five ministries, so it carries no number (#18; #19 moves it). */
-export const ONE_WALL = {
-  en: 'The One Wall',
-  zh: '代禱牆',
-  headline: '一起為彼此禱告',
-  body: 'The One Wall 直接連到 Prayer Map：在地圖上為城市、為彼此代禱。往前走的路上，沒有人需要獨自禱告。',
-  blocked: 'Prayer Map 目前尚未開放在其他網站內嵌顯示，請在新分頁開啟。',
-  privacy: '本頁不會把你在 FORWARD 網站填寫的任何資料傳送到 Prayer Map。',
+/**
+ * Low-key Prayer Map link after the Give finale (#19, US-11). Wording and URL await
+ * BB / Comms / Ian; nothing from this site is sent along (no query, no referrer).
+ */
+export const PRAYER_LINK = {
+  lead: '也想為城市與彼此禱告？',
+  label: '前往 Prayer Map 代禱',
 };
 
 export const RESPOND = {

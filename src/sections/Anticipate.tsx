@@ -1,12 +1,10 @@
-import { useState } from 'react';
 import { CountUp } from '../components/CountUp';
 import { Phrases } from '../components/Phrases';
 import { Reveal } from '../components/Reveal';
-import { config } from '../config/env';
-import { ANTICIPATE, MINISTRIES, ONE_WALL, type Ministry } from '../data/content';
+import { ANTICIPATE, MINISTRIES, type Ministry } from '../data/content';
 import './Anticipate.css';
 
-/** 02 · Anticipate (US-06): the five ministries, then The One Wall / Prayer Map (not one of the five). */
+/** 02 · Anticipate (US-06): the five ministries. Prayer Map is a link at the end of the journey (#19). */
 export function Anticipate() {
   return (
     <section id="anticipate" className="chapter anticipate" tabIndex={-1} aria-labelledby="anticipate-title">
@@ -26,8 +24,6 @@ export function Anticipate() {
             <MinistryBlock key={m.id} ministry={m} flip={i % 2 === 1} />
           ))}
         </div>
-
-        <OneWall />
       </div>
     </section>
   );
@@ -157,70 +153,4 @@ function MinistryArt({ kind }: { kind: Ministry['art'] }) {
         </svg>
       );
   }
-}
-
-/**
- * Item 05 (US-06 / US-11). Prayer Map currently sends frame-ancestors 'none' and
- * X-Frame-Options: DENY, so the iframe stays behind VITE_PRAYER_MAP_EMBED_ENABLED
- * and the default is a clear fallback with a new-tab link. No data from this site is
- * sent to Prayer Map (no query params, no-referrer).
- */
-function OneWall() {
-  const [iframeLoaded, setIframeLoaded] = useState(false);
-  const embed = config.prayerMapEmbedEnabled;
-
-  return (
-    <article className="one-wall" aria-labelledby="one-wall-title">
-      <Reveal className="one-wall__head">
-        <h3 id="one-wall-title" className="ministry__title">
-          <span className="one-wall__en">{ONE_WALL.en}</span>
-          <span className="display-zh one-wall__zh">{ONE_WALL.zh}</span>
-        </h3>
-        <p className="ministry__headline display-zh">{ONE_WALL.headline}</p>
-        <p className="ministry__body">{ONE_WALL.body}</p>
-      </Reveal>
-
-      <Reveal className="one-wall__frame" delay={0.08}>
-        {embed ? (
-          <div className="one-wall__embed">
-            {!iframeLoaded && (
-              <div className="one-wall__loading">
-                <span className="spinner" /> 載入 Prayer Map…
-              </div>
-            )}
-            <iframe
-              src={config.prayerMapUrl}
-              title="Prayer Map 代禱地圖"
-              loading="lazy"
-              referrerPolicy="no-referrer"
-              sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
-              onLoad={() => setIframeLoaded(true)}
-            />
-          </div>
-        ) : (
-          <div className="one-wall__fallback">
-            <div className="one-wall__map" aria-hidden="true">
-              {Array.from({ length: 14 }, (_, i) => (
-                <span key={i} style={{ left: `${(i * 37) % 92 + 4}%`, top: `${(i * 53) % 80 + 10}%`, animationDelay: `${-i * 0.7}s` }} />
-              ))}
-            </div>
-            <div className="one-wall__fallback-text">
-              <p className="one-wall__blocked">{ONE_WALL.blocked}</p>
-            </div>
-          </div>
-        )}
-        <div className="one-wall__actions">
-          <a className="btn btn--gold" href={config.prayerMapUrl} target="_blank" rel="noopener noreferrer">
-            開啟 Prayer Map
-            <span aria-hidden="true">↗</span>
-            <span className="sr-only">（在新分頁開啟）</span>
-          </a>
-          <a className="one-wall__privacy" href={config.prayerMapPrivacyUrl} target="_blank" rel="noopener noreferrer">
-            Prayer Map 隱私權政策
-          </a>
-        </div>
-        <p className="note">{ONE_WALL.privacy}</p>
-      </Reveal>
-    </article>
-  );
 }

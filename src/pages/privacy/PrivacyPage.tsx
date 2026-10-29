@@ -83,7 +83,7 @@ export function PrivacyPage() {
                 <strong>Google Analytics（若啟用）</strong>：只用來統計「奉獻按鈕」的點擊次數等整體使用情況，不會傳送你的署名或卡片內容。
               </li>
               <li>
-                <strong>Prayer Map</strong>：The One Wall 連到外部的 Prayer Map 網站，本站不會把你在這裡填寫的任何資料傳給它。請參考
+                <strong>Prayer Map</strong>：旅程最後的「前往 Prayer Map 代禱」連到外部的 Prayer Map 網站，本站不會把你在這裡填寫的任何資料傳給它。請參考
                 <a href={config.prayerMapPrivacyUrl} target="_blank" rel="noopener noreferrer">
                   Prayer Map 隱私權政策
                 </a>
