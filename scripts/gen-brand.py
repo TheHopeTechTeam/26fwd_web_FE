@@ -9,7 +9,7 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
 DS = ROOT / "Forward_ There is more" / "_ds" / "the-hope-design-system-66e3dad3-e4ef-4716-a46b-b03fc04047ab" / "assets"
-BASE = (62, 37, 30)  # KV 深褐 #3e251e, same as --rgb-base in src/styles/tokens.css
+BASE = (15, 59, 89)  # KV 深藍 #0f3b59, same as --rgb-base in src/styles/tokens.css
 OG_SIZE = (1200, 630)
 
 

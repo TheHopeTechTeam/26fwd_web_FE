@@ -50,26 +50,27 @@
 
 :root {
   /* ── 1. THEME ── FORWARD 2026 KV palette (#26, Comms 色票.png): #0f3b59 深藍, #7d929e 藍灰,
-     #bcbdbf 淺灰, #edcc5f 金黃, #3e251e 深褐. The sheet gives no roles; the page background is
-     深褐, the closest to the KV photo's warm dark tones (team choice, 10/27, over 深藍).
-     Values as labelled on the swatch sheet; the PNG's sampled pixels differ slightly (#36211c…),
-     so Comms still has to confirm which set is final. Other channels are shades or tints of
-     those five, chosen so every text pair stays ≥ 4.5:1. Paper, white and the status colours
-     are not in the KV and stay pending Comms (#26 F-3). */
-  --rgb-base: 62 37 30; /* #3e251e 深褐: page background and dark text */
-  --rgb-base-deep: 44 26 21; /* #2c1a15 */
-  --rgb-base-soft: 71 43 35; /* #472b23 */
-  --rgb-base-raised: 82 50 41; /* #523229 */
+     #bcbdbf 淺灰, #edcc5f 金黃, #3e251e 深褐. The sheet gives no roles. The first three are one
+     blue family (dark → light), so 深藍 is the page ground with its own steps for surfaces,
+     金黃 the accent, and 深褐 stays for dark text on 金黃 (team choice, 10/29; it replaces the
+     10/27 brown ground, which had no lighter steps in the sheet to separate sections with).
+     Values as labelled on the swatch sheet. Other channels are shades or tints of those five,
+     chosen so every text pair stays ≥ 4.5:1 (淺灰 text-3 is 4.6:1 on the raised step). Paper,
+     white and the status colours are not in the KV and stay pending Comms (#26 F-3). */
+  --rgb-base: 15 59 89; /* #0f3b59 深藍: page background and dark text */
+  --rgb-base-deep: 10 41 62; /* #0a293e */
+  --rgb-base-soft: 19 66 98; /* #134262 */
+  --rgb-base-raised: 23 73 107; /* #17496b */
   --rgb-tint: 125 146 158; /* #7d929e 藍灰: glow behind sections; never body text */
   --rgb-accent: 237 204 95; /* #edcc5f 金黃 */
   --rgb-accent-bright: 244 220 140; /* #f4dc8c */
   --rgb-accent-dim: 196 164 67; /* #c4a443 */
   --rgb-accent-on-light: 122 92 14; /* #7a5c0e 金黃 dark enough to read on paper (5.4:1) */
-  --rgb-earth: 62 37 30; /* #3e251e 深褐: text on 金黃 */
+  --rgb-earth: 62 37 30; /* #3e251e 深褐: text on 金黃 (the Give buttons) */
   --rgb-paper: 244 239 228; /* #f4efe4 */
   --rgb-light: 255 255 255;
   --rgb-text-2: 188 189 191; /* #bcbdbf 淺灰 */
-  --rgb-text-3: 169 167 161; /* #a9a7a1 淺灰, one step dimmer (4.7:1 on raised) */
+  --rgb-text-3: 180 181 183; /* #b4b5b7 淺灰, one step dimmer (4.6:1 on raised) */
   --rgb-card-mist: 227 232 235; /* #e3e8eb card wall tint (藍灰) */
   --rgb-card-sand: 246 237 207; /* #f6edcf card wall tint (金黃) */
   /* Status colours are functional, not brand; they normally stay as they are. */

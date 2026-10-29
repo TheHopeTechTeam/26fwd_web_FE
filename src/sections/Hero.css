@@ -7,9 +7,8 @@
 .hero {
   position: relative;
   padding-top: var(--header-h);
-  /* Room and a hairline before 01 Appreciate, so the Hero reads as its own block. */
-  padding-bottom: clamp(88px, 14svh, 160px);
-  border-bottom: 1px solid var(--line);
+  /* 01 Appreciate starts on paper, so the colour change marks the break. */
+  padding-bottom: clamp(48px, 8svh, 88px);
   background: var(--bg);
   isolation: isolate;
 }
@@ -90,6 +89,40 @@
 
   .hero__date {
     margin-top: 0;
+  }
+}
+
+/* Wide screens: date and lead on the left, the CTA and music prompt on the right, so the
+   band under the KV stays short instead of stacking everything down the left edge. */
+@media (min-width: 900px) {
+  .hero {
+    padding-bottom: clamp(40px, 6svh, 72px);
+  }
+
+  .hero__content {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 48px;
+    margin-top: clamp(28px, 3vw, 44px);
+  }
+
+  .hero__date,
+  .hero__lead {
+    grid-column: 1;
+  }
+
+  .hero__actions {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: center;
+    justify-self: end;
+    margin-top: 0;
+  }
+
+  .hero__music {
+    grid-column: 2;
+    grid-row: 3;
+    justify-self: end;
   }
 }
 

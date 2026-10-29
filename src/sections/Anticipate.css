@@ -28,24 +28,40 @@
   aspect-ratio: 4 / 3;
 }
 
-/* Placeholder ministry art follows the theme tokens (#22). */
+/* Placeholder ministry art follows the theme tokens (#22). The cards take turns in the KV
+   swatches (gold, blue-grey, paper) so the brown section isn't one tone; on the two light
+   grounds the gold lines turn brown to stay visible. */
+.ministry:nth-child(3n + 1) .ministry-art {
+  --art-ground: var(--accent);
+}
+.ministry:nth-child(3n + 2) .ministry-art {
+  --art-ground: rgb(var(--rgb-tint));
+}
+.ministry:nth-child(3n) .ministry-art {
+  --art-ground: var(--paper);
+}
+.ministry:nth-child(3n + 1) .ministry-art,
+.ministry:nth-child(3n) .ministry-art {
+  --art-ink: var(--ink);
+}
+
 .ministry-art .art-bg {
-  fill: var(--surface);
+  fill: var(--art-ground, var(--surface));
 }
 .ministry-art .art-light {
-  fill: var(--text);
+  fill: var(--art-ink, var(--text));
 }
 .ministry-art .art-fill {
-  fill: var(--accent);
+  fill: var(--art-ink, var(--accent));
 }
 .ministry-art .art-line {
-  stroke: var(--accent);
+  stroke: var(--art-ink, var(--accent));
 }
 .ministry-art .art-line-light {
-  stroke: var(--text);
+  stroke: var(--art-ink, var(--text));
 }
 .ministry-art .art-line-bright {
-  stroke: var(--accent-bright);
+  stroke: var(--art-ink, var(--accent-bright));
 }
 
 .ministry__art-note {

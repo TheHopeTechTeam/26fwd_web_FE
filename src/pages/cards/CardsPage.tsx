@@ -79,7 +79,7 @@ export function CardsPage() {
           <header className="cards-page__head">
             <p className="kicker">Forward Cards · 卡片牆</p>
             <h1 className="cards-page__title">Write it forward</h1>
-            <p className="lead">全 Hope Nation 寫下的感謝與期待。每一張卡片都經過團隊審閱後公開。</p>
+            <p className="lead">全 Hope Nation 寫下的感謝與期待。每一張卡片都經過審核後公開。</p>
             <div className="cards-page__meta">
               {total !== null && (
                 <p className="cards-page__count" aria-live="polite">
