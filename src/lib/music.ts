@@ -11,7 +11,7 @@ export type PlayerState = 'paused' | 'loading' | 'playing' | 'error';
  */
 let audio: HTMLAudioElement | null = null;
 let state: PlayerState = 'paused';
-let fadeFrame = 0;
+let fadeTimer = 0;
 /** What the visitor last asked for; audio events never override it. */
 let wanted = false;
 const listeners = new Set<() => void>();
@@ -32,8 +32,11 @@ function player(): HTMLAudioElement {
     audio = new Audio();
     audio.preload = 'none';
     audio.loop = true;
+    // Fade up whenever sound actually starts, however play() settled.
     audio.addEventListener('playing', () => {
-      if (wanted) setState('playing');
+      if (!wanted || !audio) return;
+      setState('playing');
+      fadeTo(audio, VOLUME);
     });
     audio.addEventListener('pause', () => setState(state === 'error' ? state : 'paused'));
     audio.addEventListener('waiting', () => {
@@ -47,18 +50,22 @@ function player(): HTMLAudioElement {
   return audio;
 }
 
-/** Ramps the volume; a new fade cancels the one in progress. iOS ignores volume, so there it just plays or stops. */
+/**
+ * Ramps the volume; a new fade cancels the one in progress. Timers rather than animation
+ * frames, which stop in a background tab and would leave the music silent. iOS ignores
+ * volume, so there it just plays or stops.
+ */
 function fadeTo(el: HTMLAudioElement, target: number, done?: () => void) {
-  cancelAnimationFrame(fadeFrame);
+  clearTimeout(fadeTimer);
   const from = el.volume;
   const start = performance.now();
-  const step = (now: number) => {
-    const t = Math.min(1, (now - start) / FADE_MS);
+  const step = () => {
+    const t = Math.min(1, (performance.now() - start) / FADE_MS);
     el.volume = from + (target - from) * t;
-    if (t < 1) fadeFrame = requestAnimationFrame(step);
+    if (t < 1) fadeTimer = window.setTimeout(step, 30);
     else done?.();
   };
-  fadeFrame = requestAnimationFrame(step);
+  step();
 }
 
 export async function toggleMusic(): Promise<void> {
@@ -84,11 +91,7 @@ export async function toggleMusic(): Promise<void> {
   try {
     await el.play();
     // Turned off while it was still loading: stay off.
-    if (!wanted) {
-      el.pause();
-      return;
-    }
-    fadeTo(el, VOLUME);
+    if (!wanted) el.pause();
   } catch (error) {
     wanted = false;
     if ((error as DOMException)?.name !== 'AbortError') setState('error');
