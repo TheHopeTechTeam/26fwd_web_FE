@@ -580,6 +580,7 @@
 }
 
 .finale__body {
+  font-weight: 700;
   font-size: clamp(1rem, 0.95rem + 0.3vw, 1.1875rem);
   line-height: 1.85;
   color: rgb(var(--rgb-base) / 0.85);
