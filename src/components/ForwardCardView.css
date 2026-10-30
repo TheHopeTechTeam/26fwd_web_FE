@@ -28,9 +28,10 @@
 .fcard__prompt {
   font-family: var(--font-heading-zh);
   font-weight: 700;
-  font-size: 0.875rem;
+  font-size: 1rem;
   letter-spacing: 0.06em;
-  color: rgb(var(--fcard-rgb) / 0.82);
+  /* 深褐 prompts set apart from the 深藍 answers (金黃 on the 深褐 card). */
+  color: rgb(var(--rgb-earth));
 }
 
 .fcard--earth .fcard__prompt {
