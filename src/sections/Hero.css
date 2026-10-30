@@ -220,6 +220,14 @@ html.motion-ok .hero__actions {
   background: rgb(var(--rgb-accent) / 0.16);
 }
 
+.hero__music-label {
+  text-align: left;
+}
+
+.hero__music-label > span {
+  white-space: nowrap;
+}
+
 /* 金黃 disc with the note (or pause bars), so it reads as a play control. */
 .hero__music-icon {
   display: inline-grid;
@@ -235,4 +243,18 @@ html.motion-ok .hero__actions {
 .hero__music-hint {
   color: var(--text-3);
   font-size: 0.875rem;
+}
+
+/* Phones: a blank line's room under the lead, and a smaller Start button in proportion
+   with the music pill below it. */
+@media (max-width: 699px) {
+  .hero__actions {
+    margin-top: calc(clamp(24px, 4svh, 40px) + 1.8em);
+  }
+
+  .hero__actions .btn--lg {
+    min-height: 48px;
+    padding: 0.65em 1.5em;
+    font-size: 1rem;
+  }
 }

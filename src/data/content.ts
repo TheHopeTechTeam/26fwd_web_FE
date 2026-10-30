@@ -69,7 +69,7 @@ export const MUSIC: { track: Track; note: string } = {
 
 /** Hero prompt for the same player as the header switch. */
 export const HERO_MUSIC = {
-  start: '開啟音樂，邊聽邊走這趟旅程',
+  start: '開啟音樂，在敬拜中走這趟旅程',
   stop: '暫停音樂',
   hint: '也可以在右上角 ♪ 隨時開關',
   error: '音樂暫時無法播放，再試一次',

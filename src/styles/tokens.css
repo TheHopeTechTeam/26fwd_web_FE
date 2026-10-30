@@ -135,8 +135,9 @@
 
   --header-h: 64px;
   --pad-x: clamp(16px, 5vw, 64px);
-  /* Room kept clear on the right for the fixed journey rail (FEAT-01). */
-  --rail-space: 52px;
+  /* Room kept clear on the right for the fixed journey rail (FEAT-01). Phones keep none:
+     the slim rail may sit over the content there (team choice, 10/30). */
+  --rail-space: 0px;
   --content-max: 1200px;
 }
 

@@ -65,7 +65,12 @@ function HeroMusic() {
         <span className="hero__music-icon" aria-hidden="true">
           {playing ? '❚❚' : '♪'}
         </span>
-        {state === 'error' ? HERO_MUSIC.error : playing ? HERO_MUSIC.stop : HERO_MUSIC.start}
+        <span className="hero__music-label">
+          {/* Narrow phones wrap after the comma, never mid-phrase. */}
+          {(state === 'error' ? HERO_MUSIC.error : playing ? HERO_MUSIC.stop : HERO_MUSIC.start).split(/(?<=，)/).map((part) => (
+            <span key={part}>{part}</span>
+          ))}
+        </span>
       </button>
       {playing && <span className="hero__music-hint">{HERO_MUSIC.hint}</span>}
     </p>
