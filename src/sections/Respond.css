@@ -3,6 +3,11 @@
   background: linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
 }
 
+/* The respond lead is longer; the full content width keeps it to one line on wide screens. */
+.respond .chapter__head .lead {
+  max-width: none;
+}
+
 .respond__title {
   font-family: var(--font-display);
   font-weight: 800;
