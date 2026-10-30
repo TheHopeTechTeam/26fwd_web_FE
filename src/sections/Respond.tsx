@@ -458,6 +458,9 @@ function PublishCard({ content, honeypot, onPublished, onFieldErrors }: PublishC
   );
 }
 
+/** Newest published cards shown on the home page; the rest are on the wall. */
+const TEASER_COUNT = 6;
+
 function CardsTeaser() {
   const [data, setData] = useState<ListCardsResponse | null>(null);
   const [failed, setFailed] = useState(false);
@@ -466,7 +469,7 @@ function CardsTeaser() {
   useEffect(() => {
     const controller = new AbortController();
     api
-      .listCards({ page: 1, limit: 3 }, controller.signal)
+      .listCards({ page: 1, limit: TEASER_COUNT }, controller.signal)
       .then(setData)
       .catch(() => {
         if (!controller.signal.aborted) setFailed(true);
@@ -489,7 +492,7 @@ function CardsTeaser() {
         <div className="teaser__grid">
           {data
             ? data.items.map((card, i) => <ForwardCardView key={card.id} card={card} index={i} now={now} />)
-            : [0, 1, 2].map((i) => <ForwardCardSkeleton key={i} />)}
+            : Array.from({ length: TEASER_COUNT }, (_, i) => <ForwardCardSkeleton key={i} />)}
         </div>
       )}
       {data && data.items.length === 0 && <p className="note">還沒有公開的卡片，成為第一個寫卡的人！</p>}
