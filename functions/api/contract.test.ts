@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ApiError, createApiClient, describeError, type FetchLike } from '../../src/api/client'
 import { createMockFetch } from '../../src/api/mock/server'
+import { MAX_BODY_BYTES } from '../../src/api/types'
+import { weightedLength } from '../../src/lib/text'
+import { WEIGHTED_CASES } from '../../src/lib/text.cases'
 import type { Env } from '../_lib/cards'
 import { createTestDb, sqliteAvailable } from '../_test/d1'
 import { onRequestPost as submitCardHandler } from './cards'
@@ -132,6 +135,54 @@ describe.skipIf(!sqliteAvailable)('POST /api/cards — mock and real backend giv
     const expected = await viaMock(body, send)
     const actual = await viaBackend(body, send)
     expect(actual).toEqual(expected)
+  })
+})
+
+// #16: the weighted count's edge cases, the same ones the form's tests read, sent in either
+// prompt. The mock and the real handler must both give the form's answer: a case that fits is
+// stored, one that does not is a too_long field error.
+describe.skipIf(!sqliteAvailable)('POST /api/cards — the weighted count: mock and real backend answer like the form (#16)', () => {
+  const sends = WEIGHTED_CASES.flatMap(c => (['text_gratitude', 'text_anticipate'] as const).map(field => ({ ...c, field })))
+
+  it.each(sends)('$field: $name', async ({ field, text, fits }) => {
+    const body = card({ [field]: text })
+    const expected: Outcome = fits
+      ? { status: 201, retryHint: false }
+      : { status: 400, code: 'VALIDATION_ERROR', fields: { [field]: 'too_long' }, retryHint: false }
+    expect(await viaMock(body, {})).toEqual(expected)
+    expect(await viaBackend(body, {})).toEqual(expected)
+  })
+
+  it('stores a card that fits exactly as sent, with the weighted length the form counted', async () => {
+    stubSiteverify()
+    const { db, query } = createTestDb()
+    const env = makeEnv({ FORWARD_DB: db })
+
+    for (const { name, text, weighted } of WEIGHTED_CASES.filter(c => c.fits)) {
+      const response = await sendRaw(browser(env).fetch, card({ text_gratitude: text, text_anticipate: text }), {})
+      expect(response.status, name).toBe(201)
+      const { card_id } = await response.json() as { card_id: string }
+      const [stored] = query('SELECT text_gratitude, text_anticipate FROM forward_cards WHERE id = ?', card_id)
+      expect(stored, name).toEqual({ text_gratitude: text, text_anticipate: text })
+      expect(weightedLength(String(stored?.text_gratitude)), name).toBe(weighted)
+    }
+  })
+
+  // Why the limit went from 4 KiB to 8 KiB: every code point in the nickname and the prompts
+  // takes 4 bytes in UTF-8, and 2,048 characters is the longest token Turnstile issues.
+  it('the largest card the form can send is over 4 KiB but within 8 KiB, and is accepted', async () => {
+    const largest = card({
+      nickname: '😀'.repeat(20),
+      text_gratitude: '🇹🇼'.repeat(140),
+      text_anticipate: '🇹🇼'.repeat(140),
+      turnstile_token: 'x'.repeat(2048),
+    })
+    const bytes = new TextEncoder().encode(largest).byteLength
+
+    expect(bytes).toBeGreaterThan(4096)
+    expect(bytes).toBeLessThanOrEqual(MAX_BODY_BYTES)
+    expect(await viaMock(largest, {})).toMatchObject({ status: 201 })
+    expect(await viaBackend(largest, {})).toMatchObject({ status: 201 })
   })
 })
 
