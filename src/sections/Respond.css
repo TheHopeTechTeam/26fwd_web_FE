@@ -569,11 +569,14 @@
   }
 }
 
+/* Same size and 深褐 as the chapter labels (01 · Appreciate…). */
 .finale__kicker {
   font-family: var(--font-mono);
-  font-size: 0.75rem;
-  letter-spacing: 0.22em;
-  color: rgb(var(--rgb-base) / 0.62);
+  font-size: clamp(0.875rem, 0.8rem + 0.35vw, 1.0625rem);
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgb(var(--rgb-earth));
   margin-bottom: 18px;
 }
 
