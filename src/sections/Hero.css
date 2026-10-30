@@ -201,34 +201,35 @@ html.motion-ok .hero__actions {
 .hero__music-btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--text-2);
+  gap: 10px;
+  min-height: 48px;
+  padding: 6px 18px 6px 6px;
+  border: 1px solid rgb(var(--rgb-accent) / 0.6);
+  border-radius: var(--radius-full);
+  background: rgb(var(--rgb-accent) / 0.08);
+  color: var(--text);
   font: inherit;
-  text-decoration: underline;
-  text-decoration-color: var(--line-strong);
-  text-underline-offset: 0.3em;
+  font-weight: 700;
   cursor: pointer;
-  transition: color 0.2s var(--ease-standard);
+  transition: background-color 0.2s var(--ease-standard), border-color 0.2s var(--ease-standard);
 }
 
 .hero__music-btn:hover,
 .hero__music-btn[aria-pressed='true'] {
-  color: var(--accent);
+  border-color: var(--accent);
+  background: rgb(var(--rgb-accent) / 0.16);
 }
 
+/* 金黃 disc with the note (or pause bars), so it reads as a play control. */
 .hero__music-icon {
   display: inline-grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
-  border: 1px solid currentColor;
-  font-size: 0.75rem;
-  text-decoration: none;
+  background: var(--accent);
+  color: var(--ink);
+  font-size: 0.875rem;
 }
 
 .hero__music-hint {
