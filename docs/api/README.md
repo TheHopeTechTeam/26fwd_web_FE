@@ -1,6 +1,6 @@
 # FORWARD 2026 · Forward Card API 契約（給後端）
 
-> 版本 v0.2（2026-10-13，新增 Client Token，見 #5）｜v0.1（2026-09-22）｜對應規格表 ⑦ US-07／US-10／US-13／US-17、⑧ DATA-01～24
+> 版本 v0.3（2026-10-30，兩題改用加權字數、body 上限改為 8 KiB，見 #16）｜v0.2（2026-10-13，新增 Client Token，見 #5）｜v0.1（2026-09-22）｜對應規格表 ⑦ US-07／US-10／US-13／US-17、⑧ DATA-01～24
 > 前端目前以瀏覽器內的 mock server（`src/api/mock/server.ts`）實作**完全相同**的契約，後端照本文件實作後，只要把 `VITE_API_MODE=live`、`VITE_API_BASE_URL` 指向後端即可切換。
 > 機器可讀版本：[`openapi.yaml`](./openapi.yaml)（可直接匯入 Postman）。TypeScript 型別：`src/api/types.ts`。三者須保持一致。
 
@@ -10,7 +10,7 @@
 | --- | --- |
 | 格式 | Request／Response 皆為 `application/json; charset=utf-8` |
 | 時間 | 一律 ISO 8601 UTC（例：`2026-11-14T10:00:00.000Z`）。前端也能解析 SQLite `YYYY-MM-DD HH:MM:SS`（視為 UTC），但新資料請輸出 ISO |
-| 字數 | 一律以 **trim 後的 Unicode code point** 計算（emoji 算 1），前後端規則一致 |
+| 字數 | 一律以 **trim 後**的長度計算。暱稱算 Unicode code point（😀 算 1，組合 emoji 算多個，例如 🇹🇼 算 2）；兩題用**加權字數**（#16，見第 1 節）。表單、mock 與後端都使用 `src/lib/text.ts`，規則一致 |
 | 換行 | 前端送出前會把 `\r\n`／`\r` 正規化為 `\n` |
 | Cookie | 只有領取 Client Token 與送卡兩個請求使用 `credentials: 'same-origin'`（帶 Client Token cookie），其餘請求 `credentials: 'omit'`。Client Token cookie 為 `__Host-` 前綴且 `SameSite=Strict`，**API 必須與網站同網域**（目前即是：Pages Functions 與網站同一個網域） |
 | 快取 | 公開 `GET /api/cards` 由 Cloudflare 各資料中心快取 10 秒（每個 `page`＋`limit` 一份，其他參數不影響），所以核准或下架最多約 10 秒才反映（目標 15 秒內）；回給瀏覽器的是 `Cache-Control: public, max-age=0, must-revalidate`，瀏覽器不另外保留副本。所有 admin 端點 `Cache-Control: no-store` |
@@ -41,7 +41,7 @@
 | 401 | `UNAUTHORIZED` | admin token 缺少或錯誤 | 驗證失敗，請重新輸入管理金鑰。 |
 | 404 | `NOT_FOUND` | 卡片不存在／路徑不存在 | — |
 | 405 | `METHOD_NOT_ALLOWED` | 方法不支援 | — |
-| 413 | `PAYLOAD_TOO_LARGE` | body > 4 KiB | 格式錯誤… |
+| 413 | `PAYLOAD_TOO_LARGE` | body > 8 KiB（8,192 bytes） | 格式錯誤… |
 | 429 | `RATE_LIMITED` | 超過限流 | 發送太頻繁，請稍後再試。 |
 | 500 | `INTERNAL_ERROR` | 未預期錯誤 | 系統暫時發生問題，請稍後再試。 |
 | 503 | `SERVICE_UNAVAILABLE` | 維護中／依賴服務掛掉 | 服務暫時無法使用，請稍後再試。 |
@@ -89,11 +89,22 @@ Cookie：`__Host-fwd_ct=v1.<隨機 ID>.<到期時間（Unix 秒）>.<HMAC-SHA256
 | 欄位 | 型別 | 規則 |
 | --- | --- | --- |
 | `nickname` | string | trim 後 1–20 code points；不可含控制字元（U+0000–001F、U+007F–009F）及 bidi 控制字元（U+202A–202E、U+2066–2069） |
-| `text_gratitude` | string | trim 後 1–140 code points；允許 `\t` `\n`，其餘控制字元與 bidi 控制字元拒絕 |
+| `text_gratitude` | string | trim 後加權字數 1–140，且最多 280 code points、最多 10 個換行（見下方）；允許 `\t` `\n`，其餘控制字元與 bidi 控制字元拒絕 |
 | `text_anticipate` | string | 同上 |
 | `agreed_to_publish` | boolean | 必須為 `true`，否則 400（`fields.agreed_to_publish = "must_be_true"`） |
 | `honeypot` | string | 人類永遠送 `""`。**有值時回 201 假成功，不寫入、不消耗限流**（DATA-10） |
 | `turnstile_token` | string | 啟用 Turnstile 時必填；伺服器以 Siteverify 驗證 `success`／`action = forward_card`／`hostname`，不落地（DATA-09） |
+
+**加權字數**（#16）：以字素（grapheme，讀者看到的一個字）為單位計算。
+- 半形英數、半形符號、空白與 tab（U+0020–007E、`\t`）各算 **0.5**
+- 其他一律算 **1**：中日韓文字、全形字元與標點、換行、帶重音的字母，以及整個 emoji（👨‍👩‍👧、🇹🇼 都只算 1）
+- 例：`期待 There is more！` 算 10：中文 2 個各算 1，英文字母與空白共 14 個各算 0.5，全形「！」算 1
+- 另外最多 **280 code points**、最多 **10 個換行**。例：57 個 👨‍👩‍👧 加權只算 57，但有 285 個 code points，會被擋下
+- 超過任一上限都回 `400 VALIDATION_ERROR`，`fields.<欄位> = "too_long"`
+- 表單計數器顯示無條件進位的整數：140.5 顯示 141，不能送出
+- 規則在 `src/lib/text.ts`；邊界案例在 `src/lib/text.cases.ts`，表單、mock 與後端的測試都使用這份
+
+符合上述規則的卡片，body 都在 8 KiB 以內：表單能送出的最大卡片，加上最長的 Turnstile token（2,048 字元），約 4.4 KiB。
 
 **處理順序**（US-16）：body 大小 → JSON／欄位驗證 → honeypot → **Client Token** → Turnstile → 限流（IP 與 Client Token 兩層都通過才計數）→ 寫入 `pending`（之後若導入風險辨識，放在寫入前，且結果一律維持 `pending`）。Client Token 放在 Turnstile 之前，是因為 Turnstile token 只能用一次。
 
@@ -199,8 +210,8 @@ Cookie：`__Host-fwd_ct=v1.<隨機 ID>.<到期時間（Unix 秒）>.<HMAC-SHA256
 CREATE TABLE forward_cards (
   id                TEXT PRIMARY KEY,               -- c_ + UUID
   nickname          TEXT NOT NULL,                  -- 1–20 code points
-  text_gratitude    TEXT NOT NULL,                  -- 1–140 code points
-  text_anticipate   TEXT NOT NULL,                  -- 1–140 code points
+  text_gratitude    TEXT NOT NULL,                  -- 加權 1–140，最多 280 code points（#16）
+  text_anticipate   TEXT NOT NULL,                  -- 加權 1–140，最多 280 code points（#16）
   agreed_to_publish INTEGER NOT NULL CHECK (agreed_to_publish IN (0, 1)),
   status            TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'hidden')),
   created_at        TEXT NOT NULL                   -- ISO 8601 UTC

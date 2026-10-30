@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: FORWARD 2026 · Forward Card API
-  version: 0.2.0
+  version: 0.3.0
   description: |
     Contract between the FORWARD 2026 front end and the Forward Card backend.
     Human-readable notes (Traditional Chinese): docs/api/README.md.
@@ -45,9 +45,12 @@ paths:
       summary: Submit a Forward Card (stored as pending, never public until approved)
       description: |
         Requires the Client Token cookie from POST /api/client-token (send with credentials
-        'same-origin'). Checks run in this order: fields → honeypot → Client Token → Turnstile →
-        rate limits → insert. On 401 CLIENT_TOKEN_INVALID the Turnstile token has not been used
-        yet, so the client fetches a new Client Token and resends the same request once.
+        'same-origin'). Checks run in this order: body size → fields → honeypot → Client Token →
+        Turnstile → rate limits → insert. On 401 CLIENT_TOKEN_INVALID the Turnstile token has not
+        been used yet, so the client fetches a new Client Token and resends the same request once.
+        A body over 8 KiB (8,192 bytes) gets 413 PAYLOAD_TOO_LARGE. Every card the field rules
+        allow fits: the largest the form can send, with the longest Turnstile token (2,048
+        characters), is about 4.4 KiB (#16).
       operationId: submitCard
       security: [{ clientToken: [] }]
       requestBody:
@@ -209,11 +212,15 @@ components:
           example: 小恩
         text_gratitude:
           type: string
-          description: Trimmed length 1–140 code points; tab and newline allowed.
+          description: |
+            Trimmed, 1–140 by the weighted count (#16, src/lib/text.ts): per grapheme, half-width
+            characters (U+0020–007E) and tab count 0.5, anything else 1 (CJK, full-width
+            characters, a newline, a whole emoji such as 👨‍👩‍👧). Also at most 280 code points and
+            10 line breaks. Over any limit: 400 with fields.<field> = too_long. Tab and newline allowed.
           example: 感謝神這一年的帶領
         text_anticipate:
           type: string
-          description: Trimmed length 1–140 code points; tab and newline allowed.
+          description: Same rules as text_gratitude. The example counts 10.
           example: 期待 There is more！
         agreed_to_publish:
           type: boolean
