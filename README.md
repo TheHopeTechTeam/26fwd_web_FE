@@ -72,6 +72,7 @@ npm run preview    # 預覽 build 結果
 | `npm run assets:portraits` | 20 張合成插畫頭像 `public/synthetic/portraits/` |
 | `npm run assets:audio` | 三首自製測試音樂 `public/audio/*.m4a`（需 macOS `afconvert`） |
 | `npm run assets:font` | 中文標題子集字型 `src/assets/fonts/fwd-heading-tc.woff2`（標題文案改動後要重跑） |
+| `npm run assets:body-font` | 中文內文字型 Noto Serif TC，依字元切成約 100 個 woff2（`src/assets/fonts/noto-serif-tc/`、`src/styles/body-font.css`），瀏覽器只下載畫面上用到的字 |
 | `npm run assets:brand` | Logo、apple-touch-icon、OG 分享圖 |
 
 設計原型保留在 `Forward_ There is more/`（僅供參考，不參與 build）。

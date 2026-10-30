@@ -33,7 +33,7 @@ export const HERO = {
   series: '2026 FORWARD',
   zh: '系列講道',
   date: '11/14 起',
-  lead: '感謝神過去七年的信實，一起期待祂要成就的更多。',
+  lead: '感謝過去的信實，\n一起期待未來的更多。',
   cta: '開始旅程',
 };
 
@@ -67,6 +67,14 @@ export const MUSIC: { track: Track; note: string } = {
   note: '測試音樂為本專案自製的合成曲目，正式選曲與授權待 COMMS 確認。',
 };
 
+/** Hero prompt for the same player as the header switch. */
+export const HERO_MUSIC = {
+  start: '開啟音樂，邊聽邊走這趟旅程',
+  stop: '暫停音樂',
+  hint: '也可以在右上角 ♪ 隨時開關',
+  error: '音樂暫時無法播放，再試一次',
+};
+
 export interface Stat {
   value: number;
   suffix?: string;
@@ -90,7 +98,7 @@ export interface Ministry {
 
 export const ANTICIPATE = {
   title: '神要帶我們去的地方',
-  lead: '五項事工，加上一面代禱的牆。這是我們一起期待、也一起預備的未來。',
+  lead: '五項事工，是我們一起期待、也一起預備的未來。',
   statsNote: '示意數據，正式數字與統計口徑待 COMMS 交付。',
   artNote: '圖像待 COMMS 交付',
 };
@@ -177,10 +185,63 @@ export const PRAYER_LINK = {
   label: '前往 Prayer Map 代禱',
 };
 
+/** How the card works, beside the form (#23): write, make and keep, then choose to publish. */
+export const RESPOND_STEPS = [
+  { title: '寫下感謝與期待', text: '一句感謝，一個向前的期待。' },
+  { title: '製作並保存卡片', text: '選一段信心宣告，下載或分享到社群。' },
+  { title: '決定是否公開', text: '想讓大家一起看見，再公開到卡片牆。' },
+];
+
 export const RESPOND = {
   title: 'Write it forward',
-  lead: '寫下一張屬於你的 Forward Card：一句感謝，一個期待。送出後由團隊審閱，再公開到卡片牆與全 Hope Nation 分享。',
+  lead: '寫下一張屬於你的 Forward Card：一句感謝，一個期待。做好的卡片可以下載保存，也可以選擇公開到卡片牆，與全 Hope Nation 分享。',
 };
+
+/** Ground colours a declaration card can use; canvasCard maps them to the KV swatch. */
+export type DeclarationPalette = 'navy' | 'gold' | 'earth';
+/** How the frame on the card is drawn, so each declaration has its own look (#23). */
+export type DeclarationFrame = 'line' | 'double' | 'arch';
+
+export interface Declaration {
+  id: string;
+  title: string;
+  en: string;
+  text: string;
+  palette: DeclarationPalette;
+  frame: DeclarationFrame;
+}
+
+/**
+ * Declarations of faith for the result card (#23): each has its own header, colours and
+ * frame. Demo wording from Ian's meeting preview until BB sends the final set; visitors
+ * only pick one, never write their own, and the choice is not stored.
+ */
+export const DECLARATIONS: Declaration[] = [
+  {
+    id: 'love-in-action',
+    title: '向世界走去',
+    en: 'LOVE IN ACTION',
+    text: '我願意多走一步，把愛與盼望帶進日常。',
+    palette: 'navy',
+    frame: 'line',
+  },
+  {
+    id: 'there-is-more',
+    title: '相信還有更多',
+    en: 'THERE IS MORE',
+    text: '我相信神的信實，也期待祂要成就的更多。',
+    palette: 'gold',
+    frame: 'double',
+  },
+  {
+    id: 'hope-for-tomorrow',
+    title: '一起成為祝福',
+    en: 'HOPE FOR TOMORROW',
+    text: '我願意與教會同行，讓更多人找到盼望。',
+    palette: 'earth',
+    frame: 'arch',
+  },
+];
 
 export const FINALE = {
   kicker: 'FORWARD 2026 · GIVE',

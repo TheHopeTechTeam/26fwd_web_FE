@@ -63,7 +63,7 @@ export function Modal({ open, onClose, labelledBy, className = '', children }: M
   return (
     <dialog
       ref={ref}
-      className={`modal ${closing ? 'is-closing' : ''} ${className}`.trim()}
+      className={`modal tone-dark ${closing ? 'is-closing' : ''} ${className}`.trim()}
       aria-labelledby={labelledBy}
       onCancel={(e) => {
         e.preventDefault();

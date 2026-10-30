@@ -1,4 +1,5 @@
-import { HERO } from '../data/content';
+import { HERO, HERO_MUSIC } from '../data/content';
+import { useMusic } from '../lib/music';
 import kv1280 from '../assets/kv/kv-1280.webp';
 import kv1920 from '../assets/kv/kv-1920.webp';
 import kv2560 from '../assets/kv/kv-2560.webp';
@@ -49,7 +50,24 @@ export function Hero() {
             </svg>
           </a>
         </div>
+        <HeroMusic />
       </div>
     </section>
+  );
+}
+
+/** Invites the visitor to listen along; the header switch controls the same music. */
+function HeroMusic() {
+  const { state, playing, toggle } = useMusic();
+  return (
+    <p className="hero__music">
+      <button type="button" className="hero__music-btn" onClick={toggle} aria-pressed={playing}>
+        <span className="hero__music-icon" aria-hidden="true">
+          {playing ? '❚❚' : '♪'}
+        </span>
+        {state === 'error' ? HERO_MUSIC.error : playing ? HERO_MUSIC.stop : HERO_MUSIC.start}
+      </button>
+      {playing && <span className="hero__music-hint">{HERO_MUSIC.hint}</span>}
+    </p>
   );
 }

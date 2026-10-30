@@ -3,7 +3,9 @@
   gap: 6px;
   padding: 22px 22px 18px;
   border-radius: var(--radius-md);
-  color: var(--ink);
+  /* Ink channel for the card's text; the 深褐 card flips it to paper. */
+  --fcard-rgb: var(--rgb-base);
+  color: rgb(var(--fcard-rgb));
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.25);
   overflow-wrap: anywhere;
   animation: fcard-in 0.5s var(--ease-out) both;
@@ -15,8 +17,9 @@
 .fcard--paper {
   background: var(--paper);
 }
-.fcard--mist {
-  background: rgb(var(--rgb-card-mist));
+.fcard--earth {
+  --fcard-rgb: var(--rgb-paper);
+  background: rgb(var(--rgb-earth));
 }
 .fcard--sand {
   background: rgb(var(--rgb-card-sand));
@@ -24,9 +27,15 @@
 
 .fcard__prompt {
   font-family: var(--font-heading-zh);
-  font-size: 0.8125rem;
+  font-weight: 700;
+  font-size: 1rem;
   letter-spacing: 0.06em;
-  color: rgb(var(--rgb-base) / 0.62);
+  /* 深褐 prompts set apart from the 深藍 answers (金黃 on the 深褐 card). */
+  color: rgb(var(--rgb-earth));
+}
+
+.fcard--earth .fcard__prompt {
+  color: var(--accent);
 }
 
 .fcard__prompt:not(:first-child) {
@@ -46,14 +55,14 @@
   gap: 4px 12px;
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px solid rgb(var(--rgb-base) / 0.14);
+  border-top: 1px solid rgb(var(--fcard-rgb) / 0.14);
   font-size: 0.8125rem;
-  color: rgb(var(--rgb-base) / 0.7);
+  color: rgb(var(--fcard-rgb) / 0.7);
 }
 
 .fcard__name {
   font-weight: 600;
-  color: var(--ink);
+  color: rgb(var(--fcard-rgb));
 }
 
 .fcard--skeleton {

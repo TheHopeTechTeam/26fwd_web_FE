@@ -51,12 +51,18 @@ export interface CardDraft {
 
 export type DraftErrors = Partial<Record<CardField, FieldError>> & { agreed_to_publish?: 'required' };
 
-export function validateDraft(draft: CardDraft): DraftErrors {
+/** The card's own fields, for making the personal card before any consent to publish. */
+export function validateFields(values: Record<CardField, string>): DraftErrors {
   const errors: DraftErrors = {};
   for (const field of Object.keys(LIMITS) as CardField[]) {
-    const error = validateField(field, draft[field]);
+    const error = validateField(field, values[field]);
     if (error) errors[field] = error;
   }
+  return errors;
+}
+
+export function validateDraft(draft: CardDraft): DraftErrors {
+  const errors = validateFields(draft);
   if (draft.agreed_to_publish !== true) errors.agreed_to_publish = 'required';
   return errors;
 }

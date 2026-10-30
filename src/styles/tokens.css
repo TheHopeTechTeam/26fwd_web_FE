@@ -50,27 +50,29 @@
 
 :root {
   /* ── 1. THEME ── FORWARD 2026 KV palette (#26, Comms 色票.png): #0f3b59 深藍, #7d929e 藍灰,
-     #bcbdbf 淺灰, #edcc5f 金黃, #3e251e 深褐. The sheet gives no roles; the page background is
-     深褐, the closest to the KV photo's warm dark tones (team choice, 10/27, over 深藍).
-     Values as labelled on the swatch sheet; the PNG's sampled pixels differ slightly (#36211c…),
-     so Comms still has to confirm which set is final. Other channels are shades or tints of
-     those five, chosen so every text pair stays ≥ 4.5:1. Paper, white and the status colours
-     are not in the KV and stay pending Comms (#26 F-3). */
-  --rgb-base: 62 37 30; /* #3e251e 深褐: page background and dark text */
-  --rgb-base-deep: 44 26 21; /* #2c1a15 */
-  --rgb-base-soft: 71 43 35; /* #472b23 */
-  --rgb-base-raised: 82 50 41; /* #523229 */
+     #bcbdbf 淺灰, #edcc5f 金黃, #3e251e 深褐. The sheet gives no roles. The first three are one
+     blue family (dark → light), so 深藍 is the page ground with its own steps for surfaces,
+     金黃 the accent, and 深褐 stays for dark text on 金黃 (team choice, 10/29; it replaces the
+     10/27 brown ground, which had no lighter steps in the sheet to separate sections with).
+     Values as labelled on the swatch sheet. Other channels are shades or tints of those five,
+     chosen so every text pair stays ≥ 4.5:1 (淺灰 text-3 is 4.6:1 on the raised step). Paper,
+     white and the status colours are not in the KV and stay pending Comms (#26 F-3). */
+  --rgb-base: 15 59 89; /* #0f3b59 深藍: page background and dark text */
+  --rgb-base-deep: 10 41 62; /* #0a293e */
+  --rgb-base-soft: 19 66 98; /* #134262 */
+  --rgb-base-raised: 23 73 107; /* #17496b */
   --rgb-tint: 125 146 158; /* #7d929e 藍灰: glow behind sections; never body text */
   --rgb-accent: 237 204 95; /* #edcc5f 金黃 */
   --rgb-accent-bright: 244 220 140; /* #f4dc8c */
   --rgb-accent-dim: 196 164 67; /* #c4a443 */
   --rgb-accent-on-light: 122 92 14; /* #7a5c0e 金黃 dark enough to read on paper (5.4:1) */
-  --rgb-earth: 62 37 30; /* #3e251e 深褐: text on 金黃 */
+  --rgb-earth: 62 37 30; /* #3e251e 深褐: text on 金黃 (the Give buttons) */
+  --rgb-mist: 221 229 234; /* #dde5ea 淺藍: 淺灰 leaned toward 藍灰, ground of the light sections */
   --rgb-paper: 244 239 228; /* #f4efe4 */
-  --rgb-light: 255 255 255;
+  --rgb-light: 255 255 255; /* light ink; flips to 深藍 inside .tone-light */
+  --rgb-white: 255 255 255; /* stays white in every section */
   --rgb-text-2: 188 189 191; /* #bcbdbf 淺灰 */
-  --rgb-text-3: 169 167 161; /* #a9a7a1 淺灰, one step dimmer (4.7:1 on raised) */
-  --rgb-card-mist: 227 232 235; /* #e3e8eb card wall tint (藍灰) */
+  --rgb-text-3: 180 181 183; /* #b4b5b7 淺灰, one step dimmer (4.6:1 on raised) */
   --rgb-card-sand: 246 237 207; /* #f6edcf card wall tint (金黃) */
   /* Status colours are functional, not brand; they normally stay as they are. */
   --rgb-danger: 255 154 140; /* #ff9a8c on dark (lightened from #ff8a7a for the raised surfaces) */
@@ -87,6 +89,10 @@
   --accent-bright: rgb(var(--rgb-accent-bright));
   --accent-dim: rgb(var(--rgb-accent-dim));
   --accent-on-light: rgb(var(--rgb-accent-on-light));
+  /* 金黃 when it is text or a thin line; swaps to the darker gold on light sections. */
+  --accent-text: var(--accent);
+  /* Chapter labels (01 · Appreciate…): 金黃 on dark, 深褐 on light sections. */
+  --chapter-label: var(--accent);
   --paper: rgb(var(--rgb-paper));
   --ink: rgb(var(--rgb-base));
   --on-accent: rgb(var(--rgb-earth));
@@ -106,11 +112,15 @@
 
   /* 字體.png: 標題 Recia Serif Display (Latin only); 副標 Awesome Serif Bold Regular (英) +
      Noto Serif TC Bold (中); 資訊 Awesome Serif. Neither Latin face has CJK, so Chinese in a
-     display title falls through to the heading subset, then to system serif fonts. */
+     display title falls through to the heading subset, then to system serif fonts.
+     Body (10/29, team choice: the sheet names no body face, so it follows the same family):
+     Awesome Serif for Latin + Noto Serif TC Regular for Chinese, sliced by unicode-range in
+     body-font.css. --font-ui keeps the old sans stack for the admin console's dense tables. */
   --font-display: 'Recia Serif Display', 'FWD Heading TC', 'Noto Serif TC', 'Songti TC', serif;
   --font-info: 'Awesome Serif', 'FWD Heading TC', 'Noto Serif TC', 'Songti TC', serif;
   --font-heading-zh: 'Awesome Serif', 'FWD Heading TC', 'Noto Serif TC', 'Songti TC', serif;
-  --font-body: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'PingFang TC', 'Hiragino Sans TC', 'Noto Sans TC',
+  --font-body: 'Awesome Serif', 'Noto Serif TC', 'Songti TC', 'PMingLiU', serif;
+  --font-ui: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'PingFang TC', 'Hiragino Sans TC', 'Noto Sans TC',
     'Microsoft JhengHei', sans-serif;
   --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
 
@@ -141,4 +151,50 @@
     --rail-space: 200px;
     --header-h: 72px;
   }
+}
+
+/*
+ * Light sections (10/29, team choice: 淺深淺 — 感謝 and 回應 on 淺藍, 期待 on 深藍). Same
+ * semantic names, light values, so components need no section-specific colours. Dialogs and
+ * other dark panels inside a light section put .tone-dark back.
+ */
+.tone-light {
+  --rgb-light: var(--rgb-base);
+  --bg: rgb(var(--rgb-mist));
+  --bg-deep: rgb(var(--rgb-mist));
+  --surface: rgb(var(--rgb-white) / 0.5);
+  --surface-raised: rgb(var(--rgb-white) / 0.75);
+  --accent-text: var(--accent-on-light);
+  --chapter-label: rgb(var(--rgb-earth));
+  --text: rgb(var(--rgb-base));
+  --text-2: rgb(var(--rgb-base) / 0.86);
+  --text-3: rgb(var(--rgb-base) / 0.76);
+  --line: rgb(var(--rgb-base) / 0.14);
+  --line-strong: rgb(var(--rgb-base) / 0.3);
+  --focus: rgb(var(--rgb-base));
+  --danger: var(--danger-on-light);
+  --danger-text: var(--danger-on-light);
+  --shadow-card: 0 18px 40px rgb(var(--rgb-base) / 0.18);
+  background-color: var(--bg);
+  color: var(--text);
+}
+
+.tone-dark {
+  --rgb-light: var(--rgb-white);
+  --bg: rgb(var(--rgb-base));
+  --bg-deep: rgb(var(--rgb-base-deep));
+  --surface: rgb(var(--rgb-base-soft));
+  --surface-raised: rgb(var(--rgb-base-raised));
+  --accent-text: var(--accent);
+  --chapter-label: var(--accent);
+  --text: rgb(var(--rgb-white));
+  --text-2: rgb(var(--rgb-text-2));
+  --text-3: rgb(var(--rgb-text-3));
+  --line: rgb(var(--rgb-white) / 0.12);
+  --line-strong: rgb(var(--rgb-white) / 0.22);
+  --focus: var(--accent-bright);
+  --danger: rgb(var(--rgb-danger));
+  --danger-text: rgb(255 210 203);
+  --shadow-card: 0 18px 44px rgba(0, 0, 0, 0.34);
+  color: var(--text);
 }

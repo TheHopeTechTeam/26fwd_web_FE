@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState, type MouseEvent } from 'react';
 import logoUrl from '../assets/brand/hope-h-white.png';
 import { config, pageUrl } from '../config/env';
+import { CHAPTERS } from '../data/content';
+import { jumpToSection } from '../lib/scroll';
 import { GiveButton } from './GiveButton';
 import { MusicToggle } from './MusicToggle';
 import './SiteHeader.css';
@@ -14,7 +16,12 @@ interface SiteHeaderProps {
 
 export function SiteHeader({ progress = false, backLabel }: SiteHeaderProps) {
   const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const barRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
+  const menuId = useId();
+  // Sub-pages (cards, privacy) link back to the chapters on the home page.
+  const onHome = !backLabel;
 
   useEffect(() => {
     let frame = 0;
@@ -40,8 +47,51 @@ export function SiteHeader({ progress = false, backLabel }: SiteHeaderProps) {
     };
   }, []);
 
+  // Phone menu: Esc or a tap outside the header closes it; so does growing to the desktop nav.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuOpen(false);
+    };
+    const onPointer = (e: PointerEvent) => {
+      if (!headerRef.current?.contains(e.target as Node)) setMenuOpen(false);
+    };
+    const wide = window.matchMedia('(min-width: 960px)');
+    const onWide = () => wide.matches && setMenuOpen(false);
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('pointerdown', onPointer);
+    wide.addEventListener('change', onWide);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('pointerdown', onPointer);
+      wide.removeEventListener('change', onWide);
+    };
+  }, [menuOpen]);
+
+  const followChapter = (event: MouseEvent<HTMLAnchorElement>, id: string) => {
+    setMenuOpen(false);
+    if (onHome) jumpToSection(event, id);
+  };
+
+  const links = (
+    <ul className="site-nav__list">
+      {CHAPTERS.map((chapter) => (
+        <li key={chapter.id}>
+          <a href={onHome ? `#${chapter.id}` : pageUrl(`#${chapter.id}`)} onClick={(e) => followChapter(e, chapter.id)}>
+            {chapter.zh}
+          </a>
+        </li>
+      ))}
+      <li>
+        <a href={pageUrl('cards/')} onClick={() => setMenuOpen(false)}>
+          卡片牆<span aria-hidden="true"> ↗</span>
+        </a>
+      </li>
+    </ul>
+  );
+
   return (
-    <header className={`site-header ${scrolled ? 'is-scrolled' : ''}`}>
+    <header ref={headerRef} className={`site-header ${scrolled || menuOpen ? 'is-scrolled' : ''}`}>
       {progress && (
         <div className="site-header__progress" aria-hidden="true">
           <div ref={barRef} className="site-header__progress-bar" />
@@ -67,19 +117,27 @@ export function SiteHeader({ progress = false, backLabel }: SiteHeaderProps) {
             <span className="site-header__badge-long">SYNTHETIC </span>PREVIEW
           </span>
         )}
+        <nav className="site-nav" aria-label="主要">
+          {links}
+        </nav>
         <div className="site-header__actions">
           <MusicToggle />
-          <GiveButton
-            placement="header"
-            label={
-              <>
-                奉獻<span className="site-header__give-en"> Give</span>
-              </>
-            }
-            className="btn btn--gold btn--sm site-header__give"
-          />
+          <GiveButton placement="header" label="參與奉獻" className="btn btn--gold btn--sm site-header__give" />
+          <button
+            type="button"
+            className="site-header__menu-btn"
+            aria-expanded={menuOpen}
+            aria-controls={menuId}
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            <span className="site-header__menu-icon" aria-hidden="true" />
+            <span className="sr-only">{menuOpen ? '關閉選單' : '開啟選單'}</span>
+          </button>
         </div>
       </div>
+      <nav id={menuId} className="site-menu" aria-label="主要" hidden={!menuOpen}>
+        {links}
+      </nav>
     </header>
   );
 }

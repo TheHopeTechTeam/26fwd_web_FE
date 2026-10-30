@@ -83,6 +83,133 @@
   gap: 8px;
 }
 
+/* Chapter links: inline from 960px, behind the menu button below that. */
+.site-nav__list {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.site-nav__list a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--text-2);
+  text-decoration: none;
+  transition: color 0.2s var(--ease-standard);
+}
+
+.site-nav__list a:hover {
+  color: var(--accent);
+}
+
+.site-nav {
+  display: none;
+  margin-left: auto;
+}
+
+.site-nav .site-nav__list {
+  gap: clamp(16px, 2vw, 32px);
+}
+
+.site-nav .site-nav__list a {
+  font-family: var(--font-heading-zh);
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.06em;
+  color: var(--text);
+}
+
+.site-header__menu-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--line-strong);
+  background: rgb(var(--rgb-base-deep) / 0.4);
+  color: var(--text);
+  cursor: pointer;
+}
+
+/* Three bars that turn into an × while the menu is open. */
+.site-header__menu-icon,
+.site-header__menu-icon::before,
+.site-header__menu-icon::after {
+  display: block;
+  width: 18px;
+  height: 2px;
+  border-radius: 1px;
+  background: currentColor;
+  transition:
+    transform 0.2s var(--ease-standard),
+    background-color 0.2s var(--ease-standard);
+}
+
+.site-header__menu-icon {
+  position: relative;
+}
+
+.site-header__menu-icon::before,
+.site-header__menu-icon::after {
+  content: '';
+  position: absolute;
+  left: 0;
+}
+
+.site-header__menu-icon::before {
+  top: -6px;
+}
+
+.site-header__menu-icon::after {
+  top: 6px;
+}
+
+.site-header__menu-btn[aria-expanded='true'] .site-header__menu-icon {
+  background: transparent;
+}
+
+.site-header__menu-btn[aria-expanded='true'] .site-header__menu-icon::before {
+  transform: translateY(6px) rotate(45deg);
+}
+
+.site-header__menu-btn[aria-expanded='true'] .site-header__menu-icon::after {
+  transform: translateY(-6px) rotate(-45deg);
+}
+
+.site-menu {
+  border-top: 1px solid var(--line);
+  padding: 8px max(var(--pad-x), env(safe-area-inset-left, 0px)) 20px;
+}
+
+.site-menu .site-nav__list {
+  flex-direction: column;
+}
+
+.site-menu .site-nav__list a {
+  width: 100%;
+  min-height: 52px;
+  border-bottom: 1px solid var(--line);
+  font-family: var(--font-heading-zh);
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: var(--text);
+}
+
+@media (min-width: 960px) {
+  .site-nav {
+    display: block;
+  }
+  .site-nav + .site-header__actions {
+    margin-left: clamp(16px, 2vw, 32px);
+  }
+  .site-header__menu-btn,
+  .site-menu {
+    display: none;
+  }
+}
+
 /* Background-music switch (MusicToggle): round, 44px tap target, gold while playing. */
 .music-toggle {
   display: inline-grid;
@@ -151,8 +278,9 @@
   }
 }
 
+/* The smallest phones (320px) need the room for the menu button: the logo stays, the wordmark goes. */
 @media (max-width: 360px) {
-  .site-header__give-en {
+  .site-header__wordmark {
     display: none;
   }
 }

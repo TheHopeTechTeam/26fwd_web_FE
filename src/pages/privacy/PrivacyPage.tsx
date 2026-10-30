@@ -61,7 +61,8 @@ export function PrivacyPage() {
           <section>
             <h2>送出後會發生什麼事</h2>
             <ul>
-              <li>卡片送出後會先進入「待審閱」狀態，由團隊審閱通過後才會公開在 Forward Cards 卡片牆。</li>
+              <li>只製作、下載或分享卡片時，卡片內容不會送到伺服器；只有你勾選同意並按下「公開到卡片牆」，卡片才會送出。</li>
+              <li>卡片送出後會先進入「待審閱」狀態，審核通過後才會公開在 Forward Cards 卡片牆。</li>
               <li>內容若包含聯絡方式、他人的私密資訊或與主題無關，可能不會公開。</li>
               <li>已公開的卡片若被隱藏，只是不再顯示，並不等於資料已刪除。</li>
               <li>下載或分享你的個人卡片圖片，不代表卡片已經公開。</li>
@@ -80,7 +81,7 @@ export function PrivacyPage() {
                 <strong>Cloudflare Turnstile</strong>：用來確認送出者不是機器人，驗證資料由 Cloudflare 即時處理，本站不保存。
               </li>
               <li>
-                <strong>Google Analytics（若啟用）</strong>：只用來統計「奉獻按鈕」的點擊次數等整體使用情況，不會傳送你的署名或卡片內容。
+                <strong>Google Analytics（若啟用）</strong>：只用來統計「奉獻按鈕」的點擊次數、製作卡片的次數等整體使用情況，不會傳送你的署名或卡片內容。
               </li>
               <li>
                 <strong>Prayer Map</strong>：旅程最後的「前往 Prayer Map 代禱」連到外部的 Prayer Map 網站，本站不會把你在這裡填寫的任何資料傳給它。請參考

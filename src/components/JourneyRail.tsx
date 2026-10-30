@@ -1,6 +1,6 @@
-import { useEffect, useState, type MouseEvent } from 'react';
+import { useEffect, useState } from 'react';
 import { CHAPTERS, type ChapterId } from '../data/content';
-import { prefersReducedMotion } from '../lib/hooks';
+import { jumpToSection } from '../lib/scroll';
 import './JourneyRail.css';
 
 /**
@@ -31,16 +31,6 @@ export function JourneyRail() {
     return () => observer.disconnect();
   }, []);
 
-  const jump = (event: MouseEvent<HTMLAnchorElement>, id: ChapterId) => {
-    const target = document.getElementById(id);
-    if (!target) return;
-    event.preventDefault();
-    target.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
-    history.replaceState(null, '', `#${id}`);
-    // Move focus for keyboard and screen-reader users without a second scroll.
-    target.focus({ preventScroll: true });
-  };
-
   return (
     <nav className="journey-rail" aria-label="旅程章節">
       <ol className="journey-rail__list">
@@ -52,7 +42,7 @@ export function JourneyRail() {
                 href={`#${chapter.id}`}
                 className={`journey-rail__item ${isActive ? 'is-active' : ''}`}
                 aria-current={isActive ? 'step' : undefined}
-                onClick={(e) => jump(e, chapter.id)}
+                onClick={(e) => jumpToSection(e, chapter.id)}
               >
                 <span className="journey-rail__label">
                   <span className="journey-rail__index">{chapter.index}</span>

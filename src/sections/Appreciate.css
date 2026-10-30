@@ -11,6 +11,17 @@
   margin-bottom: clamp(32px, 5svh, 56px);
 }
 
+/* Larger chapter label, number included (10/29). */
+.chapter__head .kicker {
+  font-size: clamp(0.875rem, 0.8rem + 0.35vw, 1.0625rem);
+  font-weight: 600;
+  color: var(--chapter-label);
+}
+
+.chapter__head .kicker .eyebrow-index {
+  color: inherit;
+}
+
 .chapter__title {
   font-size: clamp(1.75rem, 1.1rem + 3.2vw, 3.75rem);
   line-height: 1.22;
@@ -160,8 +171,8 @@
 .testimony__tags li {
   padding: 4px 12px;
   border-radius: var(--radius-full);
-  border: 1px solid rgb(var(--rgb-accent) / 0.5);
-  color: var(--accent);
+  border: 1px solid var(--accent-text);
+  color: var(--accent-text);
   font-size: 0.8125rem;
 }
 

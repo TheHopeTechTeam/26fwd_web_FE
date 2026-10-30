@@ -7,7 +7,8 @@
 .hero {
   position: relative;
   padding-top: var(--header-h);
-  padding-bottom: clamp(48px, 8svh, 96px);
+  /* 01 Appreciate starts on paper, so the colour change marks the break. */
+  padding-bottom: clamp(48px, 8svh, 88px);
   background: var(--bg);
   isolation: isolate;
 }
@@ -56,10 +57,12 @@
 
 .hero__lead {
   margin-top: clamp(12px, 2svh, 20px);
+  white-space: pre-line; /* the copy breaks after the first clause */
   max-width: 28em;
   font-size: clamp(1rem, 0.9rem + 0.5vw, 1.25rem);
+  font-weight: 700;
   line-height: 1.8;
-  color: var(--text-2);
+  color: var(--text);
 }
 
 .hero__actions {
@@ -87,6 +90,40 @@
 
   .hero__date {
     margin-top: 0;
+  }
+}
+
+/* Wide screens: date and lead on the left, the CTA and music prompt on the right, so the
+   band under the KV stays short instead of stacking everything down the left edge. */
+@media (min-width: 900px) {
+  .hero {
+    padding-bottom: clamp(40px, 6svh, 72px);
+  }
+
+  .hero__content {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 48px;
+    margin-top: clamp(28px, 3vw, 44px);
+  }
+
+  .hero__date,
+  .hero__lead {
+    grid-column: 1;
+  }
+
+  .hero__actions {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: center;
+    justify-self: end;
+    margin-top: 0;
+  }
+
+  .hero__music {
+    grid-column: 2;
+    grid-row: 3;
+    justify-self: end;
   }
 }
 
@@ -149,4 +186,53 @@ html.motion-ok .hero__actions {
     opacity: 0;
     transform: translateY(32px);
   }
+}
+
+/* Listen-along prompt under the CTA: quieter than the button, same player as the header. */
+.hero__music {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  margin-top: 14px;
+  font-size: 0.9375rem;
+}
+
+.hero__music-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 6px 18px 6px 6px;
+  border: 1px solid rgb(var(--rgb-accent) / 0.6);
+  border-radius: var(--radius-full);
+  background: rgb(var(--rgb-accent) / 0.08);
+  color: var(--text);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s var(--ease-standard), border-color 0.2s var(--ease-standard);
+}
+
+.hero__music-btn:hover,
+.hero__music-btn[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: rgb(var(--rgb-accent) / 0.16);
+}
+
+/* 金黃 disc with the note (or pause bars), so it reads as a play control. */
+.hero__music-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--ink);
+  font-size: 0.875rem;
+}
+
+.hero__music-hint {
+  color: var(--text-3);
+  font-size: 0.875rem;
 }

@@ -15,7 +15,7 @@ export function Appreciate() {
   const opened = TESTIMONIES.find((t) => t.id === openId) ?? null;
 
   return (
-    <section id="appreciate" className="chapter appreciate" tabIndex={-1} aria-labelledby="appreciate-title">
+    <section id="appreciate" className="chapter appreciate tone-light" tabIndex={-1} aria-labelledby="appreciate-title">
       <div className="wrap">
         <Reveal className="chapter__head">
           <p className="kicker">
