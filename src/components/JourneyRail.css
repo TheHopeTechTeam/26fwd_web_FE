@@ -42,18 +42,18 @@
   color: var(--accent);
 }
 
-/* Phones: the English label runs vertically inside a slim capsule. */
+/* Phones: the Chinese name runs vertically inside a slim capsule (English on desktop). */
 .journey-rail__label {
   writing-mode: vertical-rl;
-  font-family: var(--font-mono);
-  font-size: 0.625rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-family: var(--font-heading-zh);
+  font-weight: 700;
+  font-size: 0.8125rem;
+  letter-spacing: 0.2em;
   line-height: 1;
 }
 
 .journey-rail__index,
-.journey-rail__zh {
+.journey-rail__en {
   display: none;
 }
 
@@ -99,6 +99,11 @@
   }
   .journey-rail__label {
     writing-mode: horizontal-tb;
+    font-family: var(--font-mono);
+    font-weight: 400;
+    font-size: 0.625rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
     display: grid;
     grid-template-columns: auto auto;
     align-items: baseline;
@@ -111,6 +116,7 @@
     opacity: 0.8;
   }
   .journey-rail__en {
+    display: inline;
     font-size: 0.6875rem;
   }
   .journey-rail__zh {
