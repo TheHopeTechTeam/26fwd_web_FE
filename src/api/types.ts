@@ -10,9 +10,9 @@ export type CardStatus = 'pending' | 'approved' | 'hidden';
 export interface SubmitCardRequest {
   /** trim → 1–20 code points, no control characters */
   nickname: string;
-  /** trim → 1–140 code points; tab/newline allowed */
+  /** trim → weighted 1–140, ≤ 280 code points, ≤ 10 line breaks (#16, src/lib/text.ts); tab/newline allowed */
   text_gratitude: string;
-  /** trim → 1–140 code points; tab/newline allowed */
+  /** trim → weighted 1–140, ≤ 280 code points, ≤ 10 line breaks (#16, src/lib/text.ts); tab/newline allowed */
   text_anticipate: string;
   /** Must be literally true. */
   agreed_to_publish: true;
@@ -134,4 +134,4 @@ export interface ApiErrorBody {
 export const PUBLIC_PAGE_LIMIT = 12;
 export const ADMIN_LIST_LIMIT = 100;
 export const ADMIN_TOKEN_MIN_LENGTH = 32;
-export const MAX_BODY_BYTES = 4096;
+export const MAX_BODY_BYTES = 8192;

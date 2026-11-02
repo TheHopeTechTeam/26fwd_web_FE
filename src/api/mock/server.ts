@@ -94,7 +94,7 @@ export function createMockServer(options: MockServerOptions = {}) {
 
   function submitCard(bodyText: string, sendsCookies: boolean): MockResponse {
     if (new TextEncoder().encode(bodyText).length > MAX_BODY_BYTES) {
-      return error(413, 'PAYLOAD_TOO_LARGE', 'Request body exceeds 4 KiB');
+      return error(413, 'PAYLOAD_TOO_LARGE', 'Request body exceeds 8 KiB');
     }
     let body: Record<string, unknown>;
     try {

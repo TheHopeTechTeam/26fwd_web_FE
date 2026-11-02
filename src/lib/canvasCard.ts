@@ -87,6 +87,8 @@ export const PROMPTS = { gratitude: '我感謝神…', anticipate: '跟神一起
 
 const BODY = '"Noto Serif TC", "Songti TC", "PMingLiU", serif';
 const HEADING = '"FWD Heading TC", "Noto Serif TC", "Songti TC", "PingFang TC", "Microsoft JhengHei", serif';
+/** Smallest body size on the image (px at 1080 wide). */
+const MIN_SIZE = 20;
 const DISPLAY = '"Recia Serif Display", "Noto Serif TC", serif';
 
 /** Canvas can't wait for web fonts by itself, so load the ones (and the slices) it uses first. */
@@ -192,15 +194,13 @@ export function drawCard(ctx: CanvasRenderingContext2D, content: CardContent, fo
   ctx.fillText(declaration.title, pad, y);
   y += (story ? 44 : 36) * 1.3 + (story ? 72 : 44);
 
-  // Body: shrink the type until both answers, the declaration and the signature fit.
+  // Body: both answers, the declaration and the signature.
   const top = y;
   const bottom = h - pad;
-  let size = story ? 46 : 36;
-  let layout: { a: string[]; b: string[]; d: string[]; label: number; line: number; gap: number; dSize: number; dLine: number; sign: number; total: number } | null = null;
-  for (; size >= 20; size -= 2) {
+  const layoutAt = (size: number, gratitude: string, anticipate: string) => {
     ctx.font = `400 ${size}px ${BODY}`;
-    const a = wrapText(content.text_gratitude, maxWidth, measure);
-    const b = wrapText(content.text_anticipate, maxWidth, measure);
+    const a = wrapText(gratitude, maxWidth, measure);
+    const b = wrapText(anticipate, maxWidth, measure);
     const dSize = Math.round(size * 1.12);
     ctx.font = `700 ${dSize}px ${BODY}`;
     const d = wrapText(declaration.text, maxWidth, measure);
@@ -210,10 +210,24 @@ export function drawCard(ctx: CanvasRenderingContext2D, content: CardContent, fo
     const gap = Math.round(size * 1.15);
     const sign = Math.round(size * 0.86);
     const total = label * 1.8 * 3 + (a.length + b.length) * line + d.length * dLine + gap * 3 + sign * 1.4;
-    layout = { a, b, d, label, line, gap, dSize, dLine, sign, total };
-    if (total <= bottom - top) break;
-  }
-  if (!layout) return;
+    return { size, a, b, d, label, line, gap, dSize, dLine, sign, total };
+  };
+  // Shrink the type until everything fits. A newline counts as one character (#16), so an
+  // answer can be up to ~70 short lines; if even the smallest size cannot hold them, the
+  // answers' line breaks become spaces on the image rather than spilling over the footer.
+  const fit = (gratitude: string, anticipate: string) => {
+    for (let size = story ? 46 : 36; size >= MIN_SIZE; size -= 2) {
+      const candidate = layoutAt(size, gratitude, anticipate);
+      if (candidate.total <= bottom - top) return candidate;
+    }
+    return null;
+  };
+  const flat = (text: string) => text.replace(/\s*\n\s*/g, ' ');
+  const layout =
+    fit(content.text_gratitude, content.text_anticipate) ??
+    fit(flat(content.text_gratitude), flat(content.text_anticipate)) ??
+    layoutAt(MIN_SIZE, flat(content.text_gratitude), flat(content.text_anticipate));
+  const { size } = layout;
 
   y = story ? top + Math.max(0, (bottom - top - layout.total) / 2) : top;
   const label = (text: string) => {
