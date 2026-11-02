@@ -10,7 +10,7 @@
 }
 
 .site-header.is-scrolled {
-  background: rgba(20, 28, 31, 0.84);
+  background: rgb(var(--rgb-base-deep) / 0.84);
   -webkit-backdrop-filter: blur(12px) saturate(1.2);
   backdrop-filter: blur(12px) saturate(1.2);
   border-bottom-color: var(--line);
@@ -20,12 +20,12 @@
   position: absolute;
   inset: 0 0 auto 0;
   height: 3px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgb(var(--rgb-light) / 0.06);
 }
 
 .site-header__progress-bar {
   height: 100%;
-  background: linear-gradient(90deg, var(--gold-dim), var(--gold), var(--gold-bright));
+  background: linear-gradient(90deg, var(--accent-dim), var(--accent), var(--accent-bright));
   transform: scaleX(0);
   transform-origin: left center;
 }
@@ -40,6 +40,7 @@
 
 .site-header__brand {
   display: inline-flex;
+  flex: none;
   align-items: center;
   gap: 10px;
   min-height: 44px;
@@ -48,20 +49,20 @@
 }
 
 .site-header__brand img {
-  height: 24px;
+  height: 36px;
   width: auto;
 }
 
 .site-header__wordmark {
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 0.9375rem;
-  letter-spacing: 0.08em;
+  font-size: 1.25rem;
+  letter-spacing: 0.06em;
   white-space: nowrap;
 }
 
 .site-header__year {
-  color: var(--gold);
+  color: var(--accent);
 }
 
 .site-header__badge {
@@ -82,9 +83,211 @@
   gap: 8px;
 }
 
+/* Chapter links: inline from 960px, behind the menu button below that. */
+.site-nav__list {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.site-nav__list a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--text-2);
+  text-decoration: none;
+  transition: color 0.2s var(--ease-standard);
+}
+
+.site-nav__list a:hover {
+  color: var(--accent);
+}
+
+.site-nav {
+  display: none;
+  margin-left: auto;
+}
+
+.site-nav .site-nav__list {
+  gap: clamp(16px, 2vw, 32px);
+}
+
+.site-nav .site-nav__list a {
+  font-family: var(--font-heading-zh);
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.06em;
+  color: var(--text);
+}
+
+.site-header__menu-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--line-strong);
+  background: rgb(var(--rgb-base-deep) / 0.4);
+  color: var(--text);
+  cursor: pointer;
+}
+
+/* Three bars that turn into an × while the menu is open. */
+.site-header__menu-icon,
+.site-header__menu-icon::before,
+.site-header__menu-icon::after {
+  display: block;
+  width: 18px;
+  height: 2px;
+  border-radius: 1px;
+  background: currentColor;
+  transition:
+    transform 0.2s var(--ease-standard),
+    background-color 0.2s var(--ease-standard);
+}
+
+.site-header__menu-icon {
+  position: relative;
+}
+
+.site-header__menu-icon::before,
+.site-header__menu-icon::after {
+  content: '';
+  position: absolute;
+  left: 0;
+}
+
+.site-header__menu-icon::before {
+  top: -6px;
+}
+
+.site-header__menu-icon::after {
+  top: 6px;
+}
+
+.site-header__menu-btn[aria-expanded='true'] .site-header__menu-icon {
+  background: transparent;
+}
+
+.site-header__menu-btn[aria-expanded='true'] .site-header__menu-icon::before {
+  transform: translateY(6px) rotate(45deg);
+}
+
+.site-header__menu-btn[aria-expanded='true'] .site-header__menu-icon::after {
+  transform: translateY(-6px) rotate(-45deg);
+}
+
+.site-menu {
+  border-top: 1px solid var(--line);
+  padding: 8px max(var(--pad-x), env(safe-area-inset-left, 0px)) 20px;
+}
+
+.site-menu .site-nav__list {
+  flex-direction: column;
+}
+
+.site-menu .site-nav__list a {
+  width: 100%;
+  min-height: 52px;
+  border-bottom: 1px solid var(--line);
+  font-family: var(--font-heading-zh);
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: var(--text);
+}
+
+@media (min-width: 960px) {
+  .site-nav {
+    display: block;
+  }
+  .site-nav + .site-header__actions {
+    margin-left: clamp(16px, 2vw, 32px);
+  }
+  .site-header__menu-btn,
+  .site-menu {
+    display: none;
+  }
+}
+
+/* Background-music switch (MusicToggle): round, 44px tap target, gold while playing. */
+.music-toggle {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--line-strong);
+  background: rgb(var(--rgb-base-deep) / 0.4);
+  color: var(--text);
+  cursor: pointer;
+  transition:
+    background-color 0.2s var(--ease-standard),
+    color 0.2s var(--ease-standard),
+    border-color 0.2s var(--ease-standard);
+}
+
+.music-toggle:hover {
+  border-color: var(--accent);
+}
+
+.music-toggle.is-on {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.music-toggle.has-error {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.music-toggle__bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 16px;
+}
+
+.music-toggle__bars span {
+  width: 3px;
+  height: 100%;
+  border-radius: 2px;
+  background: currentColor;
+  transform-origin: bottom;
+  animation: music-bars 0.9s ease-in-out infinite alternate;
+}
+.music-toggle__bars span:nth-child(2) {
+  animation-delay: -0.3s;
+}
+.music-toggle__bars span:nth-child(3) {
+  animation-delay: -0.6s;
+}
+
+@keyframes music-bars {
+  from {
+    transform: scaleY(0.3);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .music-toggle__bars span {
+    animation: none;
+  }
+  .music-toggle__bars span:nth-child(2) {
+    transform: scaleY(0.6);
+  }
+}
+
+/* The smallest phones (320px) need the room for the menu button: the logo stays, the wordmark goes. */
 @media (max-width: 360px) {
-  .site-header__badge,
-  .site-header__give-en {
+  .site-header__wordmark {
+    display: none;
+  }
+}
+
+/* With the music switch in the header, phones only have room for the brand and the buttons. */
+@media (max-width: 430px) {
+  .site-header__badge {
     display: none;
   }
 }
@@ -96,8 +299,11 @@
 }
 
 @media (max-width: 420px) {
+  .site-header__brand img {
+    height: 30px;
+  }
   .site-header__wordmark {
-    font-size: 0.8125rem;
+    font-size: 1rem;
   }
   .site-header__give {
     padding-inline: 0.95em;

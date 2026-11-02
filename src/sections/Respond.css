@@ -1,13 +1,18 @@
 .respond {
   padding-bottom: 0;
-  background: linear-gradient(180deg, var(--navy) 0%, var(--navy-deep) 100%);
+  background: linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
+}
+
+/* The respond lead is longer; the full content width keeps it to one line on wide screens. */
+.respond .chapter__head .lead {
+  max-width: none;
 }
 
 .respond__title {
   font-family: var(--font-display);
   font-weight: 800;
   font-size: clamp(2.25rem, 1.4rem + 4.4vw, 5rem);
-  letter-spacing: -0.03em;
+  letter-spacing: 0;
   line-height: 1;
 }
 
@@ -30,7 +35,7 @@
   gap: 22px;
   padding: clamp(22px, 4vw, 44px);
   border-radius: var(--radius-lg);
-  background: var(--gold);
+  background: var(--accent);
   color: var(--ink);
   box-shadow: var(--shadow-card);
 }
@@ -41,7 +46,7 @@
   font-family: var(--font-mono);
   font-size: 0.6875rem;
   letter-spacing: 0.22em;
-  color: rgba(28, 39, 43, 0.55);
+  color: rgb(var(--rgb-base) / 0.55);
 }
 
 .cardform__field {
@@ -75,7 +80,7 @@
 
 .cardform__field textarea {
   min-height: calc(34px * 4);
-  background-image: repeating-linear-gradient(rgba(28, 39, 43, 0) 0 33px, rgba(28, 39, 43, 0.2) 33px 34px);
+  background-image: repeating-linear-gradient(rgb(var(--rgb-base) / 0) 0 33px, rgb(var(--rgb-base) / 0.2) 33px 34px);
   background-attachment: local;
 }
 
@@ -83,14 +88,14 @@
   height: 48px;
   padding: 0 14px;
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.55);
-  border: 1px solid rgba(28, 39, 43, 0.18);
+  background: rgb(var(--rgb-white) / 0.55);
+  border: 1px solid rgb(var(--rgb-base) / 0.18);
   line-height: normal;
 }
 
 .cardform__field textarea::placeholder,
 .cardform__field input::placeholder {
-  color: rgba(28, 39, 43, 0.45);
+  color: rgb(var(--rgb-base) / 0.45);
 }
 
 .cardform__field textarea:focus-visible,
@@ -115,7 +120,7 @@
 .cardform__count {
   margin-left: auto;
   font-family: var(--font-mono);
-  color: rgba(28, 39, 43, 0.6);
+  color: rgb(var(--rgb-base) / 0.6);
 }
 
 .cardform__count.is-full {
@@ -124,7 +129,7 @@
 }
 
 .cardform__hint {
-  color: rgba(28, 39, 43, 0.7);
+  color: rgb(var(--rgb-base) / 0.7);
 }
 
 .cardform__error {
@@ -149,11 +154,78 @@
   color: var(--text-3);
 }
 
+/* Three steps (#23): write, make and keep, then choose to publish. */
+.cardform__steps {
+  display: grid;
+  gap: 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cardform__steps li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.cardform__step-num {
+  font-family: var(--font-info);
+  font-weight: 700;
+  font-size: clamp(1.75rem, 1.4rem + 1.2vw, 2.5rem);
+  line-height: 1;
+  min-width: 1.4em;
+  font-variant-numeric: tabular-nums;
+  color: var(--chapter-label);
+}
+
+.cardform__step-title {
+  display: block;
+  font-family: var(--font-heading-zh);
+  font-weight: 700;
+  font-size: 1.125rem;
+  line-height: 1.4;
+}
+
+.cardform__step-text {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-2);
+}
+
+/* One column: the steps lead, before the card; tips and the button follow it. */
+@media (max-width: 979px) {
+  .cardform__side {
+    display: contents;
+  }
+
+  .cardform__steps {
+    order: -1;
+  }
+}
+
+/* Two columns: the steps, then the tips and the button, from the top of the card. */
+@media (min-width: 980px) {
+  .cardform__steps {
+    gap: 0;
+  }
+
+  .cardform__steps li {
+    padding-block: 22px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .cardform__steps li:first-child {
+    padding-top: 0;
+  }
+}
+
+/* 深藍 box so the tips stand apart from the 淺藍 ground. */
 .cardform__guide {
   padding: 18px 20px;
   border-radius: var(--radius-md);
-  border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg);
   font-size: 0.875rem;
   color: var(--text-2);
 }
@@ -161,6 +233,10 @@
 .cardform__guide-title {
   font-weight: 600;
   color: var(--text);
+  margin-bottom: 6px;
+}
+
+.cardform__guide-lead {
   margin-bottom: 6px;
 }
 
@@ -193,12 +269,12 @@
   width: 22px;
   height: 22px;
   margin-top: 3px;
-  accent-color: var(--gold);
+  accent-color: var(--accent);
 }
 
 .cardform__consent a {
   margin-left: 6px;
-  color: var(--gold);
+  color: var(--accent-text);
 }
 
 .cardform__submit {
@@ -211,9 +287,9 @@
 .cardform__alert:not(:empty) {
   padding: 12px 16px;
   border-radius: var(--radius-md);
-  background: rgba(255, 138, 122, 0.12);
-  border: 1px solid rgba(255, 138, 122, 0.5);
-  color: #ffd2cb;
+  background: rgb(var(--rgb-danger) / 0.12);
+  border: 1px solid rgb(var(--rgb-danger) / 0.5);
+  color: var(--danger-text);
   font-size: 0.9375rem;
 }
 
@@ -238,15 +314,11 @@
   font-size: clamp(1.5rem, 1.2rem + 1.4vw, 2.125rem);
 }
 
-.card-result__status {
-  color: var(--text-2);
-}
-
 .card-result__cta {
   padding: 10px 14px;
   border-radius: var(--radius-sm);
-  background: rgba(255, 201, 70, 0.12);
-  color: var(--gold);
+  background: rgb(var(--rgb-accent) / 0.12);
+  color: var(--accent-text);
   font-weight: 600;
 }
 
@@ -258,7 +330,7 @@
   width: 100%;
   border-radius: var(--radius-md);
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgb(var(--rgb-light) / 0.05);
 }
 
 .card-result__preview--square {
@@ -285,7 +357,7 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  background: rgba(20, 28, 31, 0.6);
+  background: rgb(var(--rgb-base-deep) / 0.6);
   color: var(--text-2);
 }
 
@@ -296,8 +368,7 @@
   gap: 12px 20px;
 }
 
-.segmented,
-.swatches {
+.segmented {
   display: flex;
   gap: 6px;
   margin: 0;
@@ -323,37 +394,77 @@
 }
 
 .segmented input,
-.swatches input {
+.declarations input {
   position: absolute;
   opacity: 0;
   pointer-events: none;
 }
 
 .segmented label:has(input:focus-visible),
-.swatches label:has(input:focus-visible) {
+.declarations__item:has(input:focus-visible) {
   outline: 3px solid var(--focus);
   outline-offset: 2px;
 }
 
-.swatches label {
+/* Declaration of faith picker (#23): one per card, each with its own colours and frame. */
+.declarations {
   display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: 2px solid transparent;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.declarations__legend {
+  margin-bottom: 8px;
+  padding: 0;
+  font-family: var(--font-heading-zh);
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.declarations__item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 44px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line-strong);
   cursor: pointer;
+  transition: border-color 0.2s var(--ease-standard), background-color 0.2s var(--ease-standard);
 }
 
-.swatches label.is-on {
-  border-color: var(--gold);
+.declarations__item:hover {
+  border-color: var(--text-2);
 }
 
-.swatches label > span:first-of-type {
+.declarations__item.is-on {
+  border-color: var(--accent);
+  background: rgb(var(--rgb-accent) / 0.1);
+}
+
+.declarations__swatch {
+  flex: none;
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+  box-shadow: inset 0 0 0 1px rgb(var(--rgb-light) / 0.35);
+}
+
+.declarations__text {
+  display: grid;
+  gap: 2px;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.declarations__text strong {
+  font-family: var(--font-heading-zh);
+}
+
+.declarations__text span {
+  color: var(--text-2);
 }
 
 .card-result__actions {
@@ -363,11 +474,30 @@
   gap: 12px;
 }
 
-.card-result__wall {
-  justify-self: center;
+.card-publish {
+  display: grid;
+  gap: 14px;
+  margin: 0 clamp(24px, 4vw, 40px) clamp(24px, 4vw, 40px);
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+
+.card-publish__title {
+  font-family: var(--font-heading-zh);
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+
+.card-publish__lead,
+.card-publish--done p:not(.card-publish__title) {
+  color: var(--text-2);
+}
+
+.card-publish__wall {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
+  color: var(--accent-text);
 }
 
 .card-result .toast-region {
@@ -408,14 +538,26 @@
 
 .teaser__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
   gap: 16px;
   align-items: start;
 }
 
+/* Six newest cards: two rows of three, or three of two. */
+@media (min-width: 600px) {
+  .teaser__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 900px) {
+  .teaser__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 /* Give finale */
 .finale {
-  background: var(--gold);
+  background: var(--accent);
   color: var(--ink);
   padding-block: clamp(80px, 14svh, 168px) clamp(72px, 12svh, 140px);
 }
@@ -423,7 +565,7 @@
 .finale__inner {
   display: grid;
   gap: clamp(28px, 4vw, 64px);
-  align-items: end;
+  align-items: start;
 }
 
 @media (min-width: 900px) {
@@ -432,11 +574,14 @@
   }
 }
 
+/* Same size and 深褐 as the chapter labels (01 · Appreciate…). */
 .finale__kicker {
   font-family: var(--font-mono);
-  font-size: 0.75rem;
-  letter-spacing: 0.22em;
-  color: rgba(28, 39, 43, 0.62);
+  font-size: clamp(0.875rem, 0.8rem + 0.35vw, 1.0625rem);
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgb(var(--rgb-earth));
   margin-bottom: 18px;
 }
 
@@ -445,7 +590,7 @@
   font-weight: 800;
   font-size: clamp(3rem, 1.6rem + 7vw, 8.5rem);
   line-height: 0.88;
-  letter-spacing: -0.035em;
+  letter-spacing: 0;
 }
 
 .finale__side {
@@ -455,9 +600,10 @@
 }
 
 .finale__body {
+  font-weight: 700;
   font-size: clamp(1rem, 0.95rem + 0.3vw, 1.1875rem);
   line-height: 1.85;
-  color: rgba(28, 39, 43, 0.85);
+  color: rgb(var(--rgb-base) / 0.85);
 }
 
 .finale__give {
@@ -470,5 +616,25 @@
 
 .finale__hint {
   font-size: 0.875rem;
-  color: rgba(28, 39, 43, 0.72);
+  color: rgb(var(--rgb-base) / 0.72);
+}
+
+/* Prayer Map (#19): same size and colours as Give (深藍 with 金黃 text, 10/29). */
+.finale__prayer {
+  display: grid;
+  gap: 14px;
+  justify-items: start;
+  margin-top: 18px;
+  padding-top: 26px;
+  border-top: 1px solid rgb(var(--rgb-base) / 0.18);
+}
+
+.finale__prayer-link:focus-visible {
+  outline-color: var(--ink);
+}
+
+/* Until the Give URL is set the button stays in full colour (the hint below says why);
+   it still can't be clicked. */
+.finale .btn[aria-disabled='true'] {
+  opacity: 1;
 }

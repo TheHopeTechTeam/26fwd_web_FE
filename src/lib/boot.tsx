@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { config } from '../config/env';
 import { initAnalytics } from './analytics';
 import { prefersReducedMotion } from './hooks';
+import '../styles/body-font.css';
 import '../styles/tokens.css';
 import '../styles/base.css';
 

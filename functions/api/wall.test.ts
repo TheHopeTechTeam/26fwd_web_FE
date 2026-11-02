@@ -59,9 +59,11 @@ function admin(path: string, body?: unknown) {
     body: body === undefined ? undefined : JSON.stringify(body),
   })
 }
-const setStatus = (env: Env, id: string, status: 'approved' | 'hidden') =>
-  setCardStatus({ request: admin(`${id}/status`, { status }), env, params: { id } })
-const hide = (env: Env, id: string) => hideCard({ request: admin(`${id}/hide`), env, params: { id } })
+// `from` is the status the card has, which the admin endpoints require (#34).
+type Status = 'pending' | 'approved' | 'hidden'
+const setStatus = (env: Env, id: string, status: 'approved' | 'hidden', from: Status) =>
+  setCardStatus({ request: admin(`${id}/status`, { status, from }), env, params: { id } })
+const hide = (env: Env, id: string, from: Status) => hideCard({ request: admin(`${id}/hide`, { from }), env, params: { id } })
 
 // Stands in for caches.default: keeps a response until the max-age it was stored with runs out on
 // the (fake) clock, as the Cache API honours Cache-Control.
@@ -141,19 +143,19 @@ describe.skipIf(!sqliteAvailable)('GET /api/cards', () => {
     const t = createTestDb()
     const env = envFor(t.db)
     const ids = insert(t, 'pending', 14)
-    for (const id of ids.slice(0, 13)) expect((await setStatus(env, id, 'approved')).status).toBe(200)
+    for (const id of ids.slice(0, 13)) expect((await setStatus(env, id, 'approved', 'pending')).status).toBe(200)
     let seen = await wholeWall(env)
     expect(seen).toEqual({ total: 13, ids: ids.slice(0, 13).reverse() })
 
-    expect((await hide(env, ids[0]!)).status).toBe(200)
-    expect((await setStatus(env, ids[12]!, 'hidden')).status).toBe(200)
+    expect((await hide(env, ids[0]!, 'approved')).status).toBe(200)
+    expect((await setStatus(env, ids[12]!, 'hidden', 'approved')).status).toBe(200)
     seen = await wholeWall(env)
     expect(seen.total).toBe(11)
     expect(seen.ids).toHaveLength(11)
     expect(seen.ids).not.toContain(ids[0])
     expect(seen.ids).not.toContain(ids[12])
 
-    expect((await setStatus(env, ids[0]!, 'approved')).status).toBe(200)
+    expect((await setStatus(env, ids[0]!, 'approved', 'hidden')).status).toBe(200)
     seen = await wholeWall(env)
     expect(seen.total).toBe(12)
     expect(seen.ids).toHaveLength(12)
@@ -231,10 +233,10 @@ describe.skipIf(!sqliteAvailable)('GET /api/cards: edge cache', () => {
     const t = createTestDb()
     const env = envFor(t.db)
     const [id] = insert(t, 'pending', 1)
-    await setStatus(env, id!, 'approved')
+    await setStatus(env, id!, 'approved', 'pending')
     expect((await wall(env)).items.map(item => item.id)).toEqual([id])
     // The worst case: the page was cached the moment before the card was hidden.
-    await hide(env, id!)
+    await hide(env, id!, 'approved')
     vi.setSystemTime(NOW + WALL_CACHE_SECONDS * 1000 - 1)
     expect((await wall(env)).items).toHaveLength(1)
     vi.setSystemTime(NOW + WALL_CACHE_SECONDS * 1000)

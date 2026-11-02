@@ -10,8 +10,6 @@ export interface AppConfig {
   turnstileSiteKey: string | null;
   prayerMapUrl: string;
   prayerMapPrivacyUrl: string;
-  /** Only flip on once the Prayer Map host allows this origin to frame it. */
-  prayerMapEmbedEnabled: boolean;
   showPreviewBadge: boolean;
 }
 
@@ -55,7 +53,6 @@ export function readConfig(env: Env): AppConfig {
     turnstileSiteKey: str(env, 'VITE_TURNSTILE_SITE_KEY') || null,
     prayerMapUrl,
     prayerMapPrivacyUrl: new URL('privacy', prayerMapUrl).toString(),
-    prayerMapEmbedEnabled: flag(env, 'VITE_PRAYER_MAP_EMBED_ENABLED', false),
     showPreviewBadge: flag(env, 'VITE_SHOW_PREVIEW_BADGE', true),
   };
 }

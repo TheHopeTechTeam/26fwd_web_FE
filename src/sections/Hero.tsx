@@ -1,69 +1,46 @@
-import { useEffect, useRef } from 'react';
-import { HERO } from '../data/content';
-import { prefersReducedMotion } from '../lib/hooks';
+import { HERO, HERO_MUSIC } from '../data/content';
+import { useMusic } from '../lib/music';
+import kv1280 from '../assets/kv/kv-1280.webp';
+import kv1920 from '../assets/kv/kv-1920.webp';
+import kv2560 from '../assets/kv/kv-2560.webp';
+import kvPhone780 from '../assets/kv/kv-phone-780.webp';
+import kvPhone1170 from '../assets/kv/kv-phone-1170.webp';
 import './Hero.css';
 
+/** Below this width the banner KV is too small to read, so phones get the photo + live title. */
+const PHONE_QUERY = '(max-width: 699px)';
+
 /**
- * 00 · Hero (US-02). No people anywhere in the artwork: an abstract, lit doorway and
- * architectural light. The title scales with its container (cqi) so "FORWARD" never
- * clips at 320–430 px, and the next chapter peeks in at the bottom.
+ * 00 · Hero (US-02, #26). Desktop and tablet show the whole no-info KV banner, uncropped, with
+ * the title baked in; phones show a portrait slice of the KV's original photo and the title as
+ * live text (scripts/gen-kv-images.py). People in the artwork are allowed (#26 A-4).
  */
 export function Hero() {
-  const bgRef = useRef<HTMLDivElement>(null);
-
-  // Light parallax on the backdrop only; skipped entirely for reduced motion.
-  useEffect(() => {
-    if (prefersReducedMotion()) return;
-    let frame = 0;
-    const onScroll = () => {
-      if (frame) return;
-      frame = requestAnimationFrame(() => {
-        frame = 0;
-        const y = Math.min(window.scrollY, window.innerHeight * 1.2);
-        if (bgRef.current) bgRef.current.style.transform = `translate3d(0, ${y * 0.28}px, 0)`;
-      });
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-      cancelAnimationFrame(frame);
-    };
-  }, []);
-
   return (
     <section className="hero" aria-labelledby="hero-title">
-      <div className="hero__bg" ref={bgRef} aria-hidden="true">
-        <div className="hero__glow" />
-        <svg className="hero__arch" viewBox="0 0 400 560" preserveAspectRatio="xMidYMax meet">
-          <defs>
-            <linearGradient id="hero-door" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor="#ffe7a8" stopOpacity=".95" />
-              <stop offset=".55" stopColor="#ffc946" stopOpacity=".55" />
-              <stop offset="1" stopColor="#ffc946" stopOpacity="0" />
-            </linearGradient>
-            <linearGradient id="hero-frame" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor="#ffffff" stopOpacity=".35" />
-              <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          <path d="M60 560V200a140 140 0 0 1 280 0v360" fill="none" stroke="url(#hero-frame)" strokeWidth="2" />
-          <path d="M20 560V190a180 180 0 0 1 360 0v370" fill="none" stroke="url(#hero-frame)" strokeWidth="1" opacity=".5" />
-          <path className="hero__door" d="M110 560V214a90 90 0 0 1 180 0v346z" fill="url(#hero-door)" />
-        </svg>
-        <div className="hero__beams" />
-        <div className="hero__columns" />
-        <div className="hero__grain" />
-      </div>
+      <picture className="hero__kv">
+        <source media={PHONE_QUERY} srcSet={`${kvPhone780} 780w, ${kvPhone1170} 1170w`} sizes="100vw" />
+        {/* The title next to it carries the words, so the image itself is decorative. */}
+        <img
+          src={kv1920}
+          srcSet={`${kv1280} 1280w, ${kv1920} 1920w, ${kv2560} 2560w`}
+          sizes="100vw"
+          width={3713}
+          height={1152}
+          alt=""
+          fetchPriority="high"
+          decoding="async"
+        />
+      </picture>
 
       <div className="wrap hero__content">
-        <p className="kicker hero__kicker">{HERO.kicker}</p>
         <h1 id="hero-title" className="hero__title">
-          <span className="hero__forward">{HERO.title}</span>
-          <span className="hero__line">
-            <span className="hero__tagline">{HERO.tagline}</span>
-            <span className="hero__year">{HERO.year}</span>
+          <span className="hero__more">{HERO.title}</span>
+          <span className="hero__series">
+            {HERO.series} <span className="hero__series-zh">{HERO.zh}</span>
           </span>
         </h1>
+        <p className="hero__date">{HERO.date}</p>
         <p className="hero__lead">{HERO.lead}</p>
         <div className="hero__actions">
           <a className="btn btn--gold btn--lg" href="#appreciate">
@@ -73,7 +50,29 @@ export function Hero() {
             </svg>
           </a>
         </div>
+        <HeroMusic />
       </div>
     </section>
+  );
+}
+
+/** Invites the visitor to listen along; the header switch controls the same music. */
+function HeroMusic() {
+  const { state, playing, toggle } = useMusic();
+  return (
+    <p className="hero__music">
+      <button type="button" className="hero__music-btn" onClick={toggle} aria-pressed={playing}>
+        <span className="hero__music-icon" aria-hidden="true">
+          {playing ? '❚❚' : '♪'}
+        </span>
+        <span className="hero__music-label">
+          {/* Narrow phones wrap after the comma, never mid-phrase. */}
+          {(state === 'error' ? HERO_MUSIC.error : playing ? HERO_MUSIC.stop : HERO_MUSIC.start).split(/(?<=，)/).map((part) => (
+            <span key={part}>{part}</span>
+          ))}
+        </span>
+      </button>
+      {playing && <span className="hero__music-hint">{HERO_MUSIC.hint}</span>}
+    </p>
   );
 }

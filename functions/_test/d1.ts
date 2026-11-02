@@ -54,7 +54,7 @@ function requireModules(): NodeModules {
   return modules
 }
 
-// Only the D1 calls the functions use: prepare().bind() then run(), all() or first().
+// Only the D1 calls the functions use: prepare().bind() then run(), all() or first(), and batch().
 function asD1(database: SqliteDatabase): D1Database {
   return {
     prepare(sql: string) {
@@ -67,6 +67,28 @@ function asD1(database: SqliteDatabase): D1Database {
         async first() { return database.prepare(sql).get(...params) ?? null },
       }
       return statement
+    },
+    // Like D1, a batch runs as one transaction on one connection, so changes() in a statement sees
+    // the statement before it, and a failure rolls the whole batch back. Each result carries
+    // meta.changes as D1 reports it; total_changes() tells a statement that wrote nothing from one
+    // that left an earlier changes() in place.
+    async batch(statements: Array<{ all(): Promise<{ results: unknown[] }> }>) {
+      const counts = () => database.prepare('SELECT changes() AS changes, total_changes() AS total').get() as { changes: number; total: number }
+      database.exec('BEGIN')
+      try {
+        const results = []
+        for (const statement of statements) {
+          const before = counts().total
+          const { results: rows } = await statement.all()
+          const after = counts()
+          results.push({ success: true, meta: { changes: after.total === before ? 0 : after.changes }, results: rows })
+        }
+        database.exec('COMMIT')
+        return results
+      } catch (error) {
+        database.exec('ROLLBACK')
+        throw error
+      }
     },
   } as unknown as D1Database
 }

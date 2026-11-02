@@ -372,3 +372,53 @@ describe.skipIf(!sqliteAvailable)('POST /api/cards — rate limits (real SQLite)
     expect(JSON.stringify(query('SELECT * FROM submission_rate_limits'))).not.toMatch(new RegExp(`203\\.0\\.113\\.7|${token.split('.')[1]}`))
   })
 })
+
+describe('POST /api/cards — model judgment after the response (M1.6)', () => {
+  it('hands a stored card to waitUntil; a honeypot hit or a refused card hands over nothing', async () => {
+    mockSiteverify({ success: true, action: WIDGET_ACTION, hostname: HOST })
+    const { db } = createFakeDb()
+    const waitUntil = vi.fn()
+    expect((await onRequestPost({ request: await submit(validCard), env: makeEnv(db), waitUntil })).status).toBe(201)
+    expect(waitUntil).toHaveBeenCalledTimes(1)
+    // With this fake database the switch reads as off, so the judgment ends at once.
+    await expect(waitUntil.mock.calls[0]?.[0]).resolves.toBeUndefined()
+
+    const untouched = vi.fn()
+    await onRequestPost({ request: await submit({ ...validCard, honeypot: 'x' }), env: makeEnv(db), waitUntil: untouched })
+    await onRequestPost({ request: await submit(validCard, { token: null }), env: makeEnv(db), waitUntil: untouched })
+    expect(untouched).not.toHaveBeenCalled()
+  })
+})
+
+describe.skipIf(!sqliteAvailable)('POST /api/cards — auto-publish end to end (real SQLite)', () => {
+  const questions = JSON.stringify({ needs_attention: { criteria: { true: 't', false: 'f' } }, reason: { criteria: { none: 'n', flag_a: 'a' } } })
+  const clef = (choice: string) => ({ run: vi.fn(async () => ({ answers: { needs_attention: { noul: 0.1 }, reason: { choice, probabilities: { [choice]: 0.9 } } }, usage: { input_tokens: 700 } })) })
+
+  async function sendAndJudge(choice: string, switchValue: string) {
+    mockSiteverify({ success: true, action: WIDGET_ACTION, hostname: HOST })
+    const { db, query } = createTestDb()
+    query("UPDATE app_settings SET value = ? WHERE key = 'auto_publish'", switchValue)
+    const AI = clef(choice)
+    const pending: Promise<unknown>[] = []
+    const response = await onRequestPost({ request: await submit(validCard), env: { ...makeEnv(db), AI, MODERATION_QUESTIONS: questions }, waitUntil: promise => pending.push(promise) })
+    const { card_id } = await response.json() as { card_id: string }
+    // The response came first; the card was stored pending before any judgment.
+    expect(query('SELECT status FROM forward_cards WHERE id = ?', card_id)).toEqual([{ status: 'pending' }])
+    await Promise.all(pending)
+    return { status: query('SELECT status FROM forward_cards WHERE id = ?', card_id)[0]?.status, judgments: query('SELECT outcome, auto_published FROM card_moderations'), AI }
+  }
+
+  it('switch on and no reason to hold it: published after the response, with the judgment recorded', async () => {
+    expect(await sendAndJudge('none', 'on')).toMatchObject({ status: 'approved', judgments: [{ outcome: 'clear', auto_published: 1 }] })
+  })
+
+  it('switch on and some reason: stays pending for a reviewer', async () => {
+    expect(await sendAndJudge('flag_a', 'on')).toMatchObject({ status: 'pending', judgments: [{ outcome: 'flagged', auto_published: 0 }] })
+  })
+
+  it('switch off: stays pending, and the model is never called', async () => {
+    const result = await sendAndJudge('none', 'off')
+    expect(result).toMatchObject({ status: 'pending', judgments: [] })
+    expect(result.AI.run).not.toHaveBeenCalled()
+  })
+})

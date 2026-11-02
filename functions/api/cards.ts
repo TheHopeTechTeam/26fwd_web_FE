@@ -1,13 +1,16 @@
 import { errorResponse, handleError, json, parseCardSubmission, verifyTurnstile, type Env } from '../_lib/cards'
 import { requireClientToken } from '../_lib/client-token'
+import { moderateCard } from '../_lib/moderation'
 import { clientIp, consumeRateLimits, RATE_RULES, requireSalt, saltedHash } from '../_lib/rate-limit'
 
-type Context = { request: Request; env: Env }
+type Context = { request: Request; env: Env; waitUntil?: (promise: Promise<unknown>) => void }
 
-// Order: validate → honeypot → Client Token → Turnstile → rate limits → insert. The Client Token
-// comes before Turnstile because a Turnstile token works only once: when the browser re-fetches
-// an expired Client Token and resends, the same Turnstile token is still unused.
-export async function onRequestPost({ request, env }: Context): Promise<Response> {
+// Order: validate → honeypot → Client Token → Turnstile → rate limits → insert → judge in the
+// background. The Client Token comes before Turnstile because a Turnstile token works only once:
+// when the browser re-fetches an expired Client Token and resends, the same Turnstile token is
+// still unused.
+export async function onRequestPost(context: Context): Promise<Response> {
+  const { request, env } = context
   try {
     if (env.CARD_SUBMISSIONS_ENABLED === 'false') return errorResponse(503, 'SERVICE_UNAVAILABLE', 'Card submissions are paused')
     const body = await parseCardSubmission(request)
@@ -23,6 +26,10 @@ export async function onRequestPost({ request, env }: Context): Promise<Response
     await env.FORWARD_DB.prepare(`INSERT INTO forward_cards
       (id,nickname,text_gratitude,text_anticipate,status,agreed_to_publish,created_at)
       VALUES (?,?,?,?, 'pending',1,?)`).bind(id, body.nickname, body.text_gratitude, body.text_anticipate, createdAt).run()
+    // Judged after the response (M1.6, _lib/moderation.ts): the visitor never waits for the model,
+    // and the card is already stored as pending if the judgment fails or never runs. Called on the
+    // context itself, not detached from it.
+    context.waitUntil?.(moderateCard(env, id, body))
     return json({ success: true, card_id: id }, 201)
   } catch (error) { return handleError(error) }
 }
