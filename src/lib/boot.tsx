@@ -19,4 +19,7 @@ export function boot(app: ReactNode): void {
   const container = document.getElementById('root');
   if (!container) throw new Error('#root is missing');
   createRoot(container).render(<StrictMode>{app}</StrictMode>);
+
+  // Review aid: `?ids=1` tags text and images with their sheet 編號 (separate chunk, off otherwise).
+  if (new URLSearchParams(location.search).has('ids')) void import('./idOverlay');
 }
