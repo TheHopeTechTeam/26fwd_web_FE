@@ -41,7 +41,7 @@
 | **管理後台 Token** | 測試用 Token（僅工程團隊知悉） | 正式 Token（僅發給指定審核同工，長度 ≥32 字） | 權限完全隔離，防止以測試 Token 操作正式後台 |
 | **金流奉獻 (Give CTA)** | 測試金流網址（帶 `utm_campaign=staging_test`） | 正式 Forward 專案 Give URL | 防止測試產生真實款項扣繳 |
 | **數據分析 (GA4)** | 測試 GA4 ID（或留空不發送） | 正式 GA4 Measurement ID（`G-XXXXXXX`） | 避免內部測試稀釋並污染正式行銷指標與轉換率 |
-| **搜尋引擎收錄 (SEO)** | `X-Robots-Tag: noindex, nofollow, noarchive` | 展覽前維持 `noindex`；11/14 開展轉為允許索引 | 避免未定稿素材遭 Google 搜尋提前曝光 |
+| **搜尋引擎收錄 (SEO)** | 一律 `X-Robots-Tag: noindex, nofollow, noarchive`（不設 `SITE_INDEXING`） | 上線前維持 `noindex`；開放日以 `SITE_INDEXING=allow` 建置，只有 `forward.thehope.co` 可被收錄，`*.pages.dev` 與 `/admin/` 仍不收錄（開放日期依 #36 確認） | 避免未定稿素材遭 Google 搜尋提前曝光 |
 
 ---
 
@@ -113,6 +113,7 @@ VITE_GIVE_URL=<official-forward-give-url-from-finance>
 VITE_GA4_MEASUREMENT_ID=<official-ga4-measurement-id>
 VITE_SHOW_PREVIEW_BADGE=false
 CARD_SUBMISSIONS_ENABLED=true
+# 開放收錄日才加（建置用，見下方注意事項）：SITE_INDEXING=allow
 ```
 
 > **設定注意事項**
@@ -120,6 +121,11 @@ CARD_SUBMISSIONS_ENABLED=true
 > - `VITE_*` 在 build 時寫入前端 bundle，修改後需重新部署才會生效。
 > - `VITE_SHOW_PREVIEW_BADGE` 沒設定時**預設為顯示**：header 的 PREVIEW 標籤與頁尾「本網站目前為開發預覽版…」的說明。staging 與 GitHub Pages 保持預設；**正式專案 `26fwd-prod` 一定要設為 `false`**，M4 上線檢查要確認正式站看不到這兩處。
 > - Turnstile 的 hostname 檢查只接受主網址；Pages 每次部署的預覽網址（`<hash>.26fwd-staging.pages.dev`）會被拒絕，驗收請使用主網址。
+> - `SITE_INDEXING` 是建置時的變數，不是 `VITE_*`，不會進到前端 bundle。沒設或不是 `allow` 時，所有網址都送 `X-Robots-Tag: noindex`（`public/_headers`）；設為 `allow` 時，建置會拿掉全站的 noindex，只保留 `*.pages.dev`、`*.*.pages.dev` 與 `/admin/*`（`scripts/site-indexing.mjs`）。**staging 永遠不設**。正式站在開放收錄日、經 Ian 確認後才設定並重新部署，部署後確認：
+>   ```bash
+>   curl -sI https://forward.thehope.co/ | grep -i x-robots-tag      # 沒有輸出：可被收錄
+>   curl -sI https://26fwd-prod.pages.dev/ | grep -i x-robots-tag   # 仍是 noindex
+>   ```
 
 #### 模型判斷與自動公開（M1.6）
 
