@@ -101,6 +101,15 @@ export interface AdminStatusResponse {
   status: CardStatus;
 }
 
+/**
+ * DELETE /api/admin/cards/:id (#35), no body. Only hidden cards can be deleted; a card that is no
+ * longer hidden gets 409 CARD_STATUS_CHANGED and stays.
+ */
+export interface AdminDeleteResponse {
+  success: true;
+  card_id: string;
+}
+
 export type ApiErrorCode =
   | 'VALIDATION_ERROR'
   | 'TURNSTILE_FAILED'
@@ -111,7 +120,7 @@ export type ApiErrorCode =
   | 'UNAUTHORIZED'
   | 'NOT_FOUND'
   | 'METHOD_NOT_ALLOWED'
-  /** 409 on the admin status and hide endpoints: someone else changed the card first. */
+  /** 409 on the admin status, hide and delete endpoints: someone else changed the card first. */
   | 'CARD_STATUS_CHANGED'
   | 'SERVICE_UNAVAILABLE'
   | 'INTERNAL_ERROR';

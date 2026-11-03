@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: FORWARD 2026 · Forward Card API
-  version: 0.3.0
+  version: 0.4.0
   description: |
     Contract between the FORWARD 2026 front end and the Forward Card backend.
     Human-readable notes (Traditional Chinese): docs/api/README.md.
@@ -194,6 +194,36 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/StatusChanged'
+  /api/admin/cards/{id}:
+    delete:
+      tags: [admin]
+      summary: Delete a hidden card for good (#35)
+      description: |
+        Only hidden cards can be deleted, so a published card has to be hidden first and has left
+        the wall by then. No body: if the card is no longer hidden (someone published it again
+        after the reviewer loaded the list), the answer is 409 CARD_STATUS_CHANGED with the card's
+        status now, and nothing is deleted. The card goes together with its model judgment and its
+        status change records; a deletion record without card text (card id, time, actor) is kept.
+        A deleted card cannot be brought back on its own.
+      operationId: adminDeleteCard
+      security: [{ adminToken: [] }]
+      parameters:
+        - $ref: '#/components/parameters/CardId'
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminDeleteResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/StatusChanged'
 components:
   securitySchemes:
     adminToken:
@@ -352,6 +382,14 @@ components:
         card_id: { type: string }
         status:
           $ref: '#/components/schemas/CardStatus'
+    AdminDeleteResponse:
+      type: object
+      required: [success, card_id]
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+        card_id: { type: string }
     ApiError:
       type: object
       required: [success, error]
@@ -449,8 +487,9 @@ components:
               retry_after_seconds: 42
     StatusChanged:
       description: |
-        Someone else changed the card after the reviewer loaded it, so this change was not applied.
-        current_status is the card's status now; refresh before acting again.
+        Someone else changed the card after the reviewer loaded it, so this change was not applied
+        (on DELETE: the card is no longer hidden, so it was not deleted). current_status is the
+        card's status now; refresh before acting again.
       content:
         application/json:
           schema:
