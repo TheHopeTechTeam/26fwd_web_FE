@@ -8,19 +8,19 @@
 
 ```
                        [開發者分支 PR]
-                              │
-                              ▼ (自動觸發 PR Preview)
+                              │ (CI：型別檢查、測試、建置)
+                              ▼ (Merge to main)
                     ┌───────────────────┐
-                    │  PR Preview 環境  │ ◄── 獨立臨時網址、Mock / Staging D1
+                    │     main 分支     │
                     └───────────────────┘
-                              │ (Merge to main)
+                              │ (手動觸發 Deploy Hook，部署當下 main 的最新版)
                               ▼
                     ┌───────────────────┐
                     │  Staging 測試環境 │ ◄── 26fwd-staging.pages.dev
                     │  (D1: staging)    │     staging 專屬 Turnstile、noindex、測試 Give
                     └───────────────────┘
-                              │ (手動發布 Release / Tag v1.0.x)
-                              ▼ (需 PM/Lead 簽核批准: Environment Gate)
+                              │ (staging 驗收後，手動觸發 GitHub Actions，只限 main)
+                              ▼ (需核准人同意：GitHub environment production)
                     ┌───────────────────┐
                     │ Production正式環境│ ◄── forward.thehope.co
                     │  (D1: production) │     正式 Turnstile、正式 Token、正式金流
@@ -35,7 +35,7 @@
 |---|---|---|---|
 | **Cloudflare Pages 專案** | `26fwd-staging` | `26fwd-prod` | 專案實體分開，環境變數與綁定互不干擾 |
 | **自訂網域** | `26fwd-staging.pages.dev` | `forward.thehope.co` | 正式官方獨立網域，配置 SSL 與 CDN 快取 |
-| **GitHub 觸發條件** | `main` 分支自動部署；PR 產生 Preview | 打 Release Tag（如 `v1.0.0`）或推 `release` 分支 | 正式環境必須有人工審查簽核門檻（Approval Gate） |
+| **部署方式** | 手動觸發 Deploy Hook，部署當下 `main` 的最新版（合併後不會自動部署） | 手動觸發 GitHub Actions，只限 `main`；核准人同意後才建置、上傳（見「3. 正式環境部署」） | 正式環境必須有人工審查簽核門檻（Approval Gate） |
 | **D1 資料庫** | `forward_cards_staging` | `forward_cards_prod` | **最核心隔離**：測試卡片隨時可清空重置，絕不污染正式牆 |
 | **Turnstile 防護** | staging 專屬真實 widget（hostname 僅允許 `26fwd-staging.pages.dev`） | 正式專屬 widget（hostname 僅允許 `forward.thehope.co`） | 兩個環境都走真實 siteverify，後端 `action=forward_card`／hostname 檢查行為一致。官方測試金鑰（`1x000...AA`）的回應無法通過這兩項檢查，只用於本機，並搭配模擬 siteverify 回應的自動測試 |
 | **管理後台 Token** | 測試用 Token（僅工程團隊知悉） | 正式 Token（僅發給指定審核同工，長度 ≥32 字） | 權限完全隔離，防止以測試 Token 操作正式後台 |
@@ -51,7 +51,7 @@
 ```bash
 # 建立測試庫與正式庫
 npx wrangler d1 create forward_cards_staging
-npx wrangler d1 create forward_cards_prod
+npx wrangler d1 create forward_cards_prod --location=apac   # 和 staging 一樣放在 APAC
 
 # 執行 Schema 遷移（依編號順序，每個資料庫各執行一次）
 npx wrangler d1 execute forward_cards_staging --remote --file=./migrations/0001_initial.sql
@@ -82,7 +82,7 @@ npx wrangler d1 execute forward_cards_staging --remote --command "SELECT (SELECT
   ```bash
   npx wrangler d1 execute forward_cards_staging --remote --command "DROP TRIGGER IF EXISTS forward_cards_count_insert; DROP TRIGGER IF EXISTS forward_cards_count_update; DROP TRIGGER IF EXISTS forward_cards_count_delete; DROP TABLE IF EXISTS forward_card_counts"
   ```
-- **Time Travel 還原**（`npx wrangler d1 time-travel restore forward_cards_staging --bookmark=<書籤>`）會連同書籤之後新增或變更的卡片一起還原，只在必要時使用。
+- **Time Travel 還原**（`npx wrangler d1 time-travel restore forward_cards_staging --bookmark=<書籤> --json`）會連同書籤之後新增或變更的卡片一起還原，只在必要時使用。`--json` 的作用見「4. 回復操作」。
 
 ### 2. 環境變數綁定清單
 
@@ -101,6 +101,9 @@ CARD_SUBMISSIONS_ENABLED=true
 ```
 
 #### Production (`26fwd-prod`)
+
+正式專案由 GitHub Actions 建置後上傳（見「3. 正式環境部署」）。`VITE_*` 要設在 GitHub environment `production`，設在 Pages 專案不會生效；其中 `VITE_API_MODE` 與 `VITE_SHOW_PREVIEW_BADGE` 已固定寫在 workflow。其他變數、加密變數與綁定都設在 Pages 專案。
+
 ```ini
 VITE_API_MODE=live
 VITE_TURNSTILE_SITE_KEY=<production-turnstile-site-key>
@@ -156,14 +159,15 @@ npx wrangler d1 execute forward_cards_staging --remote --command "SELECT COUNT(D
 **停用與回復**（套用 `0004` 前先記下 Time Travel 書籤：`npx wrangler d1 time-travel info forward_cards_staging`）
 - **只是要停用自動公開**：不需要回復，把開關改成 `off`（上面的指令）即可，下一張卡起生效。
 - **只回復程式**：部署前一版即可。舊程式不會用到 `0004` 的三張表，表留著不影響運作。
-- **回復 `0004`**：**一定要先回復程式**，因為新程式的後台列表、核准與隱藏都會用到這些表，表不存在時會失敗。刪表會一併刪除判斷紀錄與狀態變更紀錄，需要保留時先匯出（匯出檔含判斷結果，不要放進 repo）：
+- **回復 `0004`**：**一定要先回復程式**，因為新程式的後台列表、核准與隱藏都會用到這些表，表不存在時會失敗。刪表會一併刪除判斷紀錄與狀態變更紀錄，需要保留時先匯出（匯出檔含判斷結果，放在 repo 外；匯出會短暫擋住資料庫，見「4. 回復操作」）：
   ```bash
-  npx wrangler d1 export forward_cards_staging --remote --table card_moderations --output card_moderations.sql
-  npx wrangler d1 export forward_cards_staging --remote --table card_status_changes --output card_status_changes.sql
+  mkdir -p ~/fwd-exports
+  npx wrangler d1 export forward_cards_staging --remote --table card_moderations --output ~/fwd-exports/card_moderations.sql
+  npx wrangler d1 export forward_cards_staging --remote --table card_status_changes --output ~/fwd-exports/card_status_changes.sql
   npx wrangler d1 execute forward_cards_staging --remote --command "DROP TABLE IF EXISTS card_status_changes; DROP TABLE IF EXISTS card_moderations; DROP TABLE IF EXISTS app_settings"
   ```
   卡片資料不受影響；之後要恢復，重新執行 `0004` 即可，開關會回到 `off`。
-- **Time Travel 還原**（`npx wrangler d1 time-travel restore forward_cards_staging --bookmark=<書籤>`）會連同書籤之後新增或變更的卡片一起還原，只在必要時使用。
+- **Time Travel 還原**（`npx wrangler d1 time-travel restore forward_cards_staging --bookmark=<書籤> --json`）會連同書籤之後新增或變更的卡片一起還原，只在必要時使用。`--json` 的作用見「4. 回復操作」。
 
 #### Staging 壓測模式 `LOAD_TEST_MODE`（只用於 #5 的 300 人壓測）
 
@@ -175,6 +179,49 @@ npx wrangler d1 execute forward_cards_staging --remote --command "SELECT COUNT(D
 - 關閉：刪除變數 → 重新部署 → 確認標頭消失，並用手機以真實 Turnstile 送一張卡
 - 壓測卡片的暱稱一律以 `壓測-` 開頭，方便事後清理
 - **正式專案 `26fwd-prod` 永遠不設定這個變數**；M4 上線檢查要確認它不存在
+
+### 3. 正式環境部署（GitHub Actions）
+
+`26fwd-prod` 是「直接上傳」類型的 Pages 專案，不接 GitHub：`.github/workflows/deploy-cloudflare.yml` 在 GitHub Actions 建置，再用 wrangler 上傳。不占 Cloudflare 的建置次數，誰觸發、誰核准都記錄在 GitHub。staging 仍用 Deploy Hook。
+
+**一次性設定**（Ian 在 #36 確認後才建立）
+
+| 項目 | 內容 |
+|---|---|
+| Pages 專案 | `npx wrangler pages project create 26fwd-prod --production-branch=main --compatibility-date=2026-10-02`（相容性日期和 staging 相同），再到專案設定加上「2. 環境變數綁定清單」的加密變數與明文變數（`VITE_*` 除外），以及 D1（`FORWARD_DB`）與 Workers AI（`AI`）綁定 |
+| Cloudflare API token | 帳號層級，只開 **Cloudflare Pages：Edit**。由能建立帳號 token 的管理員建立後，直接存進下面的 environment secret，不經過任何人轉交、不截圖，也不貼到 issue 或群組 |
+| GitHub environment `production` | Deployment branches 只允許 `main`；Required reviewers 設定核准人 |
+| environment secrets | `CLOUDFLARE_API_TOKEN`、`CLOUDFLARE_ACCOUNT_ID` |
+| environment variables | `VITE_TURNSTILE_SITE_KEY`、`VITE_GIVE_URL`、`VITE_GA4_MEASUREMENT_ID`（Give 與 GA4 還沒有正式值時先不設）。`SITE_INDEXING` 平常不設，開放搜尋引擎收錄當天才設為 `allow`（#48） |
+
+environment 設定好之前不要執行這個 workflow：job 引用的 environment 不存在時，GitHub 會自動建立一個同名、沒有核准人也沒有 secret 的 environment。
+
+**每次部署**
+1. 確認版本：workflow 一律部署當下 `main` 的最新版。這個 commit 要和 staging 驗收過、在 #36 列出的版本相同；驗收後 `main` 又有合併時，先部署到 staging 再驗收一次
+2. GitHub → Actions → **Deploy production (Cloudflare Pages)** → Run workflow → 分支選 `main` → Run workflow
+3. 核准人在執行頁面核對 commit，再按 Review deployments → Approve。核准前 job 不會開始，也讀不到 token
+4. job 依序跑型別檢查、測試與建置，都通過才上傳。完成後，執行頁面的 Summary 會列出部署 id 與網址
+5. 確認頁面正常、API 正常回應、後台可以登入；有問題就依「4. 回復操作」退回前一個部署
+
+- **第一次部署**：`CARD_SUBMISSIONS_ENABLED` 先設 `false`（送卡顯示暫停），驗收時才改成 `true`。網域綁好前，`TURNSTILE_ALLOWED_HOSTNAME` 先設 `26fwd-prod.pages.dev`（正式 Turnstile widget 也要允許這個網址）；綁好 `forward.thehope.co` 後改為正式網域，並重新部署
+- Pages 專案的變數或綁定改了以後，要再執行一次 workflow 才會生效
+- workflow 只能部署 `main` 的最新版，不能用來退回舊版
+
+### 4. 回復操作（11/02 staging 演練確認過）
+
+**退回前一個部署**：wrangler 沒有退回的指令，要在 Cloudflare 後台操作：Workers & Pages → 專案 → Deployments → All deployments 裡要退回的部署右側的 `⋯` → **Rollback to this deployment** → 確認。只能退回到成功建置的 Production 部署。演練時兩次切換在回報前就已生效，卡片牆沒有中斷。
+- `wrangler pages deployment list` 不會顯示退回。要確認是否生效，比對主網址和目標部署自己的網址（`https://<部署 id 前 8 碼>.<專案>.pages.dev`）載入的前端檔名：`/` 的 `assets/main-*.js` 與 `/admin/` 的 `assets/admin-*.js`
+- 兩個部署的前端檔案相同時（同一份 build，或只改了後端），從外部分不出來，要在 Cloudflare 後台確認目前生效的是哪一個部署
+- staging 的 Deploy Hook 一律部署當下 `main` 的最新版，不是固定版本。`main` 比 staging 新的時候，退路要用同一份 build 的另一個部署（11/02 演練準備的是 `1a0fbffd`），不能用 Deploy Hook
+
+**匯出**（`wrangler d1 export`）
+- 輸出路徑放在 repo 外（例如 `~/fwd-exports/`）。判斷紀錄的匯出檔含判斷結果，不可進 repo，不再需要時刪除
+- **匯出期間資料庫會短暫無法回應**：演練時兩張表各約 6～7 秒，期間不經快取、直接讀資料庫的請求有 5 次失敗（500），有快取的卡片牆第 1 頁不受影響。正式環境要匯出時，排在離峰時間，並先在 issue 公告時間
+
+**Time Travel 還原**
+- 操作前先記下書籤：`npx wrangler d1 time-travel info <資料庫>`
+- 還原指令要加 `--json`：`npx wrangler d1 time-travel restore <資料庫> --bookmark=<書籤> --json`。不加時會先詢問是否確定，在腳本等非互動環境會以預設的「否」結束，不會還原；加了就不再詢問，所以執行前要再核對一次資料庫名稱與書籤
+- 還原會連同書籤之後新增或變更的資料一起還原，只在必要時使用
 
 ---
 

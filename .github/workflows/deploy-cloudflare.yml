@@ -1,0 +1,64 @@
+name: Deploy production (Cloudflare Pages)
+
+# Builds main on GitHub Actions and uploads it to the direct-upload Pages project 26fwd-prod (#36).
+# Manual only. The job waits for a reviewer of the `production` environment, which holds the token,
+# so no other branch, PR or unapproved run can read it. Setup and rollback: docs/DEPLOYMENT.md.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  # A running upload is never interrupted; a second run waits for it.
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: check, build & upload
+    # The environment allows main only; this also holds before the environment is configured.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run typecheck
+
+      - run: npm test
+
+      # Every value below is compiled into the browser bundle, so it is public. The first two are
+      # fixed for production: anything else would serve mock data or the preview badge.
+      - run: npm run build
+        env:
+          VITE_API_MODE: live
+          VITE_SHOW_PREVIEW_BADGE: 'false'
+          VITE_TURNSTILE_SITE_KEY: ${{ vars.VITE_TURNSTILE_SITE_KEY }}
+          VITE_GIVE_URL: ${{ vars.VITE_GIVE_URL }}
+          VITE_GA4_MEASUREMENT_ID: ${{ vars.VITE_GA4_MEASUREMENT_ID }}
+          # Unset keeps every URL noindex; set it to `allow` only on the day indexing opens (#48).
+          SITE_INDEXING: ${{ vars.SITE_INDEXING }}
+
+      # Pinned to a commit because this step receives the deploy token. It uploads dist/ and
+      # ./functions; bindings, secrets and runtime variables stay in the Pages project settings.
+      - id: upload
+        uses: cloudflare/wrangler-action@953926a2e2182532811c01a25e53647d93bf07c0 # v4.1.3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: '4.157.0'
+          command: pages deploy dist --project-name=26fwd-prod --branch=main
+
+      - env:
+          DEPLOYMENT_ID: ${{ steps.upload.outputs.pages-deployment-id }}
+          DEPLOYMENT_URL: ${{ steps.upload.outputs.deployment-url }}
+        run: |
+          echo "Deployed \`${GITHUB_SHA::7}\` to 26fwd-prod as deployment \`${DEPLOYMENT_ID}\`: ${DEPLOYMENT_URL}" >> "$GITHUB_STEP_SUMMARY"
