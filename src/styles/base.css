@@ -145,6 +145,7 @@ h3 {
 }
 
 .lead {
+  white-space: pre-line; /* BB's leads break between sentences */
   font-size: clamp(1rem, 0.95rem + 0.35vw, 1.2rem);
   line-height: 1.8;
   color: var(--text-2);

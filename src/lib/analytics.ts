@@ -28,8 +28,8 @@ export function initAnalytics(measurementId: string | null): void {
 }
 
 /** Event names only — no nickname, card text or any other custom payload. */
-// create_card counts people who made a card, including those who never publish it (those
-// cards never reach the server, so this is the only participation count for them).
+// create_card counts FORWARD 卡 sent from the form. Every card is shared since 11/04, so it
+// matches the cards the server received; it carries no content.
 export type TrackedEvent = 'click_give_cta' | 'create_card';
 
 export function trackEvent(name: TrackedEvent): void {

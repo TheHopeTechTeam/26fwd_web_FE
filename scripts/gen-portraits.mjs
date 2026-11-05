@@ -1,4 +1,4 @@
-// Generates the 20 SYNTHETIC editorial-illustration portraits used by the Appreciate
+// Generates the 43 SYNTHETIC editorial-illustration portraits (the testimony list is 43 long) used by the Appreciate
 // section until Online Campus delivers real, consented photos (US-03, DATA-22).
 // Output: public/synthetic/portraits/pNN.svg. Run: npm run assets:portraits
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -33,6 +33,29 @@ const PEOPLE = [
   ['short', 0, 7, 5, 1, 'glasses'],
   ['long', 5, 1, 2, 2, 'cheeks'],
   ['buzz', 2, 5, 0, 3, ''],
+  ['wavy', 0, 4, 9, 4, 'cheeks'],
+  ['short', 4, 1, 1, 5, ''],
+  ['bob', 6, 0, 2, 6, 'cheeks'],
+  ['side', 1, 3, 8, 7, 'glasses'],
+  ['long', 3, 2, 5, 0, ''],
+  ['buzz', 7, 6, 4, 1, 'beard'],
+  ['curly', 1, 0, 7, 2, 'glasses'],
+  ['bun', 2, 1, 3, 3, ''],
+  ['short', 5, 5, 6, 4, 'glasses beard'],
+  ['long', 0, 7, 4, 5, 'cheeks'],
+  ['side', 6, 0, 9, 6, ''],
+  ['wavy', 2, 1, 0, 7, 'glasses'],
+  ['bob', 4, 3, 1, 0, 'cheeks'],
+  ['short', 7, 0, 8, 1, ''],
+  ['curly', 6, 2, 5, 2, 'cheeks'],
+  ['buzz', 3, 1, 7, 3, 'glasses'],
+  ['bun', 5, 4, 2, 4, 'cheeks'],
+  ['side', 0, 2, 6, 5, 'beard'],
+  ['long', 7, 0, 3, 6, ''],
+  ['short', 2, 6, 9, 7, 'glasses'],
+  ['wavy', 5, 0, 8, 0, ''],
+  ['bob', 1, 5, 4, 1, 'cheeks'],
+  ['side', 3, 7, 2, 2, 'glasses'],
 ];
 
 function shade(hex, amount) {

@@ -57,7 +57,6 @@
 
 .hero__lead {
   margin-top: clamp(12px, 2svh, 20px);
-  white-space: pre-line; /* the copy breaks after the first clause */
   max-width: 28em;
   font-size: clamp(1rem, 0.9rem + 0.5vw, 1.25rem);
   font-weight: 700;

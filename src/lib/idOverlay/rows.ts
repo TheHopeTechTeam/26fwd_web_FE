@@ -1,5 +1,6 @@
 // Generated from the cloud sheet 「FORWARD2026_網站文字表」 (columns 編號 / 頁面 / 區段 / 出現方式 / 位置 /
 // 目前文字 / 備註), so reviewers can map a sheet row to the spot on the page. Review aid only (`?ids=1`).
+// Rows changed by the 11/04 FORWARD 卡 flow and BB's copy carry the wording now on the page.
 export type OverlayPage = 'home' | 'cards' | 'privacy' | 'all';
 
 export interface SheetRow {
@@ -21,7 +22,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "頁首導覽",
   "when": "打開就看得到",
   "pos": "導覽連結",
-  "text": "感謝 / 期待 / 回應 / 卡片牆 ↗",
+  "text": "感謝 / 期待 / 回應 / Hope Nation 回應牆 ↗",
   "note": ""
  },
  {
@@ -61,7 +62,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "右側旅程導覽",
   "when": "打開就看得到",
   "pos": "章節名稱",
-  "text": "01 Appreciate 感謝 / 02 Anticipate 期待 / 03 Respond 回應",
+  "text": "01 Appreciate 我感謝神… / 02 Anticipate 一起期待… / 03 Respond 線上 FORWARD 卡",
   "note": "手機只顯示中文"
  },
  {
@@ -101,7 +102,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "封面 Hero",
   "when": "打開就看得到",
   "pos": "引言",
-  "text": "感謝過去的信實，\n一起期待未來的更多。",
+  "text": "APPRECIATE 為神已經成就的獻上感謝\nANTICIPATE 憑著信心 為更多生命與教會所相信的挪出一個空間 參與在祂將要成就的未來",
   "note": "有換行"
  },
  {
@@ -161,7 +162,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "01 感謝",
   "when": "打開就看得到",
   "pos": "章節標籤",
-  "text": "01 · Appreciate 感謝",
+  "text": "01 · Appreciate 2026 我感謝神…",
   "note": ""
  },
  {
@@ -171,7 +172,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "01 感謝",
   "when": "打開就看得到",
   "pos": "標題",
-  "text": "神的信實，寫在每一張臉上",
+  "text": "教會，就是一張張尋求神的臉。",
   "note": ""
  },
  {
@@ -181,7 +182,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "01 感謝",
   "when": "打開就看得到",
   "pos": "引言",
-  "text": "七年來，神在一個又一個生命裡留下記號。點開任何一張臉，讀一段故事。",
+  "text": "從你我的一個回應開始，踏出第一步，再下一步。\n我們聚集的地方，就是見證神正在尋找人的地方；我們所在的地方，就是福音正在發生的地方。在跟隨神的路上，讓我們經歷豐盛，也永遠別忘記我們曾對祂說過的 YES！",
   "note": ""
  },
  {
@@ -201,7 +202,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "01 感謝",
   "when": "操作後才出現",
   "pos": "見證彈窗標籤",
-  "text": "Testimony · 見證",
+  "text": "Appreciate 2026 我感謝神…",
   "note": ""
  },
  {
@@ -222,7 +223,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "when": "操作後才出現",
   "pos": "信仰歷程標籤",
   "text": "決志 Decision / 受洗 Baptism / 課程 Equip / 小組 Belong",
-  "note": ""
+  "note": "11/04 依 BB 刪除（不需要分類），頁面上已無這些標籤"
  },
  {
   "id": 22,
@@ -241,7 +242,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "02 期待",
   "when": "打開就看得到",
   "pos": "章節標籤",
-  "text": "02 · Anticipate 期待",
+  "text": "02 · Anticipate 2027 我和神一起期待…",
   "note": ""
  },
  {
@@ -251,7 +252,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "02 期待",
   "when": "打開就看得到",
   "pos": "標題",
-  "text": "神要帶我們去的地方",
+  "text": "FORWARD 是十一之外的慷慨奉獻。",
   "note": ""
  },
  {
@@ -261,7 +262,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "02 期待",
   "when": "打開就看得到",
   "pos": "引言",
-  "text": "五項事工，是我們一起期待、也一起預備的未來。",
+  "text": "它不只為一個場地，也不是一次性的募款，而是持續支持五大事工。\n每一份給予，都幫助教會接觸人群、帶領更多人認識耶穌，並朝著 The Hope「在我們所到的每個城市，贏得 1% 的人」的異象一起前進。",
   "note": ""
  },
  {
@@ -311,7 +312,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "02 期待 · 事工 01",
   "when": "打開就看得到",
   "pos": "副標題",
-  "text": "為更多生命預備空間",
+  "text": "為人預備一個經歷神同在、認識神的空間。",
   "note": ""
  },
  {
@@ -331,7 +332,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "02 期待 · 事工 01",
   "when": "打開就看得到",
   "pos": "數據（數字 + 說明）",
-  "text": "1200+ 每週聚會人次 / 24 週間小組據點",
+  "text": "2500+ 每週聚會人次 / 1200+ 人在這裡受洗 / 4500+ 過去一年，新朋友走進教會",
   "note": "目前為示意數字"
  },
  {
@@ -341,7 +342,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "02 期待 · 事工 02",
   "when": "打開就看得到",
   "pos": "名稱（中 / 英）",
-  "text": "宣教資助 / Missions & Donations",
+  "text": "宣教資助 / Missions",
   "note": ""
  },
  {
@@ -351,7 +352,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "02 期待 · 事工 02",
   "when": "打開就看得到",
   "pos": "副標題",
-  "text": "把福音帶到更遠的地方",
+  "text": "宣教，是你我一起的事。讓福音去到我們到不了的地方。",
   "note": ""
  },
  {
@@ -381,7 +382,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "02 期待 · 事工 03",
   "when": "打開就看得到",
   "pos": "名稱（中 / 英）",
-  "text": "外展與憐憫事工 / Outreach & Hope Week",
+  "text": "外展憐憫事工 / Outreach & Hope Week",
   "note": ""
  },
  {
@@ -391,7 +392,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "02 期待 · 事工 03",
   "when": "打開就看得到",
   "pos": "副標題",
-  "text": "走進社區，成為好鄰舍",
+  "text": "走出教會與機構合作，建立長久關懷陪伴的關係。",
   "note": ""
  },
  {
@@ -431,7 +432,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "02 期待 · 事工 04",
   "when": "打開就看得到",
   "pos": "副標題",
-  "text": "跨越距離的教會",
+  "text": "製作福音內容觸及華語群體，打造屬於我們的線上 Hope 主日。",
   "note": ""
  },
  {
@@ -441,7 +442,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "02 期待 · 事工 04",
   "when": "打開就看得到",
   "pos": "內文",
-  "text": "不論在哪個城市、哪個時區，Online Campus 讓更多人能一起敬拜、加入線上小組、被牧養與陪伴。下一步，我們期待觸及更多還沒有教會的人。",
+  "text": "線上分部牧養的是台北、台中以外的所有地方：台灣其他縣市，還有海外所有的 Hope Nation。這些人沒有一棟可以走進去的教會，但他們有小組和屬於他們的教會生活。\n小組開始跨組連結。高雄、香港、吉隆坡的小組聯合舉辦 Watch Party，一起看主日、一起吃飯；不同城市的組員彼此探訪。他們沒有實體的教會建築物，他們相聚在一起，就是教會。",
   "note": ""
  },
  {
@@ -451,7 +452,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "02 期待 · 事工 04",
   "when": "打開就看得到",
   "pos": "數據（數字 + 說明）",
-  "text": "520+ 每週線上參與 / 74 觸及城市 / 1800+ 線上小組成員",
+  "text": "62 個 線上小組 / 390+ 小組員每週線上參與 / 13 個 國家／地區 / 21 個 過去一年新成立的小組",
   "note": "目前為示意數字"
  },
  {
@@ -461,7 +462,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "02 期待 · 事工 05",
   "when": "打開就看得到",
   "pos": "名稱（中 / 英）",
-  "text": "其他城市分布（暫稱） / Other Cities",
+  "text": "其他城市分部 / Future Campuses",
   "note": ""
  },
  {
@@ -471,7 +472,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "02 期待 · 事工 05",
   "when": "打開就看得到",
   "pos": "副標題",
-  "text": "標題待 COMMS 提供",
+  "text": "一個教會，不同城市。無論在哪裡，都有相同主日體驗。",
   "note": ""
  },
  {
@@ -501,7 +502,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "03 回應",
   "when": "打開就看得到",
   "pos": "章節標籤",
-  "text": "03 · Respond 回應",
+  "text": "03 · Respond 填寫 FORWARD 卡",
   "note": ""
  },
  {
@@ -511,7 +512,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "03 回應",
   "when": "打開就看得到",
   "pos": "標題",
-  "text": "Write it forward",
+  "text": "寫下一張屬於你的 FORWARD 卡",
   "note": ""
  },
  {
@@ -521,7 +522,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "03 回應",
   "when": "打開就看得到",
   "pos": "引言",
-  "text": "寫下一張屬於你的 Forward Card：一句感謝，一個期待。做好的卡片可以下載保存，也可以選擇公開到卡片牆，與全 Hope Nation 分享。",
+  "text": "回顧過去一年，你最想為什麼感謝神？\n展望明年，你期待神在哪裡擴張你的信心？你願意如何回應？\n完成後，這張 FORWARD 卡會分享至線上回應牆，你也可以下載保存。讓你的感謝成為別人的鼓勵，也讓我們彼此的信心，一起走向神要成就的更多。",
   "note": ""
  },
  {
@@ -541,7 +542,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "03 回應 · 寫卡表單",
   "when": "網頁＋卡片圖片上",
   "pos": "第一題",
-  "text": "我感謝神…",
+  "text": "2026 我感謝神…",
   "note": "也會印在下載的卡片上"
  },
  {
@@ -551,7 +552,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "03 回應 · 寫卡表單",
   "when": "網頁＋卡片圖片上",
   "pos": "第二題",
-  "text": "跟神一起期待…",
+  "text": "2027 我和神一起期待…",
   "note": "也會印在下載的卡片上"
  },
  {
@@ -571,7 +572,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "03 回應 · 寫卡表單",
   "when": "打開就看得到",
   "pos": "署名欄位",
-  "text": "署名",
+  "text": "你的名稱",
   "note": ""
  },
  {
@@ -591,7 +592,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "03 回應 · 寫卡表單",
   "when": "打開就看得到",
   "pos": "署名說明",
-  "text": "可以用暱稱，不需要真實姓名",
+  "text": "可填寫暱稱",
   "note": ""
  },
  {
@@ -611,7 +612,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "03 回應 · 寫卡表單",
   "when": "打開就看得到",
   "pos": "按鈕",
-  "text": "製作我的卡片",
+  "text": "分享到 Hope Nation 回應牆",
   "note": ""
  },
  {
@@ -622,7 +623,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "when": "打開就看得到",
   "pos": "步驟 1",
   "text": "寫下感謝與期待／一句感謝，一個向前的期待。",
-  "note": "標題／說明"
+  "note": "11/04 三步驟改為兩段寫卡引導（APPRECIATE／ANTICIPATE），文字不在這張表"
  },
  {
   "id": 62,
@@ -631,8 +632,8 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "03 回應 · 三步驟",
   "when": "打開就看得到",
   "pos": "步驟 2",
-  "text": "製作並保存卡片／選一段信心宣告，下載或分享到社群。",
-  "note": "標題／說明"
+  "text": "分享到回應牆／勾選同意後送出，經過審核就會出現在 Hope Nation 回應牆。",
+  "note": "11/04 三步驟改為兩段寫卡引導（APPRECIATE／ANTICIPATE），文字不在這張表"
  },
  {
   "id": 63,
@@ -641,8 +642,8 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "03 回應 · 三步驟",
   "when": "打開就看得到",
   "pos": "步驟 3",
-  "text": "決定是否公開／想讓大家一起看見，再公開到卡片牆。",
-  "note": "標題／說明"
+  "text": "保存你的 FORWARD 卡／選擇 FORWARD 卡樣式，下載或分享到社群。",
+  "note": "11/04 三步驟改為兩段寫卡引導（APPRECIATE／ANTICIPATE），文字不在這張表"
  },
  {
   "id": 64,
@@ -662,7 +663,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "when": "打開就看得到",
   "pos": "開頭",
   "text": "只下載保存的卡片不會送出；打算公開到卡片牆的話，請留意：",
-  "note": "⚠️ 若改成所有卡片都送給同工代禱，這句要改"
+  "note": "11/04 依 BB 刪除，頁面上已無這句"
  },
  {
   "id": 66,
@@ -671,7 +672,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "03 回應 · 寫卡小提醒",
   "when": "打開就看得到",
   "pos": "第 1 點",
-  "text": "請勿寫下自己或他人的電話、地址、LINE ID 等聯絡方式。",
+  "text": "分享至線上回應牆後，你的內容將公開顯示。請勿留下自己或他人的電話、地址、LINE ID 等個人資料；提到家人、孩子、健康或其他私密內容時，也請斟酌描述。",
   "note": ""
  },
  {
@@ -682,7 +683,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "when": "打開就看得到",
   "pos": "第 2 點",
   "text": "提到家人、孩子、健康等私密細節時，請斟酌描述。",
-  "note": ""
+  "note": "11/04 已併入 66 的一句話"
  },
  {
   "id": 68,
@@ -691,7 +692,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "03 回應 · 你的卡片",
   "when": "操作後才出現",
   "pos": "標籤",
-  "text": "Your Card · 你的卡片",
+  "text": "Your Card · 你的 FORWARD 卡",
   "note": ""
  },
  {
@@ -701,7 +702,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "03 回應 · 你的卡片",
   "when": "操作後才出現",
   "pos": "標題",
-  "text": "謝謝你寫下這張卡片！",
+  "text": "謝謝你寫下這張 FORWARD 卡！",
   "note": ""
  },
  {
@@ -711,7 +712,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "03 回應 · 你的卡片",
   "when": "操作後才出現",
   "pos": "說明",
-  "text": "恭喜完成！立即下載專屬 Forward Card 保存，或分享到社群！",
+  "text": "恭喜完成！立即下載專屬 FORWARD 卡保存，或分享到社群！",
   "note": ""
  },
  {
@@ -721,7 +722,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "03 回應 · 你的卡片",
   "when": "操作後才出現",
   "pos": "產生中",
-  "text": "產生卡片中…",
+  "text": "產生 FORWARD 卡中…",
   "note": ""
  },
  {
@@ -731,7 +732,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "03 回應 · 信心宣告",
   "when": "操作後才出現",
   "pos": "選擇區標題",
-  "text": "選一段信心宣告",
+  "text": "選擇你的 FORWARD 卡樣式",
   "note": ""
  },
  {
@@ -751,7 +752,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "03 回應 · 信心宣告",
   "when": "操作後才出現",
   "pos": "宣告：向世界走去",
-  "text": "向世界走去 / LOVE IN ACTION\n我願意多走一步，把愛與盼望帶進日常。",
+  "text": "LOVE IN ACTION\n讓愛走進社區\n我參與 Forward，相信教會要走進更多社區，讓人真實經歷耶穌的愛與盼望。",
   "note": ""
  },
  {
@@ -761,7 +762,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "03 回應 · 信心宣告",
   "when": "操作後才出現",
   "pos": "宣告：相信還有更多",
-  "text": "相信還有更多 / THERE IS MORE\n我相信神的信實，也期待祂要成就的更多。",
+  "text": "HOPE WITHOUT BORDERS\n讓福音跨越距離\n我參與 Forward，相信福音要透過網路進入更多城市，找到每一個正在尋找盼望的人。",
   "note": ""
  },
  {
@@ -771,7 +772,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "03 回應 · 信心宣告",
   "when": "操作後才出現",
   "pos": "宣告：一起成為祝福",
-  "text": "一起成為祝福 / HOPE FOR TOMORROW\n我願意與教會同行，讓更多人找到盼望。",
+  "text": "ONE CHURCH, MANY CITIES\n在更多城市建立教會的家\n我參與 Forward，相信神要在新的城市預備人、團隊與合適的時機，讓更多人找到教會的家。",
   "note": ""
  },
  {
@@ -791,7 +792,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "03 回應 · 你的卡片",
   "when": "操作後才出現",
   "pos": "按鈕",
-  "text": "下載卡片 / 分享",
+  "text": "下載 FORWARD 卡 / 分享",
   "note": ""
  },
  {
@@ -801,7 +802,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "03 回應 · 你的卡片",
   "when": "操作後才出現",
   "pos": "下方說明",
-  "text": "手機可長按上方圖片儲存到相簿。下載或分享個人卡片，不會公開到卡片牆。",
+  "text": "手機可長按上方圖片儲存到相簿",
   "note": ""
  },
  {
@@ -811,7 +812,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "03 回應 · 你的卡片",
   "when": "操作後才出現",
   "pos": "提示訊息",
-  "text": "已下載卡片圖片 / 已開啟分享 / 已複製網站連結 / 無法分享，請改用下載卡片 / 卡片圖片產生失敗，請再試一次",
+  "text": "已下載 FORWARD 卡圖片 / 已開啟分享 / 已複製網站連結 / 無法分享，請改用下載 FORWARD 卡 / FORWARD 卡圖片產生失敗，請再試一次",
   "note": ""
  },
  {
@@ -822,7 +823,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "when": "操作後才出現",
   "pos": "標題",
   "text": "也想公開到卡片牆嗎？",
-  "note": ""
+  "note": "11/04 改為寫完即分享，已無這一步"
  },
  {
   "id": 82,
@@ -832,7 +833,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "when": "操作後才出現",
   "pos": "說明",
   "text": "和大家一起分享你的感謝與期待。不公開也沒關係，你的卡片已經可以下載保存。",
-  "note": ""
+  "note": "11/04 依 BB 刪除，頁面上已無這句"
  },
  {
   "id": 83,
@@ -841,8 +842,8 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "03 回應 · 公開到卡片牆",
   "when": "操作後才出現",
   "pos": "同意勾選",
-  "text": "我同意將這張卡片（署名與兩段內容）公開分享於 FORWARD 網站的卡片牆，並了解卡片需經審核後才會公開。",
-  "note": ""
+  "text": "我了解分享後，這張 FORWARD 卡將公開顯示於線上回應牆。我已詳閱並瞭解上述條款，同意 The Hope 教會依上述內容蒐集、處理及利用我的個人資料。",
+  "note": "11/04 後半句為法務條款第 10 點原文"
  },
  {
   "id": 84,
@@ -861,7 +862,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "03 回應 · 公開到卡片牆",
   "when": "操作後才出現",
   "pos": "按鈕",
-  "text": "公開到卡片牆（送出中：送出中…）",
+  "text": "分享到 Hope Nation 回應牆（送出中：送出中…）",
   "note": ""
  },
  {
@@ -891,7 +892,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "03 回應 · 公開到卡片牆",
   "when": "操作後才出現",
   "pos": "送出後標題",
-  "text": "已送出到卡片牆！",
+  "text": "已成功送出！",
   "note": ""
  },
  {
@@ -901,7 +902,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "03 回應 · 公開到卡片牆",
   "when": "操作後才出現",
   "pos": "送出後說明",
-  "text": "卡片會先經過審核，通過後就會出現在 Forward Cards 卡片牆。",
+  "text": "每一張 FORWARD 卡都會先經過文字審核，完成後就會出現在 Hope Nation 回應牆。",
   "note": ""
  },
  {
@@ -911,7 +912,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "03 回應 · 公開到卡片牆",
   "when": "操作後才出現",
   "pos": "送出後連結",
-  "text": "看看大家寫的卡片 →",
+  "text": "看看大家寫的 FORWARD 卡 →",
   "note": ""
  },
  {
@@ -921,7 +922,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "03 回應 · 卡片牆預覽",
   "when": "打開就看得到",
   "pos": "標題",
-  "text": "Forward Cards",
+  "text": "Hope Nation 回應牆",
   "note": ""
  },
  {
@@ -931,7 +932,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "03 回應 · 卡片牆預覽",
   "when": "打開就看得到",
   "pos": "張數",
-  "text": "已有 {N} 張卡片公開",
+  "text": "已有 {N} 張 FORWARD 卡公開",
   "note": "{N} 自動帶入"
  },
  {
@@ -941,7 +942,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "03 回應 · 卡片牆預覽",
   "when": "打開就看得到",
   "pos": "按鈕",
-  "text": "看全部卡片 →",
+  "text": "看全部 FORWARD 卡 →",
   "note": ""
  },
  {
@@ -951,7 +952,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "03 回應 · 卡片牆預覽",
   "when": "操作後才出現",
   "pos": "沒有卡片時",
-  "text": "還沒有公開的卡片，成為第一個寫卡的人！",
+  "text": "還沒有公開的 FORWARD 卡，成為第一個寫卡的人！",
   "note": ""
  },
  {
@@ -961,7 +962,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "結尾 奉獻",
   "when": "打開就看得到",
   "pos": "小標",
-  "text": "FORWARD 2026 · GIVE",
+  "text": "YEAR END FORWARD 2026",
   "note": ""
  },
  {
@@ -971,7 +972,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "結尾 奉獻",
   "when": "打開就看得到",
   "pos": "大標",
-  "text": "There is more",
+  "text": "There is More",
   "note": ""
  },
  {
@@ -981,7 +982,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "結尾 奉獻",
   "when": "打開就看得到",
   "pos": "內文",
-  "text": "透過奉獻，一起為神接下來要成就的事預備空間。你的每一份擺上，都會成為建堂、宣教、外展與網路宣教往前的一步。",
+  "text": "我們能給予，是因為神先慷慨地將恩典、赦免與耶穌賜給了我們。真正的慷慨，不是因為我們「擁有很多」，而是深知自己已經「領受極多」。\n每一次的給予，都是用行動回應神的愛，讓更多人經歷這份盼望。",
   "note": ""
  },
  {
@@ -1041,7 +1042,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "頁尾",
   "when": "打開就看得到",
   "pos": "連結",
-  "text": "Forward Cards 卡片牆 / 隱私與資料說明",
+  "text": "Hope Nation 回應牆 / 隱私與資料說明",
   "note": ""
  },
  {
@@ -1071,7 +1072,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "頁尾",
   "when": "預覽版才有（上線拿掉）",
   "pos": "預覽說明（正式版會拿掉）",
-  "text": "本網站目前為開發預覽版：人物、見證、數據與卡片皆為合成示意內容（synthetic），不代表真實人物或正式數字。",
+  "text": "本網站目前為開發預覽版：人物、見證、數據與 FORWARD 卡皆為合成示意內容（synthetic），不代表真實人物或正式數字。",
   "note": "正式上線不顯示"
  },
  {
@@ -1091,7 +1092,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "分享預覽（LINE / FB 貼連結時）",
   "when": "網頁上看不到",
   "pos": "說明",
-  "text": "感謝過去的信實，一起期待未來的更多。",
+  "text": "APPRECIATE 為神已經成就的獻上感謝 ANTICIPATE 憑著信心，為更多生命與教會所相信的挪出一個空間，參與在祂將要成就的未來",
   "note": ""
  },
  {
@@ -1131,7 +1132,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "標題區",
   "when": "打開就看得到",
   "pos": "標籤",
-  "text": "Forward Cards · 卡片牆",
+  "text": "Hope Nation 回應牆",
   "note": ""
  },
  {
@@ -1151,7 +1152,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "標題區",
   "when": "打開就看得到",
   "pos": "引言",
-  "text": "全 Hope Nation 寫下的感謝與期待。每一張卡片都經過審核後公開。",
+  "text": "在這面回應牆上，看見 The Hope 家人一張張真實的感謝與期待。讓彼此的故事成為鼓勵，也打開我們對未來的想像，一起相信神還要成就更多。",
   "note": ""
  },
  {
@@ -1161,7 +1162,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "標題區",
   "when": "打開就看得到",
   "pos": "張數",
-  "text": "已有 {N} 張卡片",
+  "text": "已有 {N} 張 FORWARD 卡",
   "note": "{N} 自動帶入"
  },
  {
@@ -1171,7 +1172,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "標題區",
   "when": "打開就看得到",
   "pos": "按鈕",
-  "text": "寫一張卡片",
+  "text": "寫一張 FORWARD 卡",
   "note": ""
  },
  {
@@ -1181,7 +1182,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "卡片列表",
   "when": "打開就看得到",
   "pos": "按鈕 / 狀態",
-  "text": "載入更多 / 載入中… / 已顯示全部卡片 / 重新載入 / 載入失敗",
+  "text": "載入更多 / 載入中… / 已顯示全部 FORWARD 卡 / 重新載入 / 載入失敗",
   "note": ""
  },
  {
@@ -1191,7 +1192,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "卡片列表",
   "when": "操作後才出現",
   "pos": "沒有卡片時",
-  "text": "成為第一個寫卡的人！（按鈕：寫一張 Forward Card）",
+  "text": "成為第一個寫卡的人！（按鈕：寫一張 FORWARD 卡）",
   "note": ""
  },
  {
@@ -1211,7 +1212,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "瀏覽器分頁標題",
   "when": "網頁上看不到",
   "pos": "",
-  "text": "Forward Cards 卡片牆 · FORWARD 2026 | The Hope",
+  "text": "Hope Nation 回應牆 · FORWARD 2026 | The Hope",
   "note": ""
  },
  {
@@ -1221,7 +1222,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "搜尋引擎說明",
   "when": "網頁上看不到",
   "pos": "",
-  "text": "全 Hope Nation 寫下的感謝與期待：FORWARD 2026 Forward Cards 卡片牆。",
+  "text": "全 Hope Nation 寫下的感謝與期待：FORWARD 2026 Hope Nation 回應牆。",
   "note": ""
  },
  {
@@ -1232,7 +1233,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "when": "打開就看得到",
   "pos": "標籤",
   "text": "Privacy · 隱私與資料說明",
-  "note": ""
+  "note": "11/04 隱私頁改為法務條款全文（The Hope 教會個人資料使用與隱私政策同意條款），這列的舊文字已不在頁面上"
  },
  {
   "id": 123,
@@ -1242,7 +1243,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "when": "打開就看得到",
   "pos": "標題",
   "text": "Forward Card 隱私與資料說明",
-  "note": "整頁文字待 Comms / BB / Online 確認"
+  "note": "11/04 隱私頁改為法務條款全文（The Hope 教會個人資料使用與隱私政策同意條款），這列的舊文字已不在頁面上"
  },
  {
   "id": 124,
@@ -1252,7 +1253,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "when": "預覽版才有（上線拿掉）",
   "pos": "草稿提示（正式版會拿掉）",
   "text": "草稿：本說明的文字、保存期限與聯絡管道仍待 Comms 與負責同工確認，正式上線前會更新。",
-  "note": ""
+  "note": "11/04 隱私頁改為法務條款全文（The Hope 教會個人資料使用與隱私政策同意條款），這列的舊文字已不在頁面上"
  },
  {
   "id": 125,
@@ -1262,7 +1263,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "when": "打開就看得到",
   "pos": "內文",
   "text": "你只需要填寫署名（可以是暱稱）和兩段內容。我們不會要求你的真實姓名、電話、Email 或社群帳號。",
-  "note": ""
+  "note": "11/04 隱私頁改為法務條款全文（The Hope 教會個人資料使用與隱私政策同意條款），這列的舊文字已不在頁面上"
  },
  {
   "id": 126,
@@ -1272,7 +1273,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "when": "打開就看得到",
   "pos": "表格欄位名稱",
   "text": "資料 / 用途 / 誰看得到",
-  "note": ""
+  "note": "11/04 隱私頁改為法務條款全文（The Hope 教會個人資料使用與隱私政策同意條款），這列的舊文字已不在頁面上"
  },
  {
   "id": 127,
@@ -1282,7 +1283,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "when": "打開就看得到",
   "pos": "表格：署名（暱稱或名字）",
   "text": "資料：署名（暱稱或名字）\n用途：作為卡片署名，不要求真實姓名\n誰看得到：審閱通過後公開；審閱前僅授權審核人員",
-  "note": ""
+  "note": "11/04 隱私頁改為法務條款全文（The Hope 教會個人資料使用與隱私政策同意條款），這列的舊文字已不在頁面上"
  },
  {
   "id": 128,
@@ -1292,7 +1293,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "when": "打開就看得到",
   "pos": "表格：「我感謝神…」與「跟神一起期待…」內容",
   "text": "資料：「我感謝神…」與「跟神一起期待…」內容\n用途：你想分享的信仰經驗與期待\n誰看得到：審閱通過後公開；審閱前僅授權審核人員",
-  "note": ""
+  "note": "11/04 隱私頁改為法務條款全文（The Hope 教會個人資料使用與隱私政策同意條款），這列的舊文字已不在頁面上"
  },
  {
   "id": 129,
@@ -1302,7 +1303,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "when": "打開就看得到",
   "pos": "表格：公開分享同意",
   "text": "資料：公開分享同意\n用途：記錄你同意公開這張卡片\n誰看得到：僅系統維運人員",
-  "note": ""
+  "note": "11/04 隱私頁改為法務條款全文（The Hope 教會個人資料使用與隱私政策同意條款），這列的舊文字已不在頁面上"
  },
  {
   "id": 130,
@@ -1312,7 +1313,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "when": "打開就看得到",
   "pos": "表格：卡片編號與送出時間",
   "text": "資料：卡片編號與送出時間\n用途：排序、顯示「幾小時前」與審核作業\n誰看得到：編號與時間會隨公開卡片顯示",
-  "note": ""
+  "note": "11/04 隱私頁改為法務條款全文（The Hope 教會個人資料使用與隱私政策同意條款），這列的舊文字已不在頁面上"
  },
  {
   "id": 131,
@@ -1322,7 +1323,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "when": "打開就看得到",
   "pos": "表格：連線 IP 的單向雜湊值",
   "text": "資料：連線 IP 的單向雜湊值\n用途：防止大量灌水（限制同一個網路的送出頻率）；不保存原始 IP，也不與卡片綁定\n誰看得到：僅系統維運人員",
-  "note": ""
+  "note": "11/04 隱私頁改為法務條款全文（The Hope 教會個人資料使用與隱私政策同意條款），這列的舊文字已不在頁面上"
  },
  {
   "id": 132,
@@ -1332,7 +1333,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "when": "打開就看得到",
   "pos": "表格：匿名送出識別（瀏覽器 cookie）",
   "text": "資料：匿名送出識別（瀏覽器 cookie）\n用途：送出卡片時設定，用來計算同一個瀏覽器的送出頻率，讓共用同一個網路的人各自有額度；不含任何個人資料，網頁程式無法讀取，2 小時後自動失效，也不與卡片綁定\n誰看得到：僅系統維運人員；伺服器只保存它的單向雜湊值",
-  "note": ""
+  "note": "11/04 隱私頁改為法務條款全文（The Hope 教會個人資料使用與隱私政策同意條款），這列的舊文字已不在頁面上"
  },
  {
   "id": 133,
@@ -1342,7 +1343,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "when": "打開就看得到",
   "pos": "表格下方說明",
   "text": "我們不會在你的瀏覽器（localStorage 等）保存卡片內容，也不會把卡片圖片上傳到伺服器；下載的卡片圖片只存在你自己的裝置。",
-  "note": ""
+  "note": "11/04 隱私頁改為法務條款全文（The Hope 教會個人資料使用與隱私政策同意條款），這列的舊文字已不在頁面上"
  },
  {
   "id": 134,
@@ -1352,7 +1353,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "when": "打開就看得到",
   "pos": "第 1 點",
   "text": "只製作、下載或分享卡片時，卡片內容不會送到伺服器；只有你勾選同意並按下「公開到卡片牆」，卡片才會送出。",
-  "note": "⚠️ 若改成所有卡片都送給同工代禱，這句要改"
+  "note": "11/04 隱私頁改為法務條款全文（The Hope 教會個人資料使用與隱私政策同意條款），這列的舊文字已不在頁面上"
  },
  {
   "id": 135,
@@ -1362,7 +1363,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "when": "打開就看得到",
   "pos": "第 2 點",
   "text": "卡片送出後會先進入「待審閱」狀態，審核通過後才會公開在 Forward Cards 卡片牆。",
-  "note": ""
+  "note": "11/04 隱私頁改為法務條款全文（The Hope 教會個人資料使用與隱私政策同意條款），這列的舊文字已不在頁面上"
  },
  {
   "id": 136,
@@ -1372,7 +1373,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "when": "打開就看得到",
   "pos": "第 3 點",
   "text": "內容若包含聯絡方式、他人的私密資訊或與主題無關，可能不會公開。",
-  "note": ""
+  "note": "11/04 隱私頁改為法務條款全文（The Hope 教會個人資料使用與隱私政策同意條款），這列的舊文字已不在頁面上"
  },
  {
   "id": 137,
@@ -1382,7 +1383,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "when": "打開就看得到",
   "pos": "第 4 點",
   "text": "已公開的卡片若被隱藏，只是不再顯示，並不等於資料已刪除。",
-  "note": ""
+  "note": "11/04 隱私頁改為法務條款全文（The Hope 教會個人資料使用與隱私政策同意條款），這列的舊文字已不在頁面上"
  },
  {
   "id": 138,
@@ -1392,7 +1393,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "when": "打開就看得到",
   "pos": "第 5 點",
   "text": "下載或分享你的個人卡片圖片，不代表卡片已經公開。",
-  "note": ""
+  "note": "11/04 隱私頁改為法務條款全文（The Hope 教會個人資料使用與隱私政策同意條款），這列的舊文字已不在頁面上"
  },
  {
   "id": 139,
@@ -1402,7 +1403,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "when": "打開就看得到",
   "pos": "內文",
   "text": "資料的保存期限、刪除方式，以及日後是否能取回自己寫過的卡片，目前仍在討論中（尚未定案）。確定後會更新在這裡，並提供申請管道。",
-  "note": "待決定"
+  "note": "11/04 隱私頁改為法務條款全文（The Hope 教會個人資料使用與隱私政策同意條款），這列的舊文字已不在頁面上"
  },
  {
   "id": 140,
@@ -1412,7 +1413,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "when": "打開就看得到",
   "pos": "Cloudflare Turnstile",
   "text": "用來確認送出者不是機器人，驗證資料由 Cloudflare 即時處理，本站不保存。",
-  "note": ""
+  "note": "11/04 隱私頁改為法務條款全文（The Hope 教會個人資料使用與隱私政策同意條款），這列的舊文字已不在頁面上"
  },
  {
   "id": 141,
@@ -1422,7 +1423,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "when": "打開就看得到",
   "pos": "Google Analytics（若啟用）",
   "text": "只用來統計「奉獻按鈕」的點擊次數、製作卡片的次數等整體使用情況，不會傳送你的署名或卡片內容。",
-  "note": ""
+  "note": "11/04 隱私頁改為法務條款全文（The Hope 教會個人資料使用與隱私政策同意條款），這列的舊文字已不在頁面上"
  },
  {
   "id": 142,
@@ -1432,7 +1433,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "when": "打開就看得到",
   "pos": "Prayer Map",
   "text": "旅程最後的「前往 Prayer Map 代禱」連到外部的 Prayer Map 網站，本站不會把你在這裡填寫的任何資料傳給它。請參考 Prayer Map 隱私權政策。",
-  "note": ""
+  "note": "11/04 隱私頁改為法務條款全文（The Hope 教會個人資料使用與隱私政策同意條款），這列的舊文字已不在頁面上"
  },
  {
   "id": 143,
@@ -1442,7 +1443,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "when": "打開就看得到",
   "pos": "奉獻頁面",
   "text": "奉獻按鈕會連到教會的奉獻頁面，網址帶有活動追蹤參數（UTM），不包含任何個人資料。",
-  "note": ""
+  "note": "11/04 隱私頁改為法務條款全文（The Hope 教會個人資料使用與隱私政策同意條款），這列的舊文字已不在頁面上"
  },
  {
   "id": 144,
@@ -1452,7 +1453,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "when": "打開就看得到",
   "pos": "按鈕",
   "text": "回到寫卡",
-  "note": ""
+  "note": "11/04 隱私頁改為法務條款全文（The Hope 教會個人資料使用與隱私政策同意條款），這列的舊文字已不在頁面上"
  },
  {
   "id": 145,
@@ -1462,7 +1463,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "when": "網頁上看不到",
   "pos": "",
   "text": "隱私與資料說明 · FORWARD 2026 | The Hope",
-  "note": ""
+  "note": "11/04 隱私頁改為法務條款全文（The Hope 教會個人資料使用與隱私政策同意條款），這列的舊文字已不在頁面上"
  },
  {
   "id": 146,
@@ -1472,7 +1473,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "when": "網頁上看不到",
   "pos": "",
   "text": "FORWARD 2026 Forward Card 的資料收集、公開範圍與第三方服務說明。",
-  "note": ""
+  "note": "11/04 隱私頁改為法務條款全文（The Hope 教會個人資料使用與隱私政策同意條款），這列的舊文字已不在頁面上"
  },
  {
   "id": 147,
@@ -1531,7 +1532,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "滑鼠提示 / 讀屏文字",
   "when": "網頁上看不到",
   "pos": "其他讀屏文字",
-  "text": "FORWARD 2026 首頁 / 開啟選單 / 關閉選單 / 關閉 / （在新分頁開啟）/ 旅程章節 / 見證人物 / 開啟 {姓名} 的見證：{引言} / {姓名} 的示意肖像 / {姓名} 的見證影片 / 你的 Forward Card 圖片預覽 / 圖片尺寸 / 寫卡三步驟 / 已輸入字數",
+  "text": "FORWARD 2026 首頁 / 開啟選單 / 關閉選單 / 關閉 / （在新分頁開啟）/ 旅程章節 / 見證人物 / 開啟 {姓名} 的見證：{引言} / {姓名} 的示意肖像 / {姓名} 的見證影片 / 你的 FORWARD 卡圖片預覽 / 圖片尺寸 / 寫卡三步驟 / 已輸入字數",
   "note": ""
  }
 ];

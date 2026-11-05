@@ -90,25 +90,29 @@
     border-radius: var(--radius-md);
     background: rgb(var(--rgb-base-deep) / 0.6);
   }
+  /* Text aligned left (11/04); the dots stay in one column on the right. */
   .journey-rail__item {
     flex-direction: row;
-    justify-content: flex-end;
+    justify-content: space-between;
     gap: 12px;
     width: auto;
     padding: 8px 16px 8px 18px;
   }
+  /* All rail text is bold (11/04). */
   .journey-rail__label {
     writing-mode: horizontal-tb;
     font-family: var(--font-mono);
-    font-weight: 400;
+    font-weight: 700;
     font-size: 0.625rem;
     letter-spacing: 0.14em;
     text-transform: uppercase;
     display: grid;
-    grid-template-columns: auto auto;
+    /* The number keeps its width; a long Chinese name below must not push the English apart. */
+    grid-template-columns: auto 1fr;
     align-items: baseline;
     column-gap: 8px;
-    text-align: right;
+    flex: 1;
+    text-align: left;
   }
   .journey-rail__index {
     display: inline;
@@ -122,7 +126,8 @@
   .journey-rail__zh {
     display: block;
     grid-column: 1 / -1;
-    font-family: var(--font-body);
+    font-family: var(--font-heading-zh);
+    font-weight: 700;
     font-size: 0.75rem;
     letter-spacing: 0.1em;
     text-transform: none;
@@ -131,5 +136,9 @@
   }
   .journey-rail__dot {
     order: 0;
+  }
+  /* No index on the Give stop, so its English name takes the whole first row. */
+  .journey-rail__item--give .journey-rail__en {
+    grid-column: 1 / -1;
   }
 }

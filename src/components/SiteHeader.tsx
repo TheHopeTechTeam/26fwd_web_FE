@@ -84,7 +84,7 @@ export function SiteHeader({ progress = false, backLabel }: SiteHeaderProps) {
       ))}
       <li>
         <a href={pageUrl('cards/')} onClick={() => setMenuOpen(false)}>
-          卡片牆<span aria-hidden="true"> ↗</span>
+          Hope Nation 回應牆<span aria-hidden="true"> ↗</span>
         </a>
       </li>
     </ul>
