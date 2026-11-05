@@ -3,6 +3,7 @@ import { ADMIN_TOKEN_MIN_LENGTH, api, ApiError, describeError, type AdminCard, t
 import { config, pageUrl } from '../../config/env';
 import { PROMPTS } from '../../lib/canvasCard';
 import { formatDateTime, relativeTime } from '../../lib/format';
+import { describeJudgment, percent } from './judgment';
 import './AdminPage.css';
 
 const TABS: Array<{ status: CardStatus; label: string }> = [
@@ -12,18 +13,21 @@ const TABS: Array<{ status: CardStatus; label: string }> = [
 ];
 
 // `from`: the status the card was listed with; if someone has changed it since, the API answers 409.
-type Action = { id: string; next: 'approved' | 'hidden'; from: CardStatus };
+// `deleted` is the delete of a hidden card (#35), which checks on the server that it is still hidden.
+type Action = { id: string; next: 'approved' | 'hidden' | 'deleted'; from: CardStatus };
 
 const ACTION_LABEL: Record<Action['next'], { verb: string; confirm: string; done: string }> = {
-  approved: { verb: '核准公開', confirm: '確認公開這張卡片？', done: '已核准，卡片將出現在公開卡片牆（快取最長約 15 秒）。' },
-  hidden: { verb: '隱藏', confirm: '確認隱藏這張卡片？', done: '已隱藏，卡片將從公開卡片牆移除（快取最長約 15 秒）。' },
+  approved: { verb: '核准公開', confirm: '確認公開這張卡片？', done: '已核准，卡片將出現在 Hope Nation 回應牆（快取最長約 15 秒）。' },
+  hidden: { verb: '隱藏', confirm: '確認隱藏這張卡片？', done: '已隱藏，卡片將從 Hope Nation 回應牆移除（快取最長約 15 秒）。' },
+  deleted: { verb: '永久刪除', confirm: '確認永久刪除這張卡片？卡片和它的 AI 判斷紀錄會一起刪除，無法復原。', done: '已永久刪除。' },
 };
 
 /**
- * Review console (US-17 scope for this round): switch pending / approved / hidden,
- * approve or hide with an explicit confirm step. The token lives only in React state —
- * never in storage, the URL or logs — and is gone on reload. No risk scores, edits or
- * rejections are shown because no backend exists for them yet (Q-29～Q-32).
+ * Review console (US-17 scope for this round): switch pending / approved / hidden, approve or hide,
+ * and delete a hidden card for good (#35), each with an explicit confirm step. Every card shows its
+ * AI judgment (M1.6). The token lives only in React state — never in storage, the URL or logs — and
+ * is gone on reload. No edits or rejections are shown because no backend exists for them yet
+ * (Q-29～Q-32).
  */
 export function AdminPage() {
   const [token, setToken] = useState<string | null>(null);
@@ -166,28 +170,34 @@ function ReviewConsole({ token, onUnauthorized }: { token: string; onUnauthorize
     if (busyId) return;
     setBusyId(action.id);
     setMessage(null);
-    try {
-      if (action.next === 'hidden') await api.adminHide(token, action.id, action.from);
-      else await api.adminSetStatus(token, action.id, 'approved', action.from);
+    const leave = (text: string) => {
       setItems((list) => list.filter((c) => c.id !== action.id));
-      setMessage({ tone: 'ok', text: ACTION_LABEL[action.next].done });
+      setMessage({ tone: 'ok', text });
       setConfirming(null);
+    };
+    try {
+      if (action.next === 'deleted') await api.adminDeleteCard(token, action.id);
+      else if (action.next === 'hidden') await api.adminHide(token, action.id, action.from);
+      else await api.adminSetStatus(token, action.id, 'approved', action.from);
+      leave(ACTION_LABEL[action.next].done);
     } catch (error) {
-      setMessage({ tone: 'error', text: `操作失敗：${handleError(error)}` });
+      // Someone else deleted it first: the card is gone either way.
+      if (action.next === 'deleted' && error instanceof ApiError && error.code === 'NOT_FOUND') leave('這張卡已經不存在，可能已被其他人刪除。');
+      else setMessage({ tone: 'error', text: `操作失敗：${handleError(error)}` });
     } finally {
       setBusyId(null);
     }
   };
 
   const actionsFor = (card: AdminCard): Array<Action['next']> =>
-    card.status === 'pending' ? ['approved', 'hidden'] : card.status === 'approved' ? ['hidden'] : ['approved'];
+    card.status === 'pending' ? ['approved', 'hidden'] : card.status === 'approved' ? ['hidden'] : ['approved', 'deleted'];
 
   const now = Date.now();
 
   return (
     <div className="review">
       <p className="review__scope">
-        本版僅支援「核准公開」與「隱藏」。內容風險辨識、改寫、退件理由與完整稽核紀錄尚未實作（待 Q-29～Q-32 拍板）。隱藏不等於刪除。
+        可以核准公開、隱藏，以及永久刪除已隱藏的卡；每張卡都會顯示 AI 判斷。改寫、退件理由與個別審核者的紀錄尚未實作（待 Q-29～Q-32 拍板）。隱藏的卡可以重新公開，刪除後無法復原。
       </p>
 
       <div className="review__toolbar">
@@ -249,6 +259,7 @@ function ReviewConsole({ token, onUnauthorized }: { token: string; onUnauthorize
                   <time dateTime={card.created_at}>{formatDateTime(card.created_at)}</time>（{relativeTime(card.created_at, now)}）
                 </p>
                 <p className="review__id">{card.id}</p>
+                <Judgment card={card} />
                 <div className="review__actions">
                   {confirming?.id === card.id ? (
                     <div className="review__confirm">
@@ -256,7 +267,7 @@ function ReviewConsole({ token, onUnauthorized }: { token: string; onUnauthorize
                       <button
                         ref={confirmRef}
                         type="button"
-                        className={`btn btn--sm ${confirming.next === 'hidden' ? 'btn--danger' : 'btn--gold'}`}
+                        className={`btn btn--sm ${confirming.next === 'approved' ? 'btn--gold' : 'btn--danger'}`}
                         onClick={() => void run(confirming)}
                         disabled={busyId === card.id}
                       >
@@ -288,6 +299,40 @@ function ReviewConsole({ token, onUnauthorized }: { token: string; onUnauthorize
       <p className="admin__muted review__back">
         <a href={pageUrl()}>回到 FORWARD 網站</a>
       </p>
+    </div>
+  );
+}
+
+// The card's AI judgment (M1.6): one line for scanning the list, the full record on demand.
+function Judgment({ card }: { card: AdminCard }) {
+  const view = describeJudgment(card.moderation, card.status);
+  const m = card.moderation;
+  return (
+    <div className={`review__judgment is-${view.tone}`}>
+      <p className="review__judgment-label">{view.label}</p>
+      <p>{view.note}</p>
+      {m && (
+        <details className="review__judgment-record">
+          <summary>判斷紀錄</summary>
+          <dl>
+            <dt>模型</dt>
+            <dd>{m.model}</dd>
+            <dt>題目版本</dt>
+            <dd>{m.questions_version ?? '—'}</dd>
+            <dt>理由代碼</dt>
+            <dd>
+              {m.reason ?? '—'}
+              {m.reason_probability !== null && `（${percent(m.reason_probability)}）`}
+            </dd>
+            <dt>需要注意的機率</dt>
+            <dd>{m.needs_attention_probability === null ? '—' : percent(m.needs_attention_probability)}</dd>
+            <dt>判斷時間</dt>
+            <dd>
+              <time dateTime={m.judged_at}>{formatDateTime(m.judged_at)}</time>
+            </dd>
+          </dl>
+        </details>
+      )}
     </div>
   );
 }

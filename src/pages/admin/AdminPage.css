@@ -236,6 +236,51 @@
   overflow-wrap: anywhere;
 }
 
+.review__judgment {
+  display: grid;
+  gap: 2px;
+  margin-top: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.review__judgment-label {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.review__judgment.is-auto {
+  border-color: var(--accent);
+  background: rgb(var(--rgb-accent) / 0.08);
+}
+
+.review__judgment.is-auto .review__judgment-label {
+  color: var(--accent);
+}
+
+.review__judgment.is-flagged .review__judgment-label {
+  color: var(--danger);
+}
+
+.review__judgment-record summary {
+  cursor: pointer;
+  color: var(--text-2);
+}
+
+.review__judgment-record dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 8px;
+  margin: 6px 0 0;
+}
+
+.review__judgment-record dd {
+  margin: 0;
+  color: var(--text-2);
+  overflow-wrap: anywhere;
+}
+
 .review__actions {
   display: flex;
   flex-wrap: wrap;
