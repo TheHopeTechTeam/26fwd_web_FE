@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { HERO, HERO_MUSIC } from '../data/content';
 import { useMusic } from '../lib/music';
 import kv1280 from '../assets/kv/kv-1280.webp';
@@ -41,7 +42,20 @@ export function Hero() {
           </span>
         </h1>
         <p className="hero__date">{HERO.date}</p>
-        <p className="hero__lead">{HERO.lead}</p>
+        {/* Lines break only at the spaces, so a phrase like 「…挪出一個空間」 never splits (11/04). */}
+        <p className="hero__lead">
+          {HERO.lead.split('\n').map((line, i) => (
+            <Fragment key={line}>
+              {i > 0 && <br />}
+              {line.split(' ').map((phrase, j) => (
+                <Fragment key={j}>
+                  {j > 0 && ' '}
+                  <span className="phrase">{phrase}</span>
+                </Fragment>
+              ))}
+            </Fragment>
+          ))}
+        </p>
         <div className="hero__actions">
           <a className="btn btn--gold btn--lg" href="#appreciate">
             {HERO.cta}

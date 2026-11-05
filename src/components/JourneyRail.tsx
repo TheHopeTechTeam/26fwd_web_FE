@@ -1,18 +1,22 @@
 import { useEffect, useState } from 'react';
-import { CHAPTERS, type ChapterId } from '../data/content';
+import { CHAPTERS, RAIL_GIVE, type ChapterId } from '../data/content';
 import { jumpToSection } from '../lib/scroll';
 import './JourneyRail.css';
 
 /**
  * Floating journey stepper (US-01 / FEAT-01). Fixed on the right at every width:
  * labelled on desktop, a slim vertical capsule on phones. Scroll-spy uses one
- * IntersectionObserver keyed to a line across the middle of the viewport.
+ * IntersectionObserver keyed to a line across the middle of the viewport. After the three
+ * chapters, a Give stop jumps to the finale at the end of Respond (11/04).
  */
+type Stop = ChapterId | typeof RAIL_GIVE.id;
+const STOPS: Stop[] = [...CHAPTERS.map((c) => c.id), RAIL_GIVE.id];
+
 export function JourneyRail() {
-  const [active, setActive] = useState<ChapterId | null>(null);
+  const [active, setActive] = useState<Stop | null>(null);
 
   useEffect(() => {
-    const sections = CHAPTERS.map((c) => document.getElementById(c.id)).filter((el): el is HTMLElement => !!el);
+    const sections = STOPS.map((id) => document.getElementById(id)).filter((el): el is HTMLElement => !!el);
     if (!sections.length || typeof IntersectionObserver === 'undefined') return;
     const visible = new Set<string>();
     const observer = new IntersectionObserver(
@@ -21,9 +25,8 @@ export function JourneyRail() {
           if (entry.isIntersecting) visible.add(entry.target.id);
           else visible.delete(entry.target.id);
         }
-        // Chapters are in document order; the last one crossing the midline wins.
-        const current = [...CHAPTERS].reverse().find((c) => visible.has(c.id));
-        setActive(current ? current.id : null);
+        // Stops are in document order (the finale sits inside Respond); the last one crossing the midline wins.
+        setActive([...STOPS].reverse().find((id) => visible.has(id)) ?? null);
       },
       { rootMargin: '-48% 0px -48% 0px' },
     );
@@ -47,13 +50,27 @@ export function JourneyRail() {
                 <span className="journey-rail__label">
                   <span className="journey-rail__index">{chapter.index}</span>
                   <span className="journey-rail__en">{chapter.en}</span>
-                  <span className="journey-rail__zh">{chapter.zh}</span>
+                  <span className="journey-rail__zh">{chapter.rail}</span>
                 </span>
                 <span className="journey-rail__dot" aria-hidden="true" />
               </a>
             </li>
           );
         })}
+        <li>
+          <a
+            href={`#${RAIL_GIVE.id}`}
+            className={`journey-rail__item journey-rail__item--give ${active === RAIL_GIVE.id ? 'is-active' : ''}`}
+            aria-current={active === RAIL_GIVE.id ? 'step' : undefined}
+            onClick={(e) => jumpToSection(e, RAIL_GIVE.id)}
+          >
+            <span className="journey-rail__label">
+              <span className="journey-rail__en">{RAIL_GIVE.en}</span>
+              <span className="journey-rail__zh">{RAIL_GIVE.zh}</span>
+            </span>
+            <span className="journey-rail__dot" aria-hidden="true" />
+          </a>
+        </li>
       </ol>
     </nav>
   );

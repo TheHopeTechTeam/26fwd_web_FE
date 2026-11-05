@@ -1,7 +1,8 @@
+import { useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { CountUp } from '../components/CountUp';
 import { Phrases } from '../components/Phrases';
 import { Reveal } from '../components/Reveal';
-import { ANTICIPATE, MINISTRIES, type Ministry } from '../data/content';
+import { ANTICIPATE, MINISTRIES, OUTREACH_PARTNERS, type Ministry } from '../data/content';
 import './Anticipate.css';
 
 /** 02 · Anticipate (US-06): the five ministries. Prayer Map is a link at the end of the journey (#19). */
@@ -11,7 +12,7 @@ export function Anticipate() {
       <div className="wrap">
         <Reveal className="chapter__head">
           <p className="kicker">
-            <span className="eyebrow-index">02</span> · Anticipate 期待
+            <span className="eyebrow-index">02</span> · Anticipate 2027 我和神一起期待…
           </p>
           <h2 id="anticipate-title" className="chapter__title display-zh">
             <Phrases text={ANTICIPATE.title} />
@@ -45,9 +46,14 @@ function MinistryBlock({ ministry, flip }: { ministry: Ministry; flip: boolean }
         <p className="ministry__headline display-zh">
           <Phrases text={ministry.headline} />
         </p>
-        <p className="ministry__body">{ministry.body}</p>
+        {ministry.body.split(/\n\s*\n/).map((paragraph) => (
+          <p key={paragraph} className="ministry__body">
+            {paragraph}
+          </p>
+        ))}
         {ministry.stats.length > 0 && (
-          <dl className="ministry__stats">
+          // Four figures sit two by two; two or three share one row (11/04).
+          <dl className="ministry__stats" style={{ '--stat-cols': ministry.stats.length === 4 ? 2 : ministry.stats.length } as CSSProperties}>
             {ministry.stats.map((s) => (
               <div key={s.label} className="ministry__stat">
                 <dt>{s.label}</dt>
@@ -58,9 +64,92 @@ function MinistryBlock({ ministry, flip }: { ministry: Ministry; flip: boolean }
             ))}
           </dl>
         )}
-        <p className="note">{ministry.pendingNote ?? ANTICIPATE.statsNote}</p>
+        {!ministry.statsProvided && <p className="note">{ministry.pendingNote ?? ANTICIPATE.statsNote}</p>}
       </Reveal>
+      {ministry.id === 'outreach' && <PartnerTabs />}
     </article>
+  );
+}
+
+/**
+ * 外展憐憫事工's partner stories as tabs (#26, plan C). One story at a time; the visitor
+ * switches, nothing rotates on its own. Arrow keys, Home and End move between tabs.
+ */
+function PartnerTabs() {
+  const [active, setActive] = useState(0);
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const count = OUTREACH_PARTNERS.length;
+  const at = (i: number) => OUTREACH_PARTNERS[(i + count) % count]!;
+
+  const select = (i: number, focus = false) => {
+    const next = (i + count) % count;
+    setActive(next);
+    if (focus) tabRefs.current[next]?.focus();
+  };
+
+  const onKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+    const target = { ArrowRight: active + 1, ArrowLeft: active - 1, Home: 0, End: count - 1 }[event.key];
+    if (target === undefined) return;
+    event.preventDefault();
+    select(target, true);
+  };
+
+  const partner = at(active);
+  return (
+    <Reveal className="partners">
+      <p id="partners-label" className="partners__label">
+        合作機構
+      </p>
+      <div className="partners__tabs" role="tablist" aria-labelledby="partners-label">
+        {OUTREACH_PARTNERS.map((p, i) => (
+          <button
+            key={p.id}
+            ref={(el) => {
+              tabRefs.current[i] = el;
+            }}
+            type="button"
+            role="tab"
+            id={`${p.id}-tab`}
+            aria-selected={i === active}
+            aria-controls="partners-panel"
+            tabIndex={i === active ? 0 : -1}
+            className={`partners__tab ${i === active ? 'is-on' : ''}`}
+            onClick={() => select(i)}
+            onKeyDown={onKeyDown}
+          >
+            {p.name}
+          </button>
+        ))}
+      </div>
+      <div id="partners-panel" className="partners__panel" role="tabpanel" aria-labelledby={`${partner.id}-tab`}>
+        <div className="partners__media">
+          <div className="partners__photo" aria-hidden="true">
+            機構照片（待提供）
+          </div>
+          {/* Previous / next stop at the ends: no 「← 05」 on the first story (11/04). */}
+          <div className="partners__nav">
+            {active > 0 && (
+              <button type="button" onClick={() => select(active - 1)}>
+                ← {at(active - 1).name}
+              </button>
+            )}
+            {active < count - 1 && (
+              <button type="button" className="partners__next" onClick={() => select(active + 1)}>
+                {at(active + 1).name} →
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="partners__text">
+          <p className="partners__title display-zh">{partner.title}</p>
+          <div className="partners__body">
+            {partner.body.split(/\n\s*\n/).map((paragraph) => (
+              <p key={paragraph}>{paragraph}</p>
+            ))}
+          </div>
+        </div>
+      </div>
+    </Reveal>
   );
 }
 

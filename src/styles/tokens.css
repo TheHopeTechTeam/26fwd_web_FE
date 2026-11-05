@@ -135,21 +135,15 @@
 
   --header-h: 64px;
   --pad-x: clamp(16px, 5vw, 64px);
-  /* Room kept clear on the right for the fixed journey rail (FEAT-01). Phones keep none:
-     the slim rail may sit over the content there (team choice, 10/30). */
+  /* Room kept clear on the right for the fixed journey rail (FEAT-01). None at any width
+     since 11/04 (team choice): content stays centred and the rail floats over the right
+     edge where the margin is too narrow, as it already did on phones (10/30). */
   --rail-space: 0px;
   --content-max: 1200px;
 }
 
-@media (min-width: 768px) {
-  :root {
-    --rail-space: 64px;
-  }
-}
-
 @media (min-width: 1100px) {
   :root {
-    --rail-space: 200px;
     --header-h: 72px;
   }
 }

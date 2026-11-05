@@ -122,12 +122,19 @@
 }
 
 .ministry__stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 18px clamp(24px, 4vw, 48px);
+  display: grid;
+  grid-template-columns: repeat(var(--stat-cols, 3), minmax(0, 1fr)); /* equal widths (11/04) */
+  gap: 22px clamp(28px, 5vw, 64px);
   margin: 12px 0 0;
   padding-top: 20px;
   border-top: 1px solid var(--line);
+}
+
+/* Narrow phones: never more than two across, so the numbers keep their size. */
+@media (max-width: 479px) {
+  .ministry__stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .ministry__stat {
@@ -157,4 +164,140 @@
   .ministry--flip .ministry__media {
     order: 2;
   }
+}
+
+/* 外展憐憫事工's partner stories as tabs (#26, plan C, 米白＋金黃 from the mockups): the open
+   tab joins the 米白 panel under it and carries a 金黃 bar; the others stay translucent on
+   深藍. Phones scroll the tab row sideways. */
+.partners {
+  grid-column: 1 / -1;
+  display: grid;
+  min-width: 0;
+}
+
+.partners__label {
+  margin-bottom: 14px;
+  font-family: var(--font-heading-zh);
+  font-weight: 700;
+  font-size: 1.125rem;
+}
+
+.partners__tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  scroll-snap-type: x proximity;
+}
+
+.partners__tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.partners__tab {
+  position: relative;
+  flex: none;
+  min-height: 48px;
+  padding: 12px 20px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  background: rgb(var(--rgb-light) / 0.06);
+  color: var(--text-2);
+  font-family: var(--font-heading-zh);
+  font-weight: 700;
+  font-size: 1rem;
+  white-space: nowrap;
+  scroll-snap-align: start;
+  transition:
+    background-color 0.2s var(--ease-standard),
+    color 0.2s var(--ease-standard);
+}
+
+.partners__tab:hover {
+  background: rgb(var(--rgb-light) / 0.12);
+  color: var(--text);
+}
+
+.partners__tab.is-on {
+  border-color: transparent;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.partners__tab.is-on::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 5px;
+  background: var(--accent);
+}
+
+.partners__tab:focus-visible {
+  outline-offset: -4px;
+}
+
+.partners__panel {
+  --focus: var(--ink);
+  display: grid;
+  gap: clamp(20px, 3vw, 40px);
+  padding: clamp(20px, 3vw, 36px);
+  border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md);
+  background: var(--paper);
+  color: var(--ink);
+}
+
+@media (min-width: 760px) {
+  .partners__panel {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr);
+    align-items: start;
+  }
+}
+
+.partners__photo {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 16 / 10;
+  border: 1px dashed rgb(var(--rgb-base) / 0.3);
+  border-radius: var(--radius-sm);
+  background: rgb(var(--rgb-base) / 0.06);
+  color: rgb(var(--rgb-base) / 0.7);
+  font-size: 0.8125rem;
+}
+
+.partners__nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.partners__next {
+  margin-left: auto;
+}
+
+.partners__nav button {
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: rgb(var(--rgb-earth));
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+.partners__title {
+  padding-left: 14px;
+  border-left: 3px solid var(--accent);
+  font-size: clamp(1.125rem, 1rem + 0.5vw, 1.375rem);
+}
+
+.partners__body {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+  line-height: 1.9;
+  color: rgb(var(--rgb-base) / 0.86);
 }

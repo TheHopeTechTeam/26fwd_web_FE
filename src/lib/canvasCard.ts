@@ -3,7 +3,7 @@ import { wrapText } from './wrapText';
 import type { Declaration, DeclarationPalette } from '../data/content';
 
 /**
- * Personal Forward Card image (US-09): native Canvas 2D, no html2canvas. Two sizes
+ * Personal FORWARD 卡 image (US-09): native Canvas 2D, no html2canvas. Two sizes
  * (square post / 9:16 story); colours, header and frame come from the declaration of faith
  * the visitor picks (#23).
  */
@@ -83,7 +83,7 @@ export interface CardContent {
   text_anticipate: string;
 }
 
-export const PROMPTS = { gratitude: '我感謝神…', anticipate: '跟神一起期待…' } as const;
+export const PROMPTS = { gratitude: '2026 我感謝神…', anticipate: '2027 我和神一起期待…' } as const;
 
 const BODY = '"Noto Serif TC", "Songti TC", "PMingLiU", serif';
 const HEADING = '"FWD Heading TC", "Noto Serif TC", "Songti TC", "PingFang TC", "Microsoft JhengHei", serif';
@@ -178,47 +178,49 @@ export function drawCard(ctx: CanvasRenderingContext2D, content: CardContent, fo
   spaced(ctx, 'FORWARD 2026', pad, pad, 6);
   spaced(ctx, 'THE HOPE', w - pad, pad, 6, 'right');
 
-  // Header: the declaration's English title, sized to the width, then its Chinese title.
-  let y = pad + (story ? 150 : 70);
-  let enSize = story ? 112 : 88;
+  // Layout (11/04): the visitor's own words come first and stand out — each prompt is a clear
+  // accent heading over its answer, then the signature. The chosen style's fixed text (English
+  // title, Chinese title, declaration) is grouped at the bottom. The footer is sized first, so
+  // the answers get all the room left above it.
+  const top = pad + (story ? 110 : 64);
+  const bottom = h - pad;
+
+  let enSize = story ? 64 : 52;
   ctx.font = `800 ${enSize}px ${DISPLAY}`;
-  while (enSize > 40 && measure(declaration.en) > maxWidth) {
-    enSize -= 4;
+  while (enSize > 32 && measure(declaration.en) > maxWidth) {
+    enSize -= 2;
     ctx.font = `800 ${enSize}px ${DISPLAY}`;
   }
-  ctx.fillStyle = theme.accent;
-  ctx.fillText(declaration.en, pad, y);
-  y += enSize * 0.98;
-  ctx.fillStyle = theme.text;
-  ctx.font = `400 ${story ? 44 : 36}px ${HEADING}`;
-  ctx.fillText(declaration.title, pad, y);
-  y += (story ? 44 : 36) * 1.3 + (story ? 72 : 44);
+  const tagSize = story ? 24 : 20;
+  const zhSize = story ? 36 : 30;
+  const dSize = story ? 30 : 25;
+  ctx.font = `700 ${dSize}px ${BODY}`;
+  const d = wrapText(declaration.text, maxWidth, measure);
+  const dLine = Math.round(dSize * 1.55);
+  const ruleGap = story ? 40 : 30;
+  const footer = 3 + ruleGap + tagSize * 1.9 + enSize + zhSize * 1.6 + d.length * dLine;
+  const footerTop = bottom - footer;
+  const answersBottom = footerTop - (story ? 72 : 44);
 
-  // Body: both answers, the declaration and the signature.
-  const top = y;
-  const bottom = h - pad;
   const layoutAt = (size: number, gratitude: string, anticipate: string) => {
     ctx.font = `400 ${size}px ${BODY}`;
     const a = wrapText(gratitude, maxWidth, measure);
     const b = wrapText(anticipate, maxWidth, measure);
-    const dSize = Math.round(size * 1.12);
-    ctx.font = `700 ${dSize}px ${BODY}`;
-    const d = wrapText(declaration.text, maxWidth, measure);
-    const label = Math.round(size * 0.74);
-    const line = Math.round(size * 1.58);
-    const dLine = Math.round(dSize * 1.5);
-    const gap = Math.round(size * 1.15);
-    const sign = Math.round(size * 0.86);
-    const total = label * 1.8 * 3 + (a.length + b.length) * line + d.length * dLine + gap * 3 + sign * 1.4;
-    return { size, a, b, d, label, line, gap, dSize, dLine, sign, total };
+    // The prompt never shrinks below a clear heading size, even for long answers.
+    const prompt = Math.max(Math.round(size * 1.1), story ? 36 : 30);
+    const line = Math.round(size * 1.55);
+    const gap = Math.round(size * 1.3);
+    const sign = Math.round(size * 0.9);
+    const total = prompt * 1.55 * 2 + (a.length + b.length) * line + gap + sign * 1.8;
+    return { size, a, b, prompt, line, gap, sign, total };
   };
-  // Shrink the type until everything fits. A newline counts as one character (#16), so an
+  // Shrink the type until both answers fit. A newline counts as one character (#16), so an
   // answer can be up to ~70 short lines; if even the smallest size cannot hold them, the
-  // answers' line breaks become spaces on the image rather than spilling over the footer.
+  // answers' line breaks become spaces on the image rather than spilling into the footer.
   const fit = (gratitude: string, anticipate: string) => {
-    for (let size = story ? 46 : 36; size >= MIN_SIZE; size -= 2) {
+    for (let size = story ? 46 : 38; size >= MIN_SIZE; size -= 2) {
       const candidate = layoutAt(size, gratitude, anticipate);
-      if (candidate.total <= bottom - top) return candidate;
+      if (candidate.total <= answersBottom - top) return candidate;
     }
     return null;
   };
@@ -227,53 +229,54 @@ export function drawCard(ctx: CanvasRenderingContext2D, content: CardContent, fo
     fit(content.text_gratitude, content.text_anticipate) ??
     fit(flat(content.text_gratitude), flat(content.text_anticipate)) ??
     layoutAt(MIN_SIZE, flat(content.text_gratitude), flat(content.text_anticipate));
-  const { size } = layout;
 
-  y = story ? top + Math.max(0, (bottom - top - layout.total) / 2) : top;
-  const label = (text: string) => {
-    ctx.fillStyle = theme.muted;
-    ctx.font = `400 ${layout.label}px ${HEADING}`;
-    ctx.fillText(text, pad, y);
-    y += layout.label * 1.8;
-  };
+  // The answers start near the top on both sizes (11/04: not centred on the story either).
+  let y = top;
   const block = (prompt: string, lines: string[]) => {
-    label(prompt);
+    ctx.fillStyle = theme.accent;
+    ctx.font = `400 ${layout.prompt}px ${HEADING}`;
+    ctx.fillText(prompt, pad, y);
+    y += layout.prompt * 1.55;
     ctx.fillStyle = theme.text;
-    ctx.font = `400 ${size}px ${BODY}`;
+    ctx.font = `400 ${layout.size}px ${BODY}`;
     for (const line of lines) {
       ctx.fillText(line, pad, y);
       y += layout.line;
     }
   };
-
   block(PROMPTS.gratitude, layout.a);
-  y += layout.gap * 0.6;
-  block(PROMPTS.anticipate, layout.b);
-  y += layout.gap / 2;
-  // On the square card a short answer leaves room, so the declaration sits at the bottom.
-  const declarationBlock = layout.gap * 1.4 + layout.label * 1.8 + layout.d.length * layout.dLine + layout.sign * 1.4;
-  if (!story) y = Math.max(y, bottom - declarationBlock);
-  ctx.fillStyle = theme.line;
-  ctx.fillRect(pad, y, 120, 3);
   y += layout.gap;
-
-  ctx.fillStyle = theme.muted;
-  ctx.font = `700 ${layout.label}px ${BODY}`;
-  ctx.fillText('信心宣告', pad, y);
-  y += layout.label * 1.8;
-  ctx.fillStyle = theme.accent;
-  ctx.font = `700 ${layout.dSize}px ${BODY}`;
-  for (const line of layout.d) {
-    ctx.fillText(line, pad, y);
-    y += layout.dLine;
-  }
-  y += layout.gap * 0.4;
-
+  block(PROMPTS.anticipate, layout.b);
+  y += layout.sign * 0.8;
   ctx.fillStyle = theme.text;
   ctx.font = `600 ${layout.sign}px ${BODY}`;
   ctx.textAlign = 'right';
   ctx.fillText(`— ${content.nickname}`, w - pad, y);
   ctx.textAlign = 'left';
+
+  // The footer: the chosen style's fixed text.
+  y = footerTop;
+  ctx.fillStyle = theme.line;
+  ctx.fillRect(pad, y, 120, 3);
+  y += 3 + ruleGap;
+  ctx.fillStyle = theme.muted;
+  ctx.font = `700 ${tagSize}px ${BODY}`;
+  ctx.fillText('信心宣告', pad, y);
+  y += tagSize * 1.9;
+  ctx.fillStyle = theme.accent;
+  ctx.font = `800 ${enSize}px ${DISPLAY}`;
+  ctx.fillText(declaration.en, pad, y);
+  y += enSize;
+  ctx.fillStyle = theme.text;
+  ctx.font = `400 ${zhSize}px ${HEADING}`;
+  ctx.fillText(declaration.title, pad, y);
+  y += zhSize * 1.6;
+  ctx.fillStyle = theme.muted;
+  ctx.font = `700 ${dSize}px ${BODY}`;
+  for (const line of d) {
+    ctx.fillText(line, pad, y);
+    y += dLine;
+  }
 }
 
 export async function renderCardBlob(content: CardContent, format: CardFormat, declaration: Declaration): Promise<Blob> {

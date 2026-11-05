@@ -3,20 +3,21 @@
   background: linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
 }
 
-/* The respond lead is longer; the full content width keeps it to one line on wide screens. */
-.respond .chapter__head .lead {
-  max-width: none;
+/* Two paragraphs; the first breaks between its two questions. */
+.respond__lead + .respond__lead {
+  margin-top: 0.8em;
 }
 
+/* A Chinese title (11/04), so a smaller size than the English display titles. */
 .respond__title {
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: clamp(2.25rem, 1.4rem + 4.4vw, 5rem);
-  letter-spacing: 0;
-  line-height: 1;
+  font-size: clamp(1.875rem, 1.3rem + 3vw, 3.75rem);
+  letter-spacing: 0.02em;
+  line-height: 1.2;
 }
 
-/* Form */
+/* Form: the card, and beside it the guiding questions, tips, consent and button (11/04). */
 .cardform {
   display: grid;
   gap: clamp(20px, 3vw, 40px);
@@ -40,13 +41,17 @@
   box-shadow: var(--shadow-card);
 }
 
+/* "FORWARD CARD · 2026" on the card: larger and in full 深藍 (11/04), in the same display
+   face as the "FORWARD 2026" line on the downloaded image. */
 .cardform__kicker {
   display: flex;
   justify-content: space-between;
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  letter-spacing: 0.22em;
-  color: rgb(var(--rgb-base) / 0.55);
+  align-items: baseline;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1rem, 0.9rem + 0.4vw, 1.25rem);
+  letter-spacing: 0.16em;
+  color: var(--ink);
 }
 
 .cardform__field {
@@ -54,9 +59,10 @@
   gap: 8px;
 }
 
+/* About 4pt smaller than before (11/04): 27px at most on desktop, 20px on phones. */
 .cardform__prompt {
   font-family: var(--font-heading-zh);
-  font-size: clamp(1.375rem, 1.1rem + 1.2vw, 2rem);
+  font-size: clamp(1.25rem, 1rem + 1vw, 1.6875rem);
   line-height: 1.3;
 }
 
@@ -147,14 +153,14 @@
 
 .cardform__side {
   display: grid;
-  gap: 18px;
+  gap: 24px;
 }
 
 .cardform__side .cardform__hint {
   color: var(--text-3);
 }
 
-/* Three steps (#23): write, make and keep, then choose to publish. */
+/* Two guiding questions where the three steps used to be (11/04), in the same style. */
 .cardform__steps {
   display: grid;
   gap: 18px;
@@ -166,35 +172,38 @@
 .cardform__steps li {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 16px;
+  gap: 18px;
   align-items: start;
 }
 
-.cardform__step-num {
-  font-family: var(--font-info);
-  font-weight: 700;
-  font-size: clamp(1.75rem, 1.4rem + 1.2vw, 2.5rem);
-  line-height: 1;
-  min-width: 1.4em;
-  font-variant-numeric: tabular-nums;
+/* A small line icon in a soft round badge, in the chapter-label 深褐. */
+.cardform__step-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgb(var(--rgb-earth) / 0.1);
   color: var(--chapter-label);
 }
 
 .cardform__step-title {
   display: block;
+  padding-top: 2px;
   font-family: var(--font-heading-zh);
   font-weight: 700;
   font-size: 1.125rem;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 .cardform__step-text {
   display: block;
-  margin-top: 2px;
+  margin-top: 8px;
+  line-height: 2;
   color: var(--text-2);
 }
 
-/* One column: the steps lead, before the card; tips and the button follow it. */
+/* One column: the questions lead, before the card; tips and the button follow it. */
 @media (max-width: 979px) {
   .cardform__side {
     display: contents;
@@ -205,14 +214,14 @@
   }
 }
 
-/* Two columns: the steps, then the tips and the button, from the top of the card. */
+/* Two columns: the questions, then the tips and the button, from the top of the card. */
 @media (min-width: 980px) {
   .cardform__steps {
     gap: 0;
   }
 
   .cardform__steps li {
-    padding-block: 22px;
+    padding-block: 32px;
     border-bottom: 1px solid var(--line);
   }
 
@@ -223,28 +232,19 @@
 
 /* 深藍 box so the tips stand apart from the 淺藍 ground. */
 .cardform__guide {
-  padding: 18px 20px;
+  padding: 22px 24px;
   border-radius: var(--radius-md);
   background: var(--bg);
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
+  line-height: 1.9;
   color: var(--text-2);
 }
 
 .cardform__guide-title {
-  font-weight: 600;
+  margin-bottom: 8px;
+  font-family: var(--font-heading-zh);
+  font-weight: 700;
   color: var(--text);
-  margin-bottom: 6px;
-}
-
-.cardform__guide-lead {
-  margin-bottom: 6px;
-}
-
-.cardform__guide ul {
-  margin: 0;
-  padding-left: 1.2em;
-  display: grid;
-  gap: 4px;
 }
 
 .cardform__consent {
@@ -252,7 +252,7 @@
   grid-template-columns: auto 1fr;
   gap: 12px;
   align-items: start;
-  padding: 14px 16px;
+  padding: 18px 20px;
   border-radius: var(--radius-md);
   border: 1px solid var(--line-strong);
   font-size: 0.9375rem;
@@ -459,6 +459,13 @@
   line-height: 1.5;
 }
 
+.declarations__text .declarations__en {
+  font-family: var(--font-info);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  color: var(--accent-text);
+}
+
 .declarations__text strong {
   font-family: var(--font-heading-zh);
 }
@@ -474,26 +481,25 @@
   gap: 12px;
 }
 
-.card-publish {
+/* The card has been sent (11/04): it is shown before the card image to save. */
+.card-result__sent {
   display: grid;
-  gap: 14px;
-  margin: 0 clamp(24px, 4vw, 40px) clamp(24px, 4vw, 40px);
-  padding-top: 22px;
-  border-top: 1px solid var(--line);
-}
-
-.card-publish__title {
-  font-family: var(--font-heading-zh);
-  font-weight: 700;
-  font-size: 1.25rem;
-}
-
-.card-publish__lead,
-.card-publish--done p:not(.card-publish__title) {
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-strong);
   color: var(--text-2);
 }
 
-.card-publish__wall {
+.card-result__sent-title {
+  font-family: var(--font-heading-zh);
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: var(--text);
+}
+
+.card-result__wall {
+  justify-self: center;
   display: inline-flex;
   align-items: center;
   min-height: 44px;
@@ -568,9 +574,11 @@
   align-items: start;
 }
 
+/* The Give text gets the wider column, starting a little right of "There is" (11/04). */
 @media (min-width: 900px) {
   .finale__inner {
-    grid-template-columns: 1.2fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+    column-gap: clamp(48px, 6vw, 96px);
   }
 }
 
@@ -600,6 +608,8 @@
 }
 
 .finale__body {
+  white-space: pre-line;
+  text-wrap: pretty; /* no lone 「望。」 on the last line */
   font-weight: 700;
   font-size: clamp(1rem, 0.95rem + 0.3vw, 1.1875rem);
   line-height: 1.85;

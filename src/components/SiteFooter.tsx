@@ -14,7 +14,7 @@ export function SiteFooter({ railSpace = true }: { railSpace?: boolean }) {
         <nav aria-label="頁尾連結">
           <ul className="site-footer__links">
             <li>
-              <a href={pageUrl('cards/')}>Forward Cards 卡片牆</a>
+              <a href={pageUrl('cards/')}>Hope Nation 回應牆</a>
             </li>
             <li>
               <a href={pageUrl('privacy/')}>隱私與資料說明</a>
@@ -35,7 +35,7 @@ export function SiteFooter({ railSpace = true }: { railSpace?: boolean }) {
         </p>
         {config.showPreviewBadge && (
           <p className="site-footer__notice">
-            本網站目前為開發預覽版：人物、見證、數據與卡片皆為合成示意內容（synthetic），不代表真實人物或正式數字。
+            本網站目前為開發預覽版：人物、見證、數據與 FORWARD 卡皆為合成示意內容（synthetic），不代表真實人物或正式數字。
           </p>
         )}
       </div>

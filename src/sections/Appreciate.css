@@ -33,78 +33,184 @@
   padding-top: clamp(40px, 7svh, 88px);
 }
 
-/* Same-size portrait grid (#20): everyone visible at once, names always shown so touch
-   screens never depend on hover. */
-.portrait-grid {
+/* Polaroid wall (#26): photos in white frames, slightly tilted, the name and one line on the
+   frame. The frame turns a mix of photo styles into one look. 2 columns on phones, 4 from
+   600px, 5 from 900px (11/04: 五個一排); PolaroidWall shows 8, 8 or 10 to fill two rows. */
+.polaroid-wall {
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 8px 0 0;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: clamp(16px, 2.4vw, 28px) clamp(12px, 2vw, 24px);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(22px, 3vw, 36px) clamp(16px, 2.4vw, 28px);
 }
 
-@media (min-width: 640px) {
-  .portrait-grid {
+@media (min-width: 600px) {
+  .polaroid-wall {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
-@media (min-width: 1000px) {
-  .portrait-grid {
+@media (min-width: 900px) {
+  .polaroid-wall {
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
 
-.portrait {
+/* A new batch fades in, one frame after another. Frames in a row share one height. */
+.polaroid-wall > li {
   display: grid;
-  gap: 10px;
-  width: 100%;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--text);
-  text-align: center;
-  border-radius: var(--radius-md);
+  animation: polaroid-in 0.45s var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 40ms);
 }
 
-.portrait__img {
+@keyframes polaroid-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+.polaroid {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  width: 100%;
+  height: 100%;
+  padding: 8px 8px 0;
+  border: 0;
+  border-radius: 3px;
+  background: rgb(var(--rgb-white));
+  color: rgb(var(--rgb-base));
+  text-align: center;
+  box-shadow:
+    0 10px 24px rgb(var(--rgb-base) / 0.18),
+    0 1px 3px rgb(var(--rgb-base) / 0.14);
+  transform: rotate(var(--tilt, 0deg));
+  transition:
+    transform 0.35s var(--ease-out),
+    box-shadow 0.3s var(--ease-standard);
+}
+
+.polaroid:hover,
+.polaroid:focus-visible {
+  transform: rotate(0deg) translateY(-4px) scale(1.03);
+  box-shadow:
+    0 18px 34px rgb(var(--rgb-base) / 0.24),
+    0 2px 6px rgb(var(--rgb-base) / 0.16);
+}
+
+.polaroid:focus-visible {
+  outline-offset: 4px;
+}
+
+.polaroid__img {
   width: 100%;
   height: auto;
   aspect-ratio: 1;
   object-fit: cover;
-  border-radius: var(--radius-md);
   background: var(--paper);
-  box-shadow: 0 0 0 1px rgb(var(--rgb-light) / 0.1);
-  transition:
-    box-shadow 0.3s var(--ease-standard),
-    transform 0.4s var(--ease-out);
 }
 
-.portrait:hover .portrait__img,
-.portrait:focus-visible .portrait__img {
-  box-shadow: 0 0 0 3px var(--accent);
-  transform: translateY(-3px);
+.polaroid__caption {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  padding: 12px 6px 16px;
 }
 
-.portrait:focus-visible {
-  outline-offset: 6px;
-}
-
-.portrait__name {
-  font-size: 0.875rem;
-  line-height: 1.4;
+.polaroid__name {
+  font-family: var(--font-heading-zh);
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1.3;
   overflow-wrap: anywhere;
 }
 
+/* One line from the story (a 【…】 title may carry its own break); long ones stop at 3 lines. */
+.polaroid__quote {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+  white-space: pre-line;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: rgb(var(--rgb-base) / 0.78);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .portrait__img {
+  .polaroid-wall > li {
+    animation: none;
+  }
+  .polaroid {
     transition: box-shadow 0.3s var(--ease-standard);
   }
-  .portrait:hover .portrait__img,
-  .portrait:focus-visible .portrait__img {
-    transform: none;
+  .polaroid:hover,
+  .polaroid:focus-visible {
+    transform: rotate(var(--tilt, 0deg));
   }
+}
+
+/* 「看其他故事」 leads; 「看全部故事」 is the quieter way in. */
+.polaroid-wall__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px 28px;
+  margin-top: clamp(32px, 4vw, 48px);
+}
+
+.polaroid-wall__all {
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--accent-text);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* 「看全部」 dialog: 2, then 3, then 4 across, like the wall. */
+.testimony-all {
+  display: grid;
+  gap: 12px;
+  padding: clamp(24px, 4vw, 44px);
+  padding-top: 56px;
+}
+
+.testimony-all .polaroid-wall {
+  margin-top: 12px;
+}
+
+@media (min-width: 600px) {
+  .polaroid-wall--all {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 900px) {
+  .polaroid-wall--all {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.polaroid-wall--all > li {
+  animation: none;
+}
+
+.testimony__back {
+  justify-self: start;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-text);
+  font: inherit;
+  font-weight: 600;
 }
 
 .appreciate__note {
@@ -157,29 +263,6 @@
   font-weight: 800;
   font-size: clamp(1.75rem, 1.3rem + 2vw, 2.5rem);
   line-height: 1.1;
-}
-
-.testimony__tags {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.testimony__tags li {
-  padding: 4px 12px;
-  border-radius: var(--radius-full);
-  border: 1px solid var(--accent-text);
-  color: var(--accent-text);
-  font-size: 0.8125rem;
-}
-
-.testimony__tags li span {
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  opacity: 0.75;
 }
 
 .testimony__quote {
