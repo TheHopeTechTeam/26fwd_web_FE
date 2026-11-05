@@ -1,7 +1,7 @@
 import type { OverlayPage, SheetRow } from './rows';
 
-export const SHEET_URL = 'https://docs.google.com/spreadsheets/d/190DLSZM6-pB_Tf6wCcfpR6J-bcd6lv8O/edit';
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/190DLSZM6-pB_Tf6wCcfpR6J-bcd6lv8O/export?format=csv';
+export const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1i7BQ1S8X_eUW4wKxIvsHQoZtkELHa4cFetJnz4YDOxU/edit';
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/1i7BQ1S8X_eUW4wKxIvsHQoZtkELHa4cFetJnz4YDOxU/export?format=csv';
 const TIMEOUT_MS = 10_000;
 
 const PAGES: Record<string, OverlayPage> = { 首頁: 'home', 全站: 'all', 卡片牆頁: 'cards', 隱私頁: 'privacy' };
@@ -59,6 +59,7 @@ export function rowsFromCsv(records: string[][]): SheetRow[] {
       who: (r[8] ?? '').trim(),
       status: (r[9] ?? '').trim(),
       note: r[10] ?? '',
+      design: (r[11] ?? '').trim(),
     });
   }
   return rows.sort((a, b) => a.id - b.id);

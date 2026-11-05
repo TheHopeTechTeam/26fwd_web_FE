@@ -21,7 +21,9 @@ export function boot(app: ReactNode): void {
   createRoot(container).render(<StrictMode>{app}</StrictMode>);
 
   // Review aids (separate chunk, off otherwise): `?ids=1` tags text and images with their sheet
-  // 編號; `?review=1` also lists the sheet wording the page does not show yet.
+  // 編號; `?review=1` also lists the sheet wording the page does not show yet and the design notes.
+  // Never on the live site: visitors must not see the tags.
   const query = new URLSearchParams(location.search);
-  if (query.has('ids') || query.has('review')) void import('./idOverlay');
+  const reviewAllowed = location.hostname !== 'forward.thehope.co';
+  if (reviewAllowed && (query.has('ids') || query.has('review'))) void import('./idOverlay');
 }

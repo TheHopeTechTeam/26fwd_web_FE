@@ -7,7 +7,7 @@
  */
 import './overlay.css';
 import { classifyNext, clausesOf, stripKey } from './compare';
-import { startReview, type OverlayCtx } from './review';
+import { isDesignPending, startReview, type OverlayCtx } from './review';
 import { MEDIA_SPOTS, TEXT_SELECTORS } from './spots';
 import { SHEET_ROWS, type OverlayPage, type SheetRow } from './rows';
 import { fetchSheetRows } from './sheet';
@@ -18,6 +18,8 @@ interface Target {
   kind: 'text' | 'media';
   badge: HTMLElement;
   box: HTMLElement;
+  /** Design note shown beside the frame (outside the box), when the row has one pending. */
+  flag: HTMLElement | null;
 }
 
 /** Punctuation and whitespace never decide a match (JSX line breaks, sheet spacing, 「，」 vs 「, 」). */
@@ -115,7 +117,7 @@ export function startIdOverlay(): void {
     const box = document.createElement('span');
     box.className = `idov-box idov-box--${kind}`;
     layer.append(box, badge);
-    const t: Target = { el, ids: new Set(), kind, badge, box };
+    const t: Target = { el, ids: new Set(), kind, badge, box, flag: null };
     targets.set(el, t);
     return t;
   };
@@ -139,6 +141,32 @@ export function startIdOverlay(): void {
     t.box.classList.toggle('is-pending', pending);
     t.badge.classList.toggle('is-maybe', maybe);
     t.box.classList.toggle('is-maybe', maybe);
+  };
+
+  /** Each pending design note sits beside the first frame of its row, outside the box. */
+  const paintFlags = () => {
+    const byId = rowById();
+    const shown = new Set<string>();
+    for (const t of targets.values()) {
+      const notes: string[] = [];
+      for (const k of t.ids) {
+        const r = byId.get(k);
+        if (!r || shown.has(k) || !pendingIds.has(k) || !isDesignPending(r)) continue;
+        shown.add(k);
+        notes.push(`${k}｜${r.design}`);
+      }
+      if (notes.length === 0) {
+        t.flag?.remove();
+        t.flag = null;
+        continue;
+      }
+      if (!t.flag) {
+        t.flag = document.createElement('div');
+        t.flag.className = 'idov-flag';
+        layer.append(t.flag);
+      }
+      t.flag.textContent = notes.join('\n');
+    }
   };
 
   const claim = (el: Element, id: string, kind: Target['kind']) => {
@@ -226,9 +254,11 @@ export function startIdOverlay(): void {
       if (t.ids.size === 0) {
         t.badge.remove();
         t.box.remove();
+        t.flag?.remove();
         targets.delete(el);
       } else paintTarget(t);
     }
+    paintFlags();
     renderPanel();
     for (const cb of listeners) cb();
   };
@@ -240,6 +270,7 @@ export function startIdOverlay(): void {
       if (!el.isConnected) {
         t.badge.remove();
         t.box.remove();
+        t.flag?.remove();
         targets.delete(el);
         continue;
       }
@@ -249,6 +280,16 @@ export function startIdOverlay(): void {
       const visible = !hidden && !clipped && (!modal || modal.contains(el)) && r.width >= 6 && r.height >= 6 && r.bottom > 0 && r.top < innerHeight && cs.visibility !== 'hidden' && cs.display !== 'none' && Number(cs.opacity) > 0.05;
       t.badge.style.display = visible ? '' : 'none';
       t.box.style.display = visible ? '' : 'none';
+      if (t.flag) {
+        t.flag.style.display = visible ? '' : 'none';
+        if (visible) {
+          const fw = t.flag.offsetWidth;
+          const fh = t.flag.offsetHeight;
+          const fl = Math.min(Math.max(r.left, 2), Math.max(2, innerWidth - fw - 2));
+          const ft = Math.min(r.bottom + 4, Math.max(2, innerHeight - fh - 2));
+          t.flag.style.transform = `translate(${fl}px, ${ft}px)`;
+        }
+      }
       if (!visible) continue;
       t.box.style.transform = `translate(${r.left}px, ${r.top}px)`;
       t.box.style.width = `${r.width}px`;
@@ -395,6 +436,7 @@ export function startIdOverlay(): void {
       for (const id of confirmed) pendingIds.add(id);
       for (const id of maybe) maybeIds.add(id);
       for (const t of targets.values()) paintTarget(t);
+      paintFlags();
     },
     onScan: (cb) => {
       listeners.push(cb);

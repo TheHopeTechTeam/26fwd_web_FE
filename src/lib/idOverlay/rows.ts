@@ -17,6 +17,8 @@ export interface SheetRow {
   next?: string;
   who?: string;
   status?: string;
+  /** 設計建議 (sheet column L): what to change on the page; shown until 狀態 is 已更新. */
+  design?: string;
 }
 
 export const SHEET_ROWS: SheetRow[] = [
@@ -1539,5 +1541,65 @@ export const SHEET_ROWS: SheetRow[] = [
   "pos": "其他讀屏文字",
   "text": "FORWARD 2026 首頁 / 開啟選單 / 關閉選單 / 關閉 / （在新分頁開啟）/ 旅程章節 / 見證人物 / 開啟 {姓名} 的見證：{引言} / {姓名} 的示意肖像 / {姓名} 的見證影片 / 你的 FORWARD 卡圖片預覽 / 圖片尺寸 / 寫卡三步驟 / 已輸入字數",
   "note": ""
+ },
+ {
+  "id": 153,
+  "prio": 1,
+  "page": "privacy",
+  "section": "FORWARD 網站說明",
+  "when": "打開就看得到",
+  "pos": "第一點之後新增",
+  "text": "",
+  "note": "請 BB 審閱"
+ },
+ {
+  "id": 154,
+  "prio": 1,
+  "page": "privacy",
+  "section": "教會隱私條款",
+  "when": "打開就看得到",
+  "pos": "6.2 回覆日數",
+  "text": "",
+  "note": "BB 要求改為 7 日內"
+ },
+ {
+  "id": 155,
+  "prio": 1,
+  "page": "privacy",
+  "section": "教會隱私條款",
+  "when": "打開就看得到",
+  "pos": "帳戶綁定等字句",
+  "text": "",
+  "note": "與 FORWARD 不一致，請 BB 與法務確認"
+ },
+ {
+  "id": 156,
+  "prio": 1,
+  "page": "all",
+  "section": "頁首",
+  "when": "打開就看得到",
+  "pos": "Logo（THE HOPE）",
+  "text": "THE HOPE Logo",
+  "note": ""
+ },
+ {
+  "id": 157,
+  "prio": 1,
+  "page": "privacy",
+  "section": "FORWARD 網站說明",
+  "when": "打開就看得到",
+  "pos": "第 1 點",
+  "text": "你送出 FORWARD 卡時，我們會保存你填寫的名稱、兩段內容、你勾選的同意紀錄與送出時間。內容經過文字審核後，會公開顯示在 Hope Nation 回應牆。",
+  "note": ""
+ },
+ {
+  "id": 158,
+  "prio": 1,
+  "page": "all",
+  "section": "頁首",
+  "when": "打開就看得到",
+  "pos": "背景音樂開關（♪）",
+  "text": "♪",
+  "note": "不放音樂，拿掉（11/05）"
  }
 ];

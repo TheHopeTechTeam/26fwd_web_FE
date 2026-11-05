@@ -25,7 +25,7 @@ export interface OverlayCtx {
   reload(): Promise<void>;
 }
 
-type Group = 'todo' | 'partial' | 'check' | 'later' | 'waiting' | 'other' | 'done';
+type Group = 'design' | 'todo' | 'partial' | 'check' | 'later' | 'waiting' | 'other' | 'done';
 
 interface Item {
   row: SheetRow;
@@ -35,9 +35,12 @@ interface Item {
   current: string;
   located: boolean;
   scope: '頁面上已定位的文字' | '整頁文字' | '標題／說明／提示文字（畫面上看不到）';
+  /** The sheet's 設計建議 text for this row, while its 狀態 is not yet 已更新. */
+  design?: string;
 }
 
 const GROUPS: Array<{ key: Group; title: string; hint: string }> = [
+  { key: 'design', title: '設計建議（依需求清單）', hint: '紅框處依說明修改；改完後在文字表該列「狀態」標為「已更新」，紅框就會消失' },
   { key: 'todo', title: '未套用', hint: '表格已有新文字，網頁還沒改（或舊文字應刪除卻仍在）' },
   { key: 'partial', title: '部分套用', hint: '只改了一部分，下方列出網頁上找不到的片段' },
   { key: 'check', title: '需人工確認', hint: '排列不同、或狀態有標記但「想改成」空白' },
@@ -74,6 +77,9 @@ function clip(s: string, n = 700): string {
   return t.length > n ? `${t.slice(0, n)}…` : t;
 }
 
+/** A design note stays on the page until the sheet row's 狀態 says 已更新. */
+export const isDesignPending = (row: SheetRow): boolean => Boolean(row.design?.trim()) && (row.status ?? '') !== '已更新';
+
 export function startReview(ctx: OverlayCtx): void {
   const wantedRow = new URLSearchParams(location.search).get('row');
   const openIds = new Set<string>();
@@ -96,7 +102,10 @@ export function startReview(ctx: OverlayCtx): void {
     for (const row of ctx.rows()) {
       const kind = classifyNext(row.next ?? '');
       const status = row.status ?? '';
-      if (kind === 'none' && !status) continue;
+      const note = (row.note ?? '').replace(/\s+/g, ' ');
+      // The page was rebuilt around this row (e.g. the privacy page): there is nothing to compare.
+      if (/不適用|維持不改/.test(note)) continue;
+      if (kind === 'none' && !status && !isDesignPending(row)) continue;
       const offScreen = row.when.includes('網頁上看不到');
       // Share previews, titles and search text describe the home page, so they are judged there.
       const here = row.page === ctx.page || (row.page === 'all' && (!offScreen || ctx.page === 'home'));
@@ -116,8 +125,12 @@ export function startReview(ctx: OverlayCtx): void {
         items.push({ row, group: 'waiting', reason: '', current, located: located !== null, scope });
       } else if (located === null && !offScreen && (kind === 'change' || kind === 'remove') && (row.when.includes('操作後才出現') || row.when.includes('卡片圖片'))) {
         items.push({ row, group: 'later', reason: '目前畫面上沒有這段文字，操作到對應畫面後才能比對', current, located: false, scope });
+      } else if (kind === 'none' && /作廢|拿掉/.test(note)) {
+        // Marked for removal in 備註 (no 想改成 text): the old wording must be gone from the page.
+        const verdict = compareRemoval(row.text, offScreen ? hidden : page, 2);
+        items.push({ row, group: verdict.state === 'removed' ? 'done' : 'todo', reason: `表格備註：「${note}」`, verdict, current, located: located !== null, scope: offScreen ? scope : '整頁文字' });
       } else if (kind === 'none') {
-        items.push({ row, group: 'check', reason: `狀態標為「${status}」，但「想改成」是空白，無法比對`, current, located: located !== null, scope });
+        items.push({ row, group: 'check', reason: status ? `狀態標為「${status}」，但「想改成」是空白，無法比對` : '', current, located: located !== null, scope });
       } else if (kind === 'remove') {
         const verdict = compareRemoval(row.text, offScreen ? hidden : page);
         items.push({ row, group: verdict.state === 'removed' ? 'done' : 'todo', reason: `表格要求「${(row.next ?? '').trim()}」`, verdict, current, located: located !== null, scope: offScreen ? scope : '整頁文字' });
@@ -126,6 +139,12 @@ export function startReview(ctx: OverlayCtx): void {
         const group: Group = verdict.state === 'applied' ? 'done' : verdict.state === 'likely' ? 'check' : verdict.state === 'partial' ? 'partial' : 'todo';
         items.push({ row, group, reason: '', verdict, current, located: located !== null, scope });
       }
+    }
+    // Design notes ride along with whatever else is pending; rows with nothing else become their own group.
+    for (const it of items) {
+      if (it.group === 'other' || !isDesignPending(it.row)) continue;
+      it.design = it.row.design;
+      if (it.group === 'done' || it.group === 'check' || it.group === 'later') it.group = 'design';
     }
     return items.sort((a, b) => a.row.id - b.row.id);
   };
@@ -151,6 +170,9 @@ export function startReview(ctx: OverlayCtx): void {
       body.append(a);
     } else {
       if (it.reason) body.append(el('p', 'idov-item__reason', it.reason));
+      if (it.design) {
+        body.append(el('p', 'idov-label', '設計建議（依需求清單）'), el('pre', 'idov-design', it.design));
+      }
       if (it.verdict) {
         const v = it.verdict;
         body.append(el('p', 'idov-item__reason', `比對（${it.scope}）：${VERDICT_TEXT[v.state]}${v.total > 0 ? `（${v.found}/${v.total} 段）` : ''}`));
@@ -192,9 +214,9 @@ export function startReview(ctx: OverlayCtx): void {
     const state = ctx.state();
     const items = evaluate();
     const idsOf = (...groups: Group[]) => new Set(items.filter((i) => groups.includes(i.group)).map((i) => String(i.row.id)));
-    ctx.setPending(idsOf('todo', 'partial'), idsOf('check'));
+    ctx.setPending(idsOf('todo', 'partial', 'design'), idsOf('check'));
     const count = (g: Group) => items.filter((i) => i.group === g).length;
-    toggle.textContent = `待修改（本頁 ${count('todo') + count('partial')}）`;
+    toggle.textContent = `待修改（本頁 ${count('todo') + count('partial') + count('design')}）`;
 
     const sig = JSON.stringify([state.source, state.error, state.loading, items.map((i) => [i.row.id, i.group, i.verdict?.found, i.verdict?.missing, i.located])]);
     if (sig === signature) return;
