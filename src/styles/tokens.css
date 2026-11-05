@@ -49,30 +49,30 @@
 }
 
 :root {
-  /* ── 1. THEME ── FORWARD 2026 KV palette (#26, Comms 色票.png): #0f3b59 深藍, #7d929e 藍灰,
-     #bcbdbf 淺灰, #edcc5f 金黃, #3e251e 深褐. The sheet gives no roles. The first three are one
-     blue family (dark → light), so 深藍 is the page ground with its own steps for surfaces,
-     金黃 the accent, and 深褐 stays for dark text on 金黃 (team choice, 10/29; it replaces the
-     10/27 brown ground, which had no lighter steps in the sheet to separate sections with).
-     Values as labelled on the swatch sheet. Other channels are shades or tints of those five,
-     chosen so every text pair stays ≥ 4.5:1 (淺灰 text-3 is 4.6:1 on the raised step). Paper,
-     white and the status colours are not in the KV and stay pending Comms (#26 F-3). */
-  --rgb-base: 15 59 89; /* #0f3b59 深藍: page background and dark text */
-  --rgb-base-deep: 10 41 62; /* #0a293e */
-  --rgb-base-soft: 19 66 98; /* #134262 */
-  --rgb-base-raised: 23 73 107; /* #17496b */
-  --rgb-tint: 125 146 158; /* #7d929e 藍灰: glow behind sections; never body text */
+  /* ── 1. THEME ── KV palette without 深藍 (11/04, team choice, the right-hand 配色建議 mockup):
+     深褐 #3e251e is the page ground and dark text, 金黃 #edcc5f the accent, 藍灰 #7d929e among
+     the ministry cards, and 感謝 / 回應 sit on 米白 paper. Replaces the 10/29 深藍 theme. The
+     ground has its own deeper and lighter steps for surfaces. Text pairs stay ≥ 4.5:1. 深藍
+     #0f3b59 remains only as one of the downloadable card styles; the web FORWARD 卡 keeps the
+     printed card's own brown (card-brown). */
+  --rgb-base: 62 37 30; /* #3e251e 深褐: page background and dark text */
+  --rgb-base-deep: 48 28 23; /* #301c17 */
+  --rgb-base-soft: 76 48 40; /* #4c3028 */
+  --rgb-base-raised: 88 57 48; /* #583930 */
+  --rgb-tint: 125 146 158; /* #7d929e 藍灰: ministry cards and the glow behind sections; never body text */
+  --rgb-navy: 15 59 89; /* #0f3b59 深藍: the LOVE IN ACTION card style only */
   --rgb-accent: 237 204 95; /* #edcc5f 金黃 */
   --rgb-accent-bright: 244 220 140; /* #f4dc8c */
   --rgb-accent-dim: 196 164 67; /* #c4a443 */
   --rgb-accent-on-light: 122 92 14; /* #7a5c0e 金黃 dark enough to read on paper (5.4:1) */
   --rgb-earth: 62 37 30; /* #3e251e 深褐: text on 金黃 (the Give buttons) */
-  --rgb-mist: 221 229 234; /* #dde5ea 淺藍: 淺灰 leaned toward 藍灰, ground of the light sections */
+  --rgb-card-brown: 72 60 58; /* #483c3a ground of the printed FORWARD 卡 (Comms' print file) */
+  --rgb-mist: 244 239 228; /* #f4efe4 米白 paper: ground of the light sections (感謝, 回應) */
   --rgb-paper: 244 239 228; /* #f4efe4 */
-  --rgb-light: 255 255 255; /* light ink; flips to 深藍 inside .tone-light */
+  --rgb-light: 255 255 255; /* light ink; flips to the brown inside .tone-light */
   --rgb-white: 255 255 255; /* stays white in every section */
-  --rgb-text-2: 188 189 191; /* #bcbdbf 淺灰 */
-  --rgb-text-3: 180 181 183; /* #b4b5b7 淺灰, one step dimmer (4.6:1 on raised) */
+  --rgb-text-2: 222 213 205; /* #ded5cd warm 淺灰 */
+  --rgb-text-3: 214 204 196; /* #d6ccc4 one step dimmer (≥ 4.5:1 on raised) */
   --rgb-card-sand: 246 237 207; /* #f6edcf card wall tint (金黃) */
   /* Status colours are functional, not brand; they normally stay as they are. */
   --rgb-danger: 255 154 140; /* #ff9a8c on dark (lightened from #ff8a7a for the raised surfaces) */

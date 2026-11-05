@@ -1,4 +1,5 @@
 import { wrapText } from './wrapText';
+import paperBgUrl from '../assets/card/forward-card-bg.webp';
 
 import type { Declaration, DeclarationPalette } from '../data/content';
 
@@ -24,12 +25,13 @@ interface Theme {
 
 /** Swatch shown in the declaration picker, per palette. */
 export const PALETTE_SWATCH: Record<DeclarationPalette, string> = {
-  navy: 'var(--bg)',
+  navy: 'rgb(var(--rgb-navy))',
   gold: 'var(--accent)',
   earth: 'var(--on-accent)',
+  paper: 'rgb(var(--rgb-card-brown))',
 };
 
-type Channel = 'base' | 'accent' | 'earth' | 'light';
+type Channel = 'base' | 'navy' | 'accent' | 'earth' | 'light' | 'white' | 'card-brown';
 
 /**
  * Canvas cannot resolve CSS var(), so card colours are read from the theme channels in
@@ -57,6 +59,14 @@ function resolveTheme(palette: DeclarationPalette): Theme {
         muted: color('earth', 0.66),
         line: color('earth', 0.5),
       };
+    case 'paper':
+      return {
+        background: color('card-brown'),
+        text: color('light'),
+        accent: color('accent'),
+        muted: color('accent', 0.72),
+        line: color('accent', 0.55),
+      };
     case 'earth':
       return {
         background: color('earth'),
@@ -68,7 +78,7 @@ function resolveTheme(palette: DeclarationPalette): Theme {
     case 'navy':
     default:
       return {
-        background: color('base'),
+        background: color('navy'),
         text: color('light'),
         accent: color('accent'),
         muted: color('light', 0.62),
@@ -83,7 +93,10 @@ export interface CardContent {
   text_anticipate: string;
 }
 
-export const PROMPTS = { gratitude: '2026 我感謝神…', anticipate: '2027 我和神一起期待…' } as const;
+/** The two prompts, worded as on the printed FORWARD 卡 (11/04). */
+export const PROMPTS = { gratitude: '2026, 我感謝神...', anticipate: '2027, 跟神一起期待...' } as const;
+/** The English lines under the prompts, as on the printed FORWARD 卡. */
+export const PROMPTS_EN = { gratitude: 'I APPRECIATE GOD FOR…', anticipate: "I'M BELIEVING IN GOD FOR…" } as const;
 
 const BODY = '"Noto Serif TC", "Songti TC", "PMingLiU", serif';
 const HEADING = '"FWD Heading TC", "Noto Serif TC", "Songti TC", "PingFang TC", "Microsoft JhengHei", serif';
@@ -96,7 +109,7 @@ export async function ensureCardFonts(content: CardContent, declaration: Declara
   if (typeof document === 'undefined' || !document.fonts) return;
   const written = `${content.text_gratitude}${content.text_anticipate}${content.nickname}`;
   await Promise.allSettled([
-    document.fonts.load(`800 40px "Recia Serif Display"`, `FORWARD 2026 THE HOPE ${declaration.en}`),
+    document.fonts.load(`800 40px "Recia Serif Display"`, `FORWARD 2026 THE HOPE CARD ${declaration.en} ${PROMPTS_EN.gratitude} ${PROMPTS_EN.anticipate}`),
     document.fonts.load(`40px "FWD Heading TC"`, `${PROMPTS.gratitude}${PROMPTS.anticipate}${declaration.title}`),
     document.fonts.load(`400 40px "Noto Serif TC"`, written || 'A'),
     document.fonts.load(`700 40px "Noto Serif TC"`, `信心宣告${declaration.text}`),
@@ -115,6 +128,7 @@ function spaced(ctx: CanvasRenderingContext2D, text: string, x: number, y: numbe
 
 /** Each declaration's frame (#23): one line with crop marks, two lines, or an arched top. */
 function drawFrame(ctx: CanvasRenderingContext2D, declaration: Declaration, theme: Theme, w: number, h: number, inset: number) {
+  if (declaration.frame === 'none') return;
   ctx.save();
   ctx.strokeStyle = theme.line;
   ctx.lineWidth = 3;
@@ -157,7 +171,128 @@ function drawFrame(ctx: CanvasRenderingContext2D, declaration: Declaration, them
   ctx.restore();
 }
 
-export function drawCard(ctx: CanvasRenderingContext2D, content: CardContent, format: CardFormat, declaration: Declaration): void {
+/** Rounded rectangle path (ctx.roundRect is missing in older Safari). */
+function roundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+/**
+ * The paper style (11/04): the printed FORWARD 卡 — brown with its line drawing, a large FORWARD
+ * CARD title, each prompt with its English line over a white answer box, then the signature.
+ */
+function drawPaperCard(ctx: CanvasRenderingContext2D, content: CardContent, format: CardFormat, bg?: CanvasImageSource) {
+  const { width: w, height: h } = CARD_FORMATS[format];
+  const story = format === 'story';
+  const pad = story ? 96 : 80;
+  const gold = color('accent');
+  const ink = color('base');
+
+  ctx.fillStyle = color('card-brown');
+  ctx.fillRect(0, 0, w, h);
+  if (bg) {
+    const iw = (bg as HTMLImageElement).naturalWidth || w;
+    const ih = (bg as HTMLImageElement).naturalHeight || h;
+    const scale = Math.max(w / iw, h / ih);
+    ctx.drawImage(bg, (w - iw * scale) / 2, (h - ih * scale) / 2, iw * scale, ih * scale);
+  }
+
+  ctx.textBaseline = 'top';
+  const maxWidth = w - pad * 2;
+  const measure = (s: string) => ctx.measureText(s).width;
+
+  // Title, stacked on the story like the paper card.
+  let y = pad;
+  const titleSize = story ? 150 : 96;
+  ctx.fillStyle = gold;
+  ctx.font = `800 ${titleSize}px ${DISPLAY}`;
+  for (const line of story ? ['FORWARD', 'CARD'] : ['FORWARD CARD']) {
+    ctx.fillText(line, pad, y);
+    y += titleSize * 0.9;
+  }
+  y += story ? 80 : 44;
+
+  const top = y;
+  const bottom = h - pad;
+  const layoutAt = (size: number, gratitude: string, anticipate: string) => {
+    const boxPad = Math.round(size * 0.85);
+    ctx.font = `400 ${size}px ${BODY}`;
+    const a = wrapText(gratitude, maxWidth - boxPad * 2, measure);
+    const b = wrapText(anticipate, maxWidth - boxPad * 2, measure);
+    const prompt = Math.max(Math.round(size * 1.05), story ? 36 : 30);
+    const en = Math.round(prompt * 0.62);
+    const line = Math.round(size * 1.55);
+    // Boxes keep a few lines' height even for a short answer, like the large boxes on paper.
+    const minLines = story ? 4 : 3;
+    const boxA = boxPad * 2 + Math.max(a.length, minLines) * line;
+    const boxB = boxPad * 2 + Math.max(b.length, minLines) * line;
+    const head = prompt * 1.3 + en * 1.4 + 14;
+    const gap = Math.round(size * 1.2);
+    const sign = Math.round(size * 0.95);
+    const total = head * 2 + boxA + boxB + gap + sign * 2.2;
+    return { size, a, b, boxPad, prompt, en, line, boxA, boxB, head, gap, sign, total };
+  };
+  // Shrink until both boxes fit; very long answers lose their line breaks before overflowing.
+  const fit = (gratitude: string, anticipate: string) => {
+    for (let size = story ? 44 : 34; size >= MIN_SIZE; size -= 2) {
+      const candidate = layoutAt(size, gratitude, anticipate);
+      if (candidate.total <= bottom - top) return candidate;
+    }
+    return null;
+  };
+  const flat = (text: string) => text.replace(/\s*\n\s*/g, ' ');
+  const layout =
+    fit(content.text_gratitude, content.text_anticipate) ??
+    fit(flat(content.text_gratitude), flat(content.text_anticipate)) ??
+    layoutAt(MIN_SIZE, flat(content.text_gratitude), flat(content.text_anticipate));
+
+  const block = (prompt: string, promptEn: string, lines: string[], box: number) => {
+    ctx.fillStyle = gold;
+    ctx.font = `400 ${layout.prompt}px ${HEADING}`;
+    ctx.fillText(prompt, pad, y);
+    y += layout.prompt * 1.3;
+    ctx.font = `700 ${layout.en}px ${DISPLAY}`;
+    ctx.fillText(promptEn, pad, y);
+    y += layout.en * 1.4 + 14;
+    ctx.fillStyle = color('white');
+    roundedRect(ctx, pad, y, maxWidth, box, story ? 32 : 26);
+    ctx.fill();
+    ctx.fillStyle = ink;
+    ctx.font = `400 ${layout.size}px ${BODY}`;
+    let ty = y + layout.boxPad + (layout.line - layout.size) / 2;
+    for (const line of lines) {
+      ctx.fillText(line, pad + layout.boxPad, ty);
+      ty += layout.line;
+    }
+    y += box;
+  };
+  block(PROMPTS.gratitude, PROMPTS_EN.gratitude, layout.a, layout.boxA);
+  y += layout.gap;
+  block(PROMPTS.anticipate, PROMPTS_EN.anticipate, layout.b, layout.boxB);
+  y += layout.sign;
+
+  ctx.fillStyle = gold;
+  ctx.font = `600 ${layout.sign}px ${BODY}`;
+  ctx.textAlign = 'right';
+  ctx.fillText(`— ${content.nickname}`, w - pad, y);
+  ctx.textAlign = 'left';
+
+  // Small sign-off in the bottom corner.
+  ctx.fillStyle = color('accent', 0.72);
+  ctx.font = `700 ${story ? 26 : 22}px ${DISPLAY}`;
+  spaced(ctx, 'THE HOPE · FORWARD 2026', pad, h - pad * 0.62 - (story ? 26 : 22), 4);
+}
+
+export function drawCard(ctx: CanvasRenderingContext2D, content: CardContent, format: CardFormat, declaration: Declaration, paperBg?: CanvasImageSource): void {
+  if (declaration.palette === 'paper') {
+    drawPaperCard(ctx, content, format, paperBg);
+    return;
+  }
   const { width: w, height: h } = CARD_FORMATS[format];
   const theme = resolveTheme(declaration.palette);
   const story = format === 'story';
@@ -279,15 +414,29 @@ export function drawCard(ctx: CanvasRenderingContext2D, content: CardContent, fo
   }
 }
 
+let paperBg: Promise<HTMLImageElement | undefined> | null = null;
+
+/** The paper style's background image, loaded once; the card still draws (plain brown) without it. */
+function loadPaperBg(): Promise<HTMLImageElement | undefined> {
+  paperBg ??= new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(undefined);
+    img.src = paperBgUrl;
+  });
+  return paperBg;
+}
+
 export async function renderCardBlob(content: CardContent, format: CardFormat, declaration: Declaration): Promise<Blob> {
   await ensureCardFonts(content, declaration);
+  const bg = declaration.palette === 'paper' ? await loadPaperBg() : undefined;
   const { width, height } = CARD_FORMATS[format];
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas 2D is not available');
-  drawCard(ctx, content, format, declaration);
+  drawCard(ctx, content, format, declaration, bg);
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('Could not encode PNG'))), 'image/png');
   });

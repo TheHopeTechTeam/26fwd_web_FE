@@ -27,7 +27,7 @@ export const CHAPTERS: Chapter[] = [
 ];
 
 /** The rail's last stop, after the three chapters (11/04): it jumps to the Give finale. */
-export const RAIL_GIVE = { id: 'give', en: 'There is More', zh: '我要參與奉獻' } as const;
+export const RAIL_GIVE = { id: 'give', en: 'There is More', zh: '我要參與奉獻', short: '奉獻' } as const;
 
 /**
  * Hero copy (#26). On desktop the title is baked into the KV, so `title` and the series line
@@ -223,8 +223,8 @@ export const PRAYER_LINK = {
 
 /** Guiding questions beside the card, where the three steps used to be (11/04). */
 export const RESPOND_GUIDE: { icon: 'heart' | 'sunrise'; title: string; text: string }[] = [
-  { icon: 'heart', title: 'APPRECIATE｜我感謝神……', text: '回顧過去一年，我在哪裡看見了神的信實？' },
-  { icon: 'sunrise', title: 'ANTICIPATE｜我期待和神一起……', text: '展望明年，我期待神如何擴張我的信心？我願意踏出什麼下一步？' },
+  { icon: 'heart', title: 'APPRECIATE｜我感謝神...', text: '回顧過去一年，我在哪裡看見了神的信實？' },
+  { icon: 'sunrise', title: 'ANTICIPATE｜跟神一起期待...', text: '展望明年，我期待神如何擴張我的信心？我願意踏出什麼下一步？' },
 ];
 
 /**
@@ -239,10 +239,11 @@ export const RESPOND = {
   ],
 };
 
-/** Ground colours a declaration card can use; canvasCard maps them to the KV swatch. */
-export type DeclarationPalette = 'navy' | 'gold' | 'earth';
+/** Ground colours a card style can use; canvasCard maps them to the KV swatch. `paper` is
+    the printed FORWARD 卡's brown with its line drawing. */
+export type DeclarationPalette = 'navy' | 'gold' | 'earth' | 'paper';
 /** How the frame on the card is drawn, so each declaration has its own look (#23). */
-export type DeclarationFrame = 'line' | 'double' | 'arch';
+export type DeclarationFrame = 'line' | 'double' | 'arch' | 'none';
 
 export interface Declaration {
   id: string;
@@ -284,6 +285,23 @@ export const DECLARATIONS: Declaration[] = [
     frame: 'arch',
   },
 ];
+
+/**
+ * A fourth style for the downloaded image (11/04): the printed FORWARD 卡's look — brown with
+ * the line drawing, a large FORWARD CARD title and white answer boxes — and, like the paper
+ * card, no declaration. Wording of this option is interim.
+ */
+export const PAPER_STYLE: Declaration = {
+  id: 'paper',
+  title: '紙本同款',
+  en: 'FORWARD CARD',
+  text: '和實體 FORWARD 卡同款的咖啡色設計，不含信心宣告。',
+  palette: 'paper',
+  frame: 'none',
+};
+
+/** Every style the visitor can pick for the downloaded image. */
+export const CARD_STYLES: Declaration[] = [...DECLARATIONS, PAPER_STYLE];
 
 /** Give finale, BB's 網站文字表 (11/04). BB wrote the kicker as "YEAR END FORWARD 2026 · "; the trailing dot is left off until confirmed. */
 export const FINALE = {

@@ -2,14 +2,16 @@
  * Desktop / tablet (≥ 700px): the KV banner at its own 3.2:1 ratio under the header, never
  * cropped, so the baked-in title stays whole; date, lead and CTA sit below it.
  * Phone (< 700px): the portrait photo fills the screen and the title is live text over a
- * 深藍 fade (Hero.tsx PHONE_QUERY).
+ * page-ground fade (Hero.tsx PHONE_QUERY).
  */
+/* The band under the KV uses the printed FORWARD 卡's ground — brown with the line drawing and
+   paper grain — like the front of the paper card (KV on top, this ground below; 11/04). */
 .hero {
   position: relative;
   padding-top: var(--header-h);
   /* 01 Appreciate starts on paper, so the colour change marks the break. */
   padding-bottom: clamp(48px, 8svh, 88px);
-  background: var(--bg);
+  background: rgb(var(--rgb-card-brown)) url('../assets/card/forward-card-bg.webp') center / cover no-repeat;
   isolation: isolate;
 }
 
@@ -146,7 +148,7 @@
     object-position: 50% 0;
   }
 
-  /* Fade the photo into 深藍 behind the text, and darken the top behind the header; contrast
+  /* Fade the photo into the page ground behind the text, and darken the top behind the header; contrast
      comes from the overlay, not the photo. */
   .hero__kv::after {
     content: '';
@@ -154,11 +156,11 @@
     inset: 0;
     background: linear-gradient(
       180deg,
-      rgb(var(--rgb-base) / 0.6) 0%,
-      rgb(var(--rgb-base) / 0.15) 16%,
-      rgb(var(--rgb-base) / 0.35) 40%,
-      rgb(var(--rgb-base) / 0.92) 68%,
-      var(--bg) 100%
+      rgb(var(--rgb-card-brown) / 0.6) 0%,
+      rgb(var(--rgb-card-brown) / 0.15) 16%,
+      rgb(var(--rgb-card-brown) / 0.35) 40%,
+      rgb(var(--rgb-card-brown) / 0.92) 68%,
+      rgb(var(--rgb-card-brown)) 100%
     );
   }
 }

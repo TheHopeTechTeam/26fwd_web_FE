@@ -542,8 +542,8 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "03 回應 · 寫卡表單",
   "when": "網頁＋卡片圖片上",
   "pos": "第一題",
-  "text": "2026 我感謝神…",
-  "note": "也會印在下載的卡片上"
+  "text": "2026, 我感謝神...",
+  "note": "11/04 改為紙本 FORWARD 卡的寫法；也會印在下載的卡片上"
  },
  {
   "id": 54,
@@ -552,8 +552,8 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "03 回應 · 寫卡表單",
   "when": "網頁＋卡片圖片上",
   "pos": "第二題",
-  "text": "2027 我和神一起期待…",
-  "note": "也會印在下載的卡片上"
+  "text": "2027, 跟神一起期待...",
+  "note": "11/04 改為紙本 FORWARD 卡的寫法；也會印在下載的卡片上"
  },
  {
   "id": 55,
@@ -593,7 +593,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "when": "打開就看得到",
   "pos": "署名說明",
   "text": "可填寫暱稱",
-  "note": ""
+  "note": "11/04 刪除，頁面上已無這句"
  },
  {
   "id": 59,
@@ -1133,7 +1133,7 @@ export const SHEET_ROWS: SheetRow[] = [
   "when": "打開就看得到",
   "pos": "標籤",
   "text": "Hope Nation 回應牆",
-  "note": ""
+  "note": "11/04 拿掉小標，大標直接用 Hope Nation 回應牆"
  },
  {
   "id": 113,
@@ -1142,8 +1142,8 @@ export const SHEET_ROWS: SheetRow[] = [
   "section": "標題區",
   "when": "打開就看得到",
   "pos": "標題",
-  "text": "Write it forward",
-  "note": ""
+  "text": "Hope Nation 回應牆",
+  "note": "11/04 大標改為 Hope Nation 回應牆（原 Write it forward）"
  },
  {
   "id": 114,

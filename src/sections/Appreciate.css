@@ -174,6 +174,11 @@
   text-underline-offset: 4px;
 }
 
+/* 「看全部故事」 dialog on the printed FORWARD 卡's ground (11/04), repeating down the list. */
+.testimony-all-modal .modal__panel {
+  background: rgb(var(--rgb-card-brown)) url('../assets/card/forward-card-bg-tile.webp') center top / 100% auto repeat-y;
+}
+
 /* 「看全部」 dialog: 2, then 3, then 4 across, like the wall. */
 .testimony-all {
   display: grid;

@@ -77,8 +77,7 @@ export function CardsPage() {
       <main className="cards-page">
         <div className="wrap wrap--no-rail">
           <header className="cards-page__head">
-            <p className="kicker">Hope Nation 回應牆</p>
-            <h1 className="cards-page__title">Write it forward</h1>
+            <h1 className="cards-page__title display-zh">Hope Nation 回應牆</h1>
             <p className="lead">在這面回應牆上，看見 The Hope 家人一張張真實的感謝與期待。讓彼此的故事成為鼓勵，也打開我們對未來的想像，一起相信神還要成就更多。</p>
             <div className="cards-page__meta">
               {total !== null && (

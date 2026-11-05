@@ -7,9 +7,9 @@ import { Reveal } from '../components/Reveal';
 import { useToast } from '../components/Toast';
 import { Turnstile } from '../components/Turnstile';
 import { config, pageUrl } from '../config/env';
-import { DECLARATIONS, FINALE, PRAYER_LINK, RAIL_GIVE, RESPOND, RESPOND_GUIDE } from '../data/content';
+import { CARD_STYLES, FINALE, PRAYER_LINK, RAIL_GIVE, RESPOND, RESPOND_GUIDE } from '../data/content';
 import { trackEvent } from '../lib/analytics';
-import { CARD_FORMATS, PALETTE_SWATCH, PROMPTS, renderCardBlob, type CardContent, type CardFormat } from '../lib/canvasCard';
+import { CARD_FORMATS, PALETTE_SWATCH, PROMPTS, PROMPTS_EN, renderCardBlob, type CardContent, type CardFormat } from '../lib/canvasCard';
 import {
   FIELD_ERROR_TEXT,
   LIMITS,
@@ -139,7 +139,7 @@ function ForwardCardForm() {
     }
   };
 
-  const field = (name: CardField, label: string, multiline: boolean, hint?: string) => {
+  const field = (name: CardField, label: string, multiline: boolean, hint?: string, labelEn?: string) => {
     const count = displayLength(name, values[name]);
     const max = LIMITS[name];
     const error = errors[name];
@@ -156,6 +156,11 @@ function ForwardCardForm() {
       <div className={`cardform__field ${multiline ? 'cardform__field--text' : ''} ${error ? 'has-error' : ''}`}>
         <label htmlFor={`card-${name}`} className={multiline ? 'cardform__prompt' : 'cardform__label'}>
           {label}
+          {labelEn && (
+            <span className="cardform__prompt-en" aria-hidden="true">
+              {labelEn}
+            </span>
+          )}
         </label>
         {multiline ? (
           <textarea
@@ -207,13 +212,13 @@ function ForwardCardForm() {
       <Reveal>
         <form className="cardform" onSubmit={onSubmit} noValidate aria-describedby="cardform-guide">
           <div className="cardform__card">
+            {/* Styled like the printed FORWARD 卡 (11/04): title, prompts with their English lines. */}
             <p className="cardform__kicker" aria-hidden="true">
-              <span>FORWARD CARD</span>
-              <span>2026</span>
+              FORWARD CARD
             </p>
-            {field('text_gratitude', PROMPTS.gratitude, true, PROMPT_HINT)}
-            {field('text_anticipate', PROMPTS.anticipate, true, PROMPT_HINT)}
-            {field('nickname', '你的名稱', false, '可填寫暱稱')}
+            {field('text_gratitude', PROMPTS.gratitude, true, PROMPT_HINT, PROMPTS_EN.gratitude)}
+            {field('text_anticipate', PROMPTS.anticipate, true, PROMPT_HINT, PROMPTS_EN.anticipate)}
+            {field('nickname', '你的名稱', false)}
 
             {/* Bot trap: invisible to people and assistive tech; bots tend to fill it. */}
             <div className="cardform__trap" aria-hidden="true">
@@ -238,7 +243,7 @@ function ForwardCardForm() {
               ))}
             </ol>
 
-            <div id="cardform-guide" className="cardform__guide tone-dark">
+            <div id="cardform-guide" className="cardform__guide">
               <p className="cardform__guide-title">寫卡小提醒</p>
               <p>
                 分享至線上回應牆後，你的內容將公開顯示。請勿留下自己或他人的電話、地址、LINE ID 等個人資料；提到家人、孩子、健康或其他私密內容時，也請斟酌描述。
@@ -309,7 +314,7 @@ function GuideIcon({ kind }: { kind: 'heart' | 'sunrise' }) {
 
 function CardResult({ content }: { content: CardContent }) {
   const [format, setFormat] = useState<CardFormat>('square');
-  const [declaration, setDeclaration] = useState(DECLARATIONS[0]!);
+  const [declaration, setDeclaration] = useState(CARD_STYLES[0]!);
   const [image, setImage] = useState<{ url: string; blob: Blob } | null>(null);
   const [rendering, setRendering] = useState(true);
   const { show: showToast, element: toastElement } = useToast();
@@ -400,7 +405,7 @@ function CardResult({ content }: { content: CardContent }) {
 
       <fieldset className="declarations">
         <legend className="declarations__legend display-zh">選擇你的 FORWARD 卡樣式</legend>
-        {DECLARATIONS.map((d) => (
+        {CARD_STYLES.map((d) => (
           <label key={d.id} className={`declarations__item ${declaration.id === d.id ? 'is-on' : ''}`}>
             <input type="radio" name="card-declaration" value={d.id} checked={declaration.id === d.id} onChange={() => setDeclaration(d)} />
             <span className="declarations__swatch" style={{ background: PALETTE_SWATCH[d.palette] }} aria-hidden="true" />
