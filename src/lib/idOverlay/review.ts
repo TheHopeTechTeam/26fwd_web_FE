@@ -19,7 +19,8 @@ export interface OverlayCtx {
   hiddenText(): string;
   hasElement(id: string): boolean;
   focus(id: string): boolean;
-  setPending(ids: Set<string>): void;
+  /** Red frames for wording confirmed in the sheet but not on the page; amber for ones to check by eye. */
+  setPending(confirmed: Set<string>, maybe: Set<string>): void;
   onScan(cb: () => void): void;
   reload(): Promise<void>;
 }
@@ -190,8 +191,8 @@ export function startReview(ctx: OverlayCtx): void {
   const render = () => {
     const state = ctx.state();
     const items = evaluate();
-    const pending = new Set(items.filter((i) => i.group === 'todo' || i.group === 'partial' || i.group === 'check').map((i) => String(i.row.id)));
-    ctx.setPending(pending);
+    const idsOf = (...groups: Group[]) => new Set(items.filter((i) => groups.includes(i.group)).map((i) => String(i.row.id)));
+    ctx.setPending(idsOf('todo', 'partial'), idsOf('check'));
     const count = (g: Group) => items.filter((i) => i.group === g).length;
     toggle.textContent = `待修改（本頁 ${count('todo') + count('partial')}）`;
 

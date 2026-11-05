@@ -104,6 +104,7 @@ export function startIdOverlay(): void {
   const targets = new Map<Element, Target>();
   const foundIds = new Set<string>();
   const pendingIds = new Set<string>();
+  const maybeIds = new Set<string>();
   const listeners: Array<() => void> = [];
   let hidden = false;
   let sheetState: { source: 'static' | 'live'; error: string | null; loadedAt: Date | null; loading: boolean } = { source: 'static', error: null, loadedAt: null, loading: true };
@@ -133,8 +134,11 @@ export function startIdOverlay(): void {
       .join('｜');
     t.badge.append(num, tip);
     const pending = [...t.ids].some((k) => pendingIds.has(k));
+    const maybe = !pending && [...t.ids].some((k) => maybeIds.has(k));
     t.badge.classList.toggle('is-pending', pending);
     t.box.classList.toggle('is-pending', pending);
+    t.badge.classList.toggle('is-maybe', maybe);
+    t.box.classList.toggle('is-maybe', maybe);
   };
 
   const claim = (el: Element, id: string, kind: Target['kind']) => {
@@ -385,9 +389,11 @@ export function startIdOverlay(): void {
       flash(el);
       return true;
     },
-    setPending: (ids) => {
+    setPending: (confirmed, maybe) => {
       pendingIds.clear();
-      for (const id of ids) pendingIds.add(id);
+      maybeIds.clear();
+      for (const id of confirmed) pendingIds.add(id);
+      for (const id of maybe) maybeIds.add(id);
       for (const t of targets.values()) paintTarget(t);
     },
     onScan: (cb) => {
