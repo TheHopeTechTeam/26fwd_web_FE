@@ -1,18 +1,36 @@
+/* The printed FORWARD 卡's ground (11/04 trial), repeating down this long section. */
 .anticipate {
-  background:
-    radial-gradient(80% 40% at 100% 0%, rgb(var(--rgb-tint) / 0.35), transparent 70%),
-    var(--bg);
+  background: rgb(var(--rgb-card-brown)) url('../assets/card/forward-card-bg-tile.webp') center top / 100% auto repeat-y;
 }
 
 .ministries {
   display: grid;
-  gap: clamp(64px, 11svh, 120px);
+  gap: clamp(36px, 6svh, 64px);
 }
 
 .ministry {
+  position: relative;
   display: grid;
   gap: clamp(24px, 4vw, 64px);
   align-items: center;
+}
+
+/* A fine 金黃 rule with a small diamond between ministries (11/04), so 01–05 stay apart on
+   the textured ground without boxing them in. */
+.ministry + .ministry {
+  padding-top: clamp(36px, 6svh, 64px);
+  border-top: 1px solid rgb(var(--rgb-accent) / 0.3);
+}
+
+.ministry + .ministry::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: 0;
+  width: 9px;
+  height: 9px;
+  background: var(--accent);
+  transform: rotate(45deg);
 }
 
 .ministry__media {
@@ -168,7 +186,7 @@
 
 /* 外展憐憫事工's partner stories as tabs (#26, plan C, 米白＋金黃 from the mockups): the open
    tab joins the 米白 panel under it and carries a 金黃 bar; the others stay translucent on
-   深藍. Phones scroll the tab row sideways. */
+   the dark ground. Phones scroll the tab row sideways. */
 .partners {
   grid-column: 1 / -1;
   display: grid;

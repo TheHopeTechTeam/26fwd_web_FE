@@ -48,9 +48,19 @@
   text-decoration: none;
 }
 
+/* Tall enough that the outlined THE stays visible. */
 .site-header__brand img {
-  height: 36px;
+  height: 24px;
   width: auto;
+}
+
+/* A thin rule between the THE HOPE logo and the FORWARD 2026 wordmark. The display face sits
+   high in its line box, so the wordmark is nudged down to line up with the logo (11/04). */
+.site-header__wordmark {
+  position: relative;
+  top: 3px;
+  padding-left: 12px;
+  border-left: 1px solid rgb(var(--rgb-light) / 0.3);
 }
 
 .site-header__wordmark {
@@ -211,15 +221,17 @@
 }
 
 /* Background-music switch (MusicToggle): round, 44px tap target, gold while playing. */
+/* 金黃 ring and note so the switch reads on the KV and the brown header; filled 金黃 while
+   music plays (11/04). */
 .music-toggle {
   display: inline-grid;
   place-items: center;
   width: 44px;
   height: 44px;
   border-radius: var(--radius-full);
-  border: 1px solid var(--line-strong);
-  background: rgb(var(--rgb-base-deep) / 0.4);
-  color: var(--text);
+  border: 1.5px solid var(--accent);
+  background: rgb(var(--rgb-base-deep) / 0.85);
+  color: var(--accent);
   cursor: pointer;
   transition:
     background-color 0.2s var(--ease-standard),
@@ -228,12 +240,13 @@
 }
 
 .music-toggle:hover {
-  border-color: var(--accent);
+  background: rgb(var(--rgb-accent) / 0.2);
 }
 
 .music-toggle.is-on {
   border-color: var(--accent);
-  color: var(--accent);
+  background: var(--accent);
+  color: var(--ink);
 }
 
 .music-toggle.has-error {
@@ -278,8 +291,8 @@
   }
 }
 
-/* The smallest phones (320px) need the room for the menu button: the logo stays, the wordmark goes. */
-@media (max-width: 360px) {
+/* Phones need the room for the buttons: the THE HOPE logo stays, the wordmark goes (11/04). */
+@media (max-width: 479px) {
   .site-header__wordmark {
     display: none;
   }
@@ -300,7 +313,7 @@
 
 @media (max-width: 420px) {
   .site-header__brand img {
-    height: 30px;
+    height: 17px;
   }
   .site-header__wordmark {
     font-size: 1rem;

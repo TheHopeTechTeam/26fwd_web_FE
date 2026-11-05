@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type MouseEvent } from 'react';
-import logoUrl from '../assets/brand/hope-h-white.png';
+import logoUrl from '../assets/brand/the-hope-logo-gold.png';
 import { config, pageUrl } from '../config/env';
 import { CHAPTERS } from '../data/content';
 import { jumpToSection } from '../lib/scroll';
@@ -99,7 +99,8 @@ export function SiteHeader({ progress = false, backLabel }: SiteHeaderProps) {
       )}
       <div className="site-header__inner">
         <a className="site-header__brand" href={pageUrl()} aria-label="FORWARD 2026 首頁">
-          <img src={logoUrl} alt="" width="28" height="36" />
+          {/* The full H THE HOPE logo from the printed FORWARD 卡 (11/04). */}
+          <img className="site-header__logo" src={logoUrl} alt="" width="164" height="24" />
           <span className="site-header__wordmark">
             {backLabel ? (
               <>

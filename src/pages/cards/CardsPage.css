@@ -1,6 +1,9 @@
+/* The same ground as the home page's top band and 02 (11/04): the printed FORWARD 卡's brown
+   and line drawing, repeating down the wall. */
 .cards-page {
   padding-block: calc(var(--header-h) + clamp(40px, 8svh, 88px)) clamp(64px, 10svh, 120px);
   min-height: 100svh;
+  background: rgb(var(--rgb-card-brown)) url('../../assets/card/forward-card-bg-tile.webp') center top / 100% auto repeat-y;
 }
 
 .cards-page__head {
@@ -12,9 +15,9 @@
 .cards-page__title {
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: clamp(2.5rem, 1.5rem + 5vw, 5.5rem);
+  font-size: clamp(2.25rem, 1.4rem + 4vw, 4.5rem);
   letter-spacing: 0;
-  line-height: 1;
+  line-height: 1.1;
 }
 
 .cards-page__meta {

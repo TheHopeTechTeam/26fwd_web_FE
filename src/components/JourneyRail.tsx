@@ -51,6 +51,7 @@ export function JourneyRail() {
                   <span className="journey-rail__index">{chapter.index}</span>
                   <span className="journey-rail__en">{chapter.en}</span>
                   <span className="journey-rail__zh">{chapter.rail}</span>
+                  <span className="journey-rail__short">{chapter.zh}</span>
                 </span>
                 <span className="journey-rail__dot" aria-hidden="true" />
               </a>
@@ -67,6 +68,7 @@ export function JourneyRail() {
             <span className="journey-rail__label">
               <span className="journey-rail__en">{RAIL_GIVE.en}</span>
               <span className="journey-rail__zh">{RAIL_GIVE.zh}</span>
+              <span className="journey-rail__short">{RAIL_GIVE.short}</span>
             </span>
             <span className="journey-rail__dot" aria-hidden="true" />
           </a>
