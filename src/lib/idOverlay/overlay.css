@@ -179,11 +179,19 @@
 
 /* ---- ?review=1 -------------------------------------------------------------------------- */
 .idov-badge.is-pending {
-  background: #ff7a59;
+  background: #e5202a;
   color: #fff;
+  box-shadow: 0 0 0 2px #fff, 0 1px 6px rgb(0 0 0 / 0.5);
 }
 .idov-box.is-pending {
-  border: 2px dashed rgb(255 122 89 / 0.95);
+  border: 3px solid #e5202a;
+  background: rgb(229 32 42 / 0.08);
+}
+.idov-badge.is-maybe {
+  background: #ffa24d;
+}
+.idov-box.is-maybe {
+  border: 2px dashed #ff8a1f;
 }
 .idov-toggle--review {
   left: auto;
