@@ -1,12 +1,16 @@
 /**
- * Review overlay (`?ids=1`): tags every piece of page text that has a row in the cloud sheet
- * 「FORWARD2026_網站文字表」 with its 編號, and tags image regions with their MED code, so a
- * reviewer can see which line or picture a sheet row means. It only reads the DOM and draws
- * on its own layer; nothing here runs unless the URL asks for it.
+ * Review overlay (`?ids=1`, `?review=1`): tags every piece of page text that has a row in the
+ * cloud sheet 「FORWARD2026_網站文字表」 with its 編號, and tags image regions with their MED
+ * code, so a reviewer can see which line or picture a sheet row means. `?review=1` adds the
+ * list of wording BB has confirmed in the sheet that the page does not show yet.
+ * It only reads the DOM and draws on its own layer; nothing here runs unless the URL asks.
  */
 import './overlay.css';
+import { classifyNext, clausesOf, stripKey } from './compare';
+import { startReview, type OverlayCtx } from './review';
 import { MEDIA_SPOTS, TEXT_SELECTORS } from './spots';
 import { SHEET_ROWS, type OverlayPage, type SheetRow } from './rows';
+import { fetchSheetRows } from './sheet';
 
 interface Target {
   el: Element;
@@ -16,8 +20,8 @@ interface Target {
   box: HTMLElement;
 }
 
-/** Whitespace is dropped so JSX line breaks and sheet spacing never decide a match. */
-const norm = (s: string) => s.replace(/[\s\u00a0]+/g, '');
+/** Punctuation and whitespace never decide a match (JSX line breaks, sheet spacing, 「，」 vs 「, 」). */
+const norm = stripKey;
 
 function currentPage(): OverlayPage {
   const path = location.pathname.replace(/\/+$/, '');
@@ -28,25 +32,32 @@ function currentPage(): OverlayPage {
 
 /** Strip a trailing explanatory （…） and turn {placeholders} into wildcards. */
 function toMatcher(raw: string): { exact: string; alt: string; re: RegExp | null } | null {
-  const seg = norm(raw.replace(/[（(][^）)]*[）)]\s*$/, ''));
-  if (seg.length < 2) return null;
+  const body = raw.replace(/[（(][^）)]*[）)]\s*$/, '');
+  const exact = norm(body);
+  if (exact.length < 2) return null;
   const alt = norm(raw);
-  if (/\{[^}]+\}/.test(seg)) {
-    const src = seg
+  if (/\{[^}]+\}/.test(body)) {
+    const src = body
       .split(/\{[^}]+\}/)
-      .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+      .map((part) => norm(part).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
       .join('.*');
-    return { exact: seg, alt, re: new RegExp(`^${src}$`) };
+    return { exact, alt, re: new RegExp(`^${src}$`) };
   }
-  return { exact: seg, alt, re: null };
+  return { exact, alt, re: null };
 }
 
-function segmentsOf(row: SheetRow): string[] {
-  if (row.text.startsWith('資料：')) return [(row.text.split('\n')[0] ?? '').slice(3)];
-  return row.text
+function segmentsOf(text: string): string[] {
+  if (text.startsWith('資料：')) return [(text.split('\n')[0] ?? '').slice(3)];
+  return text
     .split(/\n|\s\/\s|／/)
     .map((s) => s.trim())
     .filter(Boolean);
+}
+
+/** Wording to look for, new wording first: once BB has written it, that is what should be on the page. */
+function wordingOf(row: SheetRow): string[][] {
+  const fresh = row.next && classifyNext(row.next) === 'change' ? segmentsOf(row.next) : [];
+  return [fresh, segmentsOf(row.text)].filter((s) => s.length > 0);
 }
 
 function label(row: SheetRow): string {
@@ -61,10 +72,17 @@ function status(row: SheetRow, found: boolean): { key: string; text: string } {
   return { key: 'miss', text: '未能自動定位' };
 }
 
+/** Drop elements that contain another hit: the inner one is the line we mean. */
+function innermost(els: Element[]): Element[] {
+  return els.filter((e) => !els.some((o) => o !== e && e.contains(o)));
+}
+
 export function startIdOverlay(): void {
   const page = currentPage();
-  const rows = SHEET_ROWS.filter((r) => r.page === page || r.page === 'all');
-  const rowById = new Map(rows.map((r) => [String(r.id), r]));
+  const params = new URLSearchParams(location.search);
+  let allRows: SheetRow[] = SHEET_ROWS;
+  const rowsHere = () => allRows.filter((r) => r.page === page || r.page === 'all');
+  const rowById = () => new Map(rowsHere().map((r) => [String(r.id), r]));
 
   const root = document.createElement('div');
   root.id = 'idov-root';
@@ -85,7 +103,10 @@ export function startIdOverlay(): void {
 
   const targets = new Map<Element, Target>();
   const foundIds = new Set<string>();
+  const pendingIds = new Set<string>();
+  const listeners: Array<() => void> = [];
   let hidden = false;
+  let sheetState: { source: 'static' | 'live'; error: string | null; loadedAt: Date | null; loading: boolean } = { source: 'static', error: null, loadedAt: null, loading: true };
 
   const mkTarget = (el: Element, kind: Target['kind']): Target => {
     const badge = document.createElement('span');
@@ -98,25 +119,34 @@ export function startIdOverlay(): void {
     return t;
   };
 
-  const claim = (el: Element, id: string, kind: Target['kind']) => {
-    const t = targets.get(el) ?? mkTarget(el, kind);
-    if (t.ids.has(id)) return;
-    t.ids.add(id);
-    foundIds.add(id);
+  const paintTarget = (t: Target) => {
+    const byId = rowById();
     t.badge.replaceChildren();
     const num = document.createElement('b');
     num.textContent = [...t.ids].join(' · ');
     const tip = document.createElement('i');
     tip.textContent = [...t.ids]
       .map((k) => {
-        const r = rowById.get(k);
+        const r = byId.get(k);
         return r ? `${k} ${label(r)}` : (MEDIA_SPOTS.find((m) => m.code === k)?.label ?? k);
       })
       .join('｜');
     t.badge.append(num, tip);
+    const pending = [...t.ids].some((k) => pendingIds.has(k));
+    t.badge.classList.toggle('is-pending', pending);
+    t.box.classList.toggle('is-pending', pending);
+  };
+
+  const claim = (el: Element, id: string, kind: Target['kind']) => {
+    const t = targets.get(el) ?? mkTarget(el, kind);
+    t.ids.add(id);
+    foundIds.add(id);
   };
 
   const scan = () => {
+    for (const t of targets.values()) t.ids.clear();
+    foundIds.clear();
+
     // Leaf-most elements indexed by their normalised text.
     const all = [...document.body.querySelectorAll('*')].filter((e) => !root.contains(e) && !/^(SCRIPT|STYLE|NOSCRIPT|SVG|PATH)$/i.test(e.tagName));
     const byText = new Map<string, Element[]>();
@@ -135,7 +165,7 @@ export function startIdOverlay(): void {
     }
     const leafTexts = [...byText.keys()];
 
-    for (const row of rows) {
+    for (const row of rowsHere()) {
       const id = String(row.id);
       const sel = TEXT_SELECTORS[row.id];
       if (sel) {
@@ -143,23 +173,43 @@ export function startIdOverlay(): void {
         continue;
       }
       let count = 0;
-      for (const raw of segmentsOf(row)) {
-        const m = toMatcher(raw);
-        if (!m) continue;
-        let hits: Element[] = byText.get(m.alt) ?? byText.get(m.exact) ?? [];
-        if (hits.length === 0 && m.re) {
-          hits = leafTexts.filter((t) => m.re!.test(t)).flatMap((t) => byText.get(t) ?? []);
+      for (const wording of wordingOf(row)) {
+        const found: Element[] = [];
+        let matched = 0;
+        for (const raw of wording) {
+          const m = toMatcher(raw);
+          if (!m) continue;
+          let hits: Element[] = byText.get(m.alt) ?? byText.get(m.exact) ?? [];
+          if (hits.length === 0 && m.re) {
+            hits = leafTexts.filter((t) => m.re!.test(t)).flatMap((t) => byText.get(t) ?? []);
+          }
+          if (hits.length === 0 && m.exact.length >= 10) {
+            // Text inside a larger element (e.g. a sentence inside a paragraph).
+            hits = leafTexts.filter((t) => t.includes(m.exact)).flatMap((t) => byText.get(t) ?? []);
+            hits = hits.filter((e) => ![...e.children].some((c) => (textOf.get(c) ?? '').includes(m.exact)));
+          }
+          if (hits.length > 0) matched += 1;
+          found.push(...hits.slice(0, 3));
         }
-        if (hits.length === 0 && m.exact.length >= 10) {
-          // Text inside a larger element (e.g. a sentence inside a paragraph).
-          hits = leafTexts.filter((t) => t.includes(m.exact)).flatMap((t) => byText.get(t) ?? []);
-          hits = hits.filter((e) => ![...e.children].some((c) => (textOf.get(c) ?? '').includes(m.exact)));
-        }
-        for (const e of hits.slice(0, 3)) {
-          if (count >= 6) break;
-          claim(e, id, 'text');
-          count += 1;
-        }
+        // One line of a multi-line wording matching by chance (e.g. "THERE IS MORE") is not the row.
+        if (matched * 2 < wording.length) continue;
+        for (const e of found.slice(0, 6)) claim(e, id, 'text');
+        count = found.length;
+        if (count > 0) break;
+      }
+      // Rows that only appear after an action are not searched by clause: a common phrase on the
+      // page would be taken for them.
+      if (count > 0 || row.when.includes('操作後才出現') || row.when.includes('卡片圖片')) continue;
+      // A half-applied edit: find the line by its longest clause that is on the page.
+      const clauses = [...(row.next && classifyNext(row.next) === 'change' ? clausesOf(row.next) : []), ...clausesOf(row.text)].sort((a, b) => norm(b).length - norm(a).length);
+      for (const clause of clauses) {
+        const key = norm(clause);
+        if (key.length < 6) continue;
+        const hits = innermost(leafTexts.filter((k) => k.includes(key)).flatMap((k) => byText.get(k) ?? []));
+        if (hits.length === 0) continue;
+        // Take the whole heading / paragraph, not just the span that happens to hold the clause.
+        for (const e of hits.slice(0, 2)) claim(e.closest('h1,h2,h3,h4,p,li,blockquote,dd,dt,legend,label') ?? e, id, 'text');
+        break;
       }
     }
 
@@ -167,7 +217,16 @@ export function startIdOverlay(): void {
       if (spot.page !== 'all' && spot.page !== page) continue;
       for (const e of document.querySelectorAll(spot.sel)) if (!root.contains(e)) claim(e, spot.code, 'media');
     }
+
+    for (const [el, t] of targets) {
+      if (t.ids.size === 0) {
+        t.badge.remove();
+        t.box.remove();
+        targets.delete(el);
+      } else paintTarget(t);
+    }
     renderPanel();
+    for (const cb of listeners) cb();
   };
 
   // ---- positions ---------------------------------------------------------------------------
@@ -231,19 +290,21 @@ export function startIdOverlay(): void {
     setTimeout(() => t.box.classList.remove('is-flash'), 1800);
   };
 
+  const elementsOf = (id: string, kind: Target['kind'] = 'text') => [...targets.values()].filter((t) => t.kind === kind && t.ids.has(id)).map((t) => t.el);
+
   function renderPanel() {
     const q = search.value.trim().toLowerCase();
     toggle.textContent = `編號對照（${foundIds.size}）`;
     list.replaceChildren();
     const items: Array<{ id: string; title: string; text: string; st: { key: string; text: string }; el?: Element }> = [];
-    for (const row of rows) {
+    for (const row of rowsHere()) {
       const id = String(row.id);
-      const el = [...targets.values()].find((t) => t.kind === 'text' && t.ids.has(id))?.el;
+      const el = elementsOf(id)[0];
       items.push({ id, title: label(row), text: row.text.replace(/\s+/g, ' '), st: status(row, !!el), el });
     }
     for (const spot of MEDIA_SPOTS) {
       if (spot.page !== 'all' && spot.page !== page) continue;
-      const el = [...targets.values()].find((t) => t.kind === 'media' && t.ids.has(spot.code))?.el;
+      const el = elementsOf(spot.code, 'media')[0];
       items.push({ id: spot.code, title: spot.label, text: spot.hint, st: el ? { key: 'ok', text: '已標示' } : { key: 'later', text: '操作後才出現' }, el });
     }
     for (const it of items) {
@@ -277,6 +338,64 @@ export function startIdOverlay(): void {
   });
   search.addEventListener('input', renderPanel);
 
+  // ---- text for the review comparison --------------------------------------------------------
+  const walkText = (): string => {
+    const parts: string[] = [];
+    const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+      acceptNode: (n) => (n.parentElement?.closest('#idov-root, script, style, noscript') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT),
+    });
+    for (let n = w.nextNode(); n; n = w.nextNode()) parts.push(n.textContent ?? '');
+    return parts.join(' ');
+  };
+  const metaText = (): string => {
+    const meta = ['meta[name="description"]', 'meta[property="og:title"]', 'meta[property="og:description"]'].map((s) => document.querySelector(s)?.getAttribute('content') ?? '');
+    return [document.title, ...meta].join(' ');
+  };
+  const attrText = (): string => [...document.querySelectorAll('[placeholder],[aria-label],[title]')].filter((e) => !root.contains(e)).map((e) => [e.getAttribute('placeholder'), e.getAttribute('aria-label'), e.getAttribute('title')].filter(Boolean).join(' ')).join(' ');
+
+  // ---- sheet data ----------------------------------------------------------------------------
+  const loadSheet = async () => {
+    sheetState = { ...sheetState, loading: true, error: null };
+    for (const cb of listeners) cb();
+    try {
+      allRows = await fetchSheetRows();
+      sheetState = { source: 'live', error: null, loadedAt: new Date(), loading: false };
+    } catch (e) {
+      sheetState = { ...sheetState, error: e instanceof Error ? e.message : String(e), loading: false };
+    }
+    scan();
+  };
+
+  const ctx: OverlayCtx = {
+    page,
+    layer,
+    rows: () => allRows,
+    state: () => sheetState,
+    regionText: (id) => {
+      const els = elementsOf(id);
+      return els.length > 0 ? els.map((e) => e.textContent ?? '').join('\n') : null;
+    },
+    pageText: walkText,
+    hiddenText: () => `${metaText()} ${attrText()}`,
+    hasElement: (id) => elementsOf(id).length > 0,
+    focus: (id) => {
+      const el = elementsOf(id)[0];
+      if (!el) return false;
+      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      flash(el);
+      return true;
+    },
+    setPending: (ids) => {
+      pendingIds.clear();
+      for (const id of ids) pendingIds.add(id);
+      for (const t of targets.values()) paintTarget(t);
+    },
+    onScan: (cb) => {
+      listeners.push(cb);
+    },
+    reload: loadSheet,
+  };
+
   // ---- keep up with the page ---------------------------------------------------------------
   let timer = 0;
   let lastDialog: Element | null = null;
@@ -293,8 +412,10 @@ export function startIdOverlay(): void {
     }, 160);
   }).observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['open', 'hidden'] });
 
+  if (params.has('review')) startReview(ctx);
   scan();
   requestAnimationFrame(place);
+  void loadSheet();
 }
 
 startIdOverlay();

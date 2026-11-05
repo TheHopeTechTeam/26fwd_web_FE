@@ -1,6 +1,7 @@
 // Generated from the cloud sheet 「FORWARD2026_網站文字表」 (columns 編號 / 頁面 / 區段 / 出現方式 / 位置 /
 // 目前文字 / 備註), so reviewers can map a sheet row to the spot on the page. Review aid only (`?ids=1`).
 // Rows changed by the 11/04 FORWARD 卡 flow and BB's copy carry the wording now on the page.
+// This is the offline fallback: `?ids=1` / `?review=1` read the live sheet and use it when reachable.
 export type OverlayPage = 'home' | 'cards' | 'privacy' | 'all';
 
 export interface SheetRow {
@@ -12,6 +13,10 @@ export interface SheetRow {
   pos: string;
   text: string;
   note: string;
+  /** 想改成 / 填寫人 / 狀態: only present on rows read live from the sheet. */
+  next?: string;
+  who?: string;
+  status?: string;
 }
 
 export const SHEET_ROWS: SheetRow[] = [
