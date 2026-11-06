@@ -13,9 +13,10 @@
   display: flex;
   flex-direction: column;
   border-radius: var(--radius-full);
-  background: rgb(var(--rgb-base-deep) / 0.72);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+  /* Solid, so it reads on 米白 as well as 深褐 (11/04), in the printed card's lighter grey-brown
+     (11/06, the user's pick A). No backdrop blur: on phones a blurred fixed layer is redrawn on
+     every scrolled frame and made scrolling stutter (11/05). */
+  background: rgb(var(--rgb-card-brown));
   border: 1px solid var(--line);
 }
 
@@ -29,7 +30,7 @@
   width: 40px;
   min-height: 44px;
   padding: 10px 0;
-  color: var(--text-3);
+  color: var(--text-2);
   text-decoration: none;
   transition: color 0.25s var(--ease-standard);
 }
@@ -52,8 +53,11 @@
   line-height: 1;
 }
 
+/* Phones show the short names (感謝／期待／回應／奉獻) so the slim rail stays short (11/04);
+   desktop shows BB's full names instead. */
 .journey-rail__index,
-.journey-rail__en {
+.journey-rail__en,
+.journey-rail__zh {
   display: none;
 }
 
@@ -63,7 +67,7 @@
   height: 7px;
   border-radius: 50%;
   background: currentColor;
-  opacity: 0.55;
+  opacity: 0.75;
   transition:
     transform 0.3s var(--ease-out),
     opacity 0.3s var(--ease-standard);
@@ -88,48 +92,59 @@
   .journey-rail__list {
     padding: 10px 0;
     border-radius: var(--radius-md);
-    background: rgb(var(--rgb-base-deep) / 0.6);
   }
+  /* Text aligned left (11/04); the dots stay in one column on the right. */
   .journey-rail__item {
     flex-direction: row;
-    justify-content: flex-end;
+    justify-content: space-between;
     gap: 12px;
     width: auto;
     padding: 8px 16px 8px 18px;
   }
+  /* All rail text is bold (11/04). */
   .journey-rail__label {
     writing-mode: horizontal-tb;
     font-family: var(--font-mono);
-    font-weight: 400;
+    font-weight: 700;
     font-size: 0.625rem;
     letter-spacing: 0.14em;
     text-transform: uppercase;
     display: grid;
-    grid-template-columns: auto auto;
+    /* The number keeps its width; a long Chinese name below must not push the English apart. */
+    grid-template-columns: auto 1fr;
     align-items: baseline;
     column-gap: 8px;
-    text-align: right;
+    flex: 1;
+    text-align: left;
   }
   .journey-rail__index {
     display: inline;
     font-weight: 700;
-    opacity: 0.8;
+    opacity: 0.9;
   }
   .journey-rail__en {
     display: inline;
     font-size: 0.6875rem;
   }
+  .journey-rail__short {
+    display: none;
+  }
   .journey-rail__zh {
     display: block;
     grid-column: 1 / -1;
-    font-family: var(--font-body);
+    font-family: var(--font-heading-zh);
+    font-weight: 700;
     font-size: 0.75rem;
     letter-spacing: 0.1em;
     text-transform: none;
     margin-top: 4px;
-    opacity: 0.85;
+    opacity: 1;
   }
   .journey-rail__dot {
     order: 0;
+  }
+  /* No index on the Give stop, so its English name takes the whole first row. */
+  .journey-rail__item--give .journey-rail__en {
+    grid-column: 1 / -1;
   }
 }

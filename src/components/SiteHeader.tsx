@@ -1,10 +1,9 @@
 import { useEffect, useId, useRef, useState, type MouseEvent } from 'react';
-import logoUrl from '../assets/brand/hope-h-white.png';
-import { config, pageUrl } from '../config/env';
-import { CHAPTERS } from '../data/content';
+import logoUrl from '../assets/brand/the-hope-logo-white.png';
+import { pageUrl } from '../config/env';
+import { CHAPTERS, NAV_LABELS } from '../data/content';
 import { jumpToSection } from '../lib/scroll';
 import { GiveButton } from './GiveButton';
-import { MusicToggle } from './MusicToggle';
 import './SiteHeader.css';
 
 interface SiteHeaderProps {
@@ -56,7 +55,7 @@ export function SiteHeader({ progress = false, backLabel }: SiteHeaderProps) {
     const onPointer = (e: PointerEvent) => {
       if (!headerRef.current?.contains(e.target as Node)) setMenuOpen(false);
     };
-    const wide = window.matchMedia('(min-width: 960px)');
+    const wide = window.matchMedia('(min-width: 1180px)');
     const onWide = () => wide.matches && setMenuOpen(false);
     document.addEventListener('keydown', onKey);
     document.addEventListener('pointerdown', onPointer);
@@ -75,16 +74,20 @@ export function SiteHeader({ progress = false, backLabel }: SiteHeaderProps) {
 
   const links = (
     <ul className="site-nav__list">
-      {CHAPTERS.map((chapter) => (
+      {/* Numbered steps (網站文字表 #1): 1.感謝 / 2.期待 / 3.填寫 FORWARD 卡 / 4. 2026 回應牆 ↗ */}
+      {CHAPTERS.map((chapter, i) => (
         <li key={chapter.id}>
           <a href={onHome ? `#${chapter.id}` : pageUrl(`#${chapter.id}`)} onClick={(e) => followChapter(e, chapter.id)}>
-            {chapter.zh}
+            <span className="site-nav__num">{i + 1}.</span>
+            {NAV_LABELS[chapter.id]}
           </a>
         </li>
       ))}
       <li>
         <a href={pageUrl('cards/')} onClick={() => setMenuOpen(false)}>
-          卡片牆<span aria-hidden="true"> ↗</span>
+          <span className="site-nav__num">{CHAPTERS.length + 1}.</span>
+          {NAV_LABELS.wall}
+          <span aria-hidden="true"> ↗</span>
         </a>
       </li>
     </ul>
@@ -99,7 +102,8 @@ export function SiteHeader({ progress = false, backLabel }: SiteHeaderProps) {
       )}
       <div className="site-header__inner">
         <a className="site-header__brand" href={pageUrl()} aria-label="FORWARD 2026 首頁">
-          <img src={logoUrl} alt="" width="28" height="36" />
+          {/* The full H THE HOPE logo from the printed FORWARD 卡 (11/04), in white (11/06). */}
+          <img className="site-header__logo" src={logoUrl} alt="" width="164" height="24" />
           <span className="site-header__wordmark">
             {backLabel ? (
               <>
@@ -112,17 +116,19 @@ export function SiteHeader({ progress = false, backLabel }: SiteHeaderProps) {
             )}
           </span>
         </a>
-        {config.showPreviewBadge && (
-          <span className="site-header__badge" title="內容為合成示意資料，非正式上線內容">
-            <span className="site-header__badge-long">SYNTHETIC </span>PREVIEW
-          </span>
-        )}
         <nav className="site-nav" aria-label="主要">
           {links}
         </nav>
         <div className="site-header__actions">
-          <MusicToggle />
-          <GiveButton placement="header" label="參與奉獻" className="btn btn--gold btn--sm site-header__give" />
+          <GiveButton
+            placement="header"
+            label={
+              <>
+                參與奉獻<span aria-hidden="true">↗</span>
+              </>
+            }
+            className="btn btn--gold site-header__give"
+          />
           <button
             type="button"
             className="site-header__menu-btn"

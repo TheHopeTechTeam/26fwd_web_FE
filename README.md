@@ -30,7 +30,6 @@ npm run preview    # 預覽 build 結果
 | 右側旅程導覽（桌機／手機皆固定右側） | FEAT-01 / US-01 | `src/components/JourneyRail.tsx` |
 | 00 Hero＋右上常駐奉獻 | FEAT-02 / US-02 | `src/sections/Hero.tsx`, `src/components/SiteHeader.tsx` |
 | 01 Appreciate 同尺寸見證方格＋見證彈窗 | FEAT-03/04 / US-03/04 | `src/sections/Appreciate.tsx`, `src/data/testimonies.ts` |
-| 02 Transition 三情境＋手動播放音樂 | FEAT-05 / US-05 | `src/sections/Transition.tsx`, `public/audio/` |
 | 03 Anticipate 五項事工＋Count-up（Prayer Map 改為奉獻區後的外連，#19） | FEAT-06/07/12 / US-06/11 | `src/sections/Anticipate.tsx`, `src/data/content.ts` |
 | 04 Respond 寫卡表單 | FEAT-08 / US-07 | `src/sections/Respond.tsx` |
 | 卡片圖片下載／分享（1080×1080、1080×1920、三主題） | FEAT-10 / US-09 | `src/lib/canvasCard.ts` |
@@ -70,7 +69,6 @@ npm run preview    # 預覽 build 結果
 | 指令 | 產出 |
 | --- | --- |
 | `npm run assets:portraits` | 20 張合成插畫頭像 `public/synthetic/portraits/` |
-| `npm run assets:audio` | 三首自製測試音樂 `public/audio/*.m4a`（需 macOS `afconvert`） |
 | `npm run assets:font` | 中文標題子集字型 `src/assets/fonts/fwd-heading-tc.woff2`（標題文案改動後要重跑） |
 | `npm run assets:body-font` | 中文內文字型 Noto Serif TC，依字元切成約 100 個 woff2（`src/assets/fonts/noto-serif-tc/`、`src/styles/body-font.css`），瀏覽器只下載畫面上用到的字 |
 | `npm run assets:brand` | Logo、apple-touch-icon、OG 分享圖 |

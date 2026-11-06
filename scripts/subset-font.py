@@ -23,7 +23,7 @@ CJK = re.compile(r"[\u2E80-\u9FFF\uF900-\uFAFF\uFF00-\uFFEF\u3000-\u303F]")
 # Only text that is actually set in the heading face: .display-zh elements, the card
 # prompts, and the heading-like content fields. Buttons and body copy use the body font.
 CONTENT_FIELDS = {
-    "src/data/content.ts": r"(?:title|zh|headline|date):\s*'([^']*)'",
+    "src/data/content.ts": r"(?:title|zh|rail|name|headline|date|step|appreciate|anticipate|respond|wall):\s*'([^']*)'",
     "src/data/testimonies.ts": r"quote:\s*'([^']*)'",
     "src/lib/canvasCard.ts": r"(?:gratitude|anticipate):\s*'([^']*)'",
 }

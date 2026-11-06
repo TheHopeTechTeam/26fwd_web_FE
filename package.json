@@ -15,7 +15,6 @@
     "test": "vitest run",
     "check": "npm run typecheck && npm run test && npm run build",
     "assets:portraits": "node scripts/gen-portraits.mjs",
-    "assets:audio": "python3 scripts/gen-audio.py",
     "assets:font": "python3 scripts/subset-font.py",
     "assets:body-font": "python3 scripts/fetch-body-font.py",
     "assets:kv-fonts": "python3 scripts/convert-kv-fonts.py",

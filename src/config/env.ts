@@ -10,6 +10,8 @@ export interface AppConfig {
   turnstileSiteKey: string | null;
   prayerMapUrl: string;
   prayerMapPrivacyUrl: string;
+  /** No longer shown anywhere: the header's SYNTHETIC PREVIEW badge was removed on 11/06 (team
+   *  choice). Kept so existing deploy settings stay valid. */
   showPreviewBadge: boolean;
 }
 

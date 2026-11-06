@@ -8,7 +8,8 @@ html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   scroll-padding-top: var(--header-h);
-  background: var(--bg);
+  /* The image brown, so pulling past the top or the footer shows the same brown (11/04). */
+  background: rgb(var(--rgb-card-brown));
 }
 
 html.motion-ok {
@@ -18,7 +19,7 @@ html.motion-ok {
 body {
   margin: 0;
   min-height: 100svh;
-  background: var(--bg);
+  background: rgb(var(--rgb-card-brown));
   color: var(--text);
   font-family: var(--font-body);
   font-size: 1rem;
@@ -127,12 +128,6 @@ h3 {
   color: var(--accent-text);
 }
 
-.eyebrow-index {
-  font-family: var(--font-info);
-  font-weight: 800;
-  color: var(--accent-text);
-}
-
 .display-zh {
   font-family: var(--font-heading-zh);
   font-weight: 700;
@@ -145,6 +140,7 @@ h3 {
 }
 
 .lead {
+  white-space: pre-line; /* BB's leads break between sentences */
   font-size: clamp(1rem, 0.95rem + 0.35vw, 1.2rem);
   line-height: 1.8;
   color: var(--text-2);
