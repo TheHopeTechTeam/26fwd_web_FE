@@ -20,7 +20,7 @@ type Action = { id: string; next: 'approved' | 'hidden' | 'deleted'; from: CardS
 const ACTION_LABEL: Record<Action['next'], { verb: string; confirm: string; done: string }> = {
   approved: { verb: '核准公開', confirm: '確認公開這張 FORWARD 卡？', done: '已核准，FORWARD 卡將出現在2026 回應牆（快取最長約 15 秒）。' },
   hidden: { verb: '隱藏', confirm: '確認隱藏這張 FORWARD 卡？', done: '已隱藏，FORWARD 卡將從2026 回應牆移除（快取最長約 15 秒）。' },
-  deleted: { verb: '永久刪除', confirm: '確認永久刪除這張卡片？刪除後無法復原，卡片和它的 AI 判斷紀錄會一起刪除。', done: '已永久刪除。' },
+  deleted: { verb: '永久刪除', confirm: '確認永久刪除這張 FORWARD 卡？刪除後無法復原，它的 AI 判斷紀錄也會一起刪除。', done: '已永久刪除。' },
 };
 
 /**

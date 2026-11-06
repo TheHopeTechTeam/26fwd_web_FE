@@ -28,7 +28,7 @@ export function describeJudgment(moderation: AdminModeration | null | undefined,
     return { tone: 'none', label: '沒有 AI 判斷', note: `${byReviewer}送出時自動公開是關閉的，或判斷沒有完成。` };
   }
   if (moderation.outcome === 'clear') {
-    return { tone: 'clear', label: 'AI：沒有疑慮', note: `${byReviewer}判斷完成時，卡片已經被處理，或自動公開已經關閉，所以沒有自動公開。` };
+    return { tone: 'clear', label: 'AI：沒有疑慮', note: `${byReviewer}判斷完成時，這張 FORWARD 卡已經被處理，或自動公開已經關閉，所以沒有自動公開。` };
   }
   if (moderation.outcome === 'flagged') {
     const p = moderation.reason_probability;
