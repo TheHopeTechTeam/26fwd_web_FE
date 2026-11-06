@@ -3,6 +3,7 @@ import { ADMIN_TOKEN_MIN_LENGTH, api, ApiError, describeError, type AdminCard, t
 import { config, pageUrl } from '../../config/env';
 import { PROMPTS } from '../../lib/canvasCard';
 import { formatDateTime, relativeTime } from '../../lib/format';
+import { DELETE_WORD, deleteConfirmed } from './confirm';
 import { describeJudgment, percent } from './judgment';
 import './AdminPage.css';
 
@@ -19,7 +20,7 @@ type Action = { id: string; next: 'approved' | 'hidden' | 'deleted'; from: CardS
 const ACTION_LABEL: Record<Action['next'], { verb: string; confirm: string; done: string }> = {
   approved: { verb: '核准公開', confirm: '確認公開這張卡片？', done: '已核准，卡片將出現在 Hope Nation 回應牆（快取最長約 15 秒）。' },
   hidden: { verb: '隱藏', confirm: '確認隱藏這張卡片？', done: '已隱藏，卡片將從 Hope Nation 回應牆移除（快取最長約 15 秒）。' },
-  deleted: { verb: '永久刪除', confirm: '確認永久刪除這張卡片？卡片和它的 AI 判斷紀錄會一起刪除，無法復原。', done: '已永久刪除。' },
+  deleted: { verb: '永久刪除', confirm: '確認永久刪除這張卡片？刪除後無法復原，卡片和它的 AI 判斷紀錄會一起刪除。', done: '已永久刪除。' },
 };
 
 /**
@@ -120,7 +121,10 @@ function ReviewConsole({ token, onUnauthorized }: { token: string; onUnauthorize
   const [confirming, setConfirming] = useState<Action | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [message, setMessage] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null);
+  // What the reviewer typed to confirm a delete; it starts empty for every new confirm step.
+  const [typed, setTyped] = useState('');
   const confirmRef = useRef<HTMLButtonElement>(null);
+  const wordRef = useRef<HTMLInputElement>(null);
 
   const handleError = useCallback(
     (error: unknown): string => {
@@ -157,7 +161,8 @@ function ReviewConsole({ token, onUnauthorized }: { token: string; onUnauthorize
   }, [status, load]);
 
   useEffect(() => {
-    confirmRef.current?.focus();
+    setTyped('');
+    (confirming?.next === 'deleted' ? wordRef : confirmRef).current?.focus();
   }, [confirming]);
 
   const filtered = useMemo(() => {
@@ -167,7 +172,7 @@ function ReviewConsole({ token, onUnauthorized }: { token: string; onUnauthorize
   }, [items, query]);
 
   const run = async (action: Action) => {
-    if (busyId) return;
+    if (busyId || (action.next === 'deleted' && !deleteConfirmed(typed))) return;
     setBusyId(action.id);
     setMessage(null);
     const leave = (text: string) => {
@@ -264,12 +269,26 @@ function ReviewConsole({ token, onUnauthorized }: { token: string; onUnauthorize
                   {confirming?.id === card.id ? (
                     <div className="review__confirm">
                       <span>{ACTION_LABEL[confirming.next].confirm}</span>
+                      {confirming.next === 'deleted' && (
+                        <label className="review__confirm-word">
+                          請輸入「{DELETE_WORD}」兩個字
+                          <input
+                            ref={wordRef}
+                            type="text"
+                            autoComplete="off"
+                            spellCheck={false}
+                            value={typed}
+                            onChange={(e) => setTyped(e.target.value)}
+                            disabled={busyId === card.id}
+                          />
+                        </label>
+                      )}
                       <button
                         ref={confirmRef}
                         type="button"
                         className={`btn btn--sm ${confirming.next === 'approved' ? 'btn--gold' : 'btn--danger'}`}
                         onClick={() => void run(confirming)}
-                        disabled={busyId === card.id}
+                        disabled={busyId === card.id || (confirming.next === 'deleted' && !deleteConfirmed(typed))}
                       >
                         {busyId === card.id ? <span className="spinner" /> : '確認'}
                       </button>
