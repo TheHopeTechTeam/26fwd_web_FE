@@ -1,0 +1,330 @@
+/* Testimony playlist (11/05, the 混合版 mockup): the big player, with the playlist's videos
+   beside it on wide screens and in a sideways-scrolling row under it on phones. */
+.video-playlist {
+  max-width: 960px;
+  margin: 0 auto clamp(48px, 7svh, 80px);
+}
+
+.video-playlist.has-list {
+  max-width: none;
+}
+
+.video-playlist__frame {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: rgb(var(--rgb-card-brown));
+  box-shadow: var(--shadow-card);
+}
+
+.video-playlist__player,
+.video-playlist__frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.video-playlist__player iframe {
+  position: static;
+}
+
+/* Until play: the printed FORWARD 卡's ground, then the video's own still once it is known. */
+.video-playlist__cover {
+  --focus: var(--accent-bright);
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: rgb(var(--rgb-card-brown)) url('../assets/card/forward-card-bg.webp') center / cover no-repeat;
+  color: rgb(var(--rgb-white));
+  font: inherit;
+  cursor: pointer;
+}
+
+.video-playlist__still {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Darkens the lower part so the caption reads on any still. */
+.video-playlist__cover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 45%, rgba(0, 0, 0, 0.7) 100%);
+}
+
+.video-playlist__play {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: clamp(64px, 8vw, 92px);
+  height: clamp(64px, 8vw, 92px);
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  transition: transform 0.3s var(--ease-out);
+}
+
+/* The triangle, drawn with borders so it scales with the button. */
+.video-playlist__play::after {
+  content: '';
+  margin-left: 12%;
+  border-left: calc(var(--play, 1) * clamp(20px, 2.6vw, 28px)) solid rgb(var(--rgb-earth));
+  border-top: calc(var(--play, 1) * clamp(12px, 1.6vw, 17px)) solid transparent;
+  border-bottom: calc(var(--play, 1) * clamp(12px, 1.6vw, 17px)) solid transparent;
+}
+
+.video-playlist__cover:hover .video-playlist__play,
+.video-playlist__cover:focus-visible .video-playlist__play {
+  transform: scale(1.06);
+}
+
+.video-playlist__caption {
+  position: absolute;
+  z-index: 1;
+  left: clamp(16px, 3vw, 32px);
+  right: clamp(16px, 3vw, 32px);
+  bottom: clamp(14px, 2.4vw, 26px);
+  display: grid;
+  gap: 4px;
+  text-align: left;
+}
+
+.video-playlist__kicker {
+  font-family: var(--font-heading-zh);
+  font-weight: 700;
+  font-size: 0.875rem;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+}
+
+/* Titles come from YouTube, so they use the body face (full character set). */
+.video-playlist__title {
+  font-weight: 700;
+  font-size: clamp(1rem, 0.85rem + 0.8vw, 1.5rem);
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+/* ── The list ── */
+.video-playlist__aside {
+  margin-top: 20px;
+}
+
+.video-playlist__list-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 10px;
+  font-family: var(--font-heading-zh);
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.06em;
+}
+
+.video-playlist__list-head span {
+  font-family: var(--font-info);
+  font-size: 0.875rem;
+  color: var(--text-3);
+}
+
+/* Phones and tablets: one row that scrolls sideways; the next card peeks in at the edge. */
+.video-playlist__list {
+  position: relative; /* items measure their offset from the list */
+  list-style: none;
+  margin: 0;
+  padding: 0 0 6px;
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+}
+
+.video-playlist__list > li {
+  flex: 0 0 min(64%, 260px);
+  scroll-snap-align: start;
+}
+
+/* More videos past the edge: that edge fades out, so the list reads as scrollable. */
+.video-playlist__list.has-more {
+  -webkit-mask-image: linear-gradient(90deg, #000 78%, transparent);
+  mask-image: linear-gradient(90deg, #000 78%, transparent);
+}
+
+.video-playlist__item {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+  padding: 8px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color 0.2s var(--ease-standard),
+    border-color 0.2s var(--ease-standard);
+}
+
+.video-playlist__item:hover {
+  background: rgb(var(--rgb-light) / 0.06);
+}
+
+/* The video in the big player: a light 金黃 card, as in the mockup. */
+.video-playlist__item.is-current {
+  background: rgb(var(--rgb-accent) / 0.22);
+  border-color: rgb(var(--rgb-accent) / 0.75);
+}
+
+.video-playlist__thumb {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: rgb(var(--rgb-card-brown));
+}
+
+.video-playlist__thumb img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.video-playlist__play--sm {
+  --play: 0.45;
+  width: 32px;
+  height: 32px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.video-playlist__item-text {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  min-width: 0;
+}
+
+/* Always two lines tall: titles arrive after the list and may need two (11/06). */
+.video-playlist__item-title {
+  min-height: 2.8em;
+  font-weight: 700;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+/* The blank cards that hold the list's place while the playlist loads. */
+.video-playlist__item.is-placeholder {
+  cursor: default;
+}
+
+.video-playlist__item.is-placeholder .video-playlist__thumb {
+  background: rgb(var(--rgb-light) / 0.08);
+}
+
+.video-playlist__item.is-placeholder:hover {
+  background: none;
+}
+
+.video-playlist__now {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--accent-text);
+}
+
+.video-playlist__note {
+  margin-top: 12px;
+}
+
+@media (max-width: 599px) {
+  .video-playlist__kicker {
+    font-size: 0.75rem;
+  }
+  .video-playlist__title {
+    -webkit-line-clamp: 1;
+  }
+}
+
+/* Wide screens: the list stands beside the player, as tall as it, and scrolls inside. */
+@media (min-width: 900px) {
+  .video-playlist.has-list .video-playlist__body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(280px, 27vw, 340px);
+    gap: 24px;
+  }
+
+  .video-playlist.has-list .video-playlist__aside {
+    /* Takes the player's height instead of growing the row. */
+    contain: size;
+    display: flex;
+    flex-direction: column;
+    margin-top: 0;
+  }
+
+  .video-playlist__list {
+    flex: 1;
+    min-height: 0;
+    flex-direction: column;
+    gap: 6px;
+    padding: 0 4px 0 0;
+    overflow-x: visible;
+    overflow-y: auto;
+    scroll-snap-type: none;
+  }
+
+  .video-playlist__list > li {
+    flex: none;
+  }
+
+  .video-playlist__list.has-more {
+    -webkit-mask-image: linear-gradient(180deg, #000 82%, transparent);
+    mask-image: linear-gradient(180deg, #000 82%, transparent);
+  }
+
+  /* A slim 金黃 scrollbar where the browser shows one. */
+  .video-playlist__list {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--rgb-accent) / 0.7) transparent;
+  }
+
+  .video-playlist__item {
+    grid-template-columns: 120px minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .video-playlist__play,
+  .video-playlist__item {
+    transition: none;
+  }
+}

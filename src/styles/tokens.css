@@ -74,6 +74,16 @@
   --rgb-text-2: 222 213 205; /* #ded5cd warm 淺灰 */
   --rgb-text-3: 214 204 196; /* #d6ccc4 one step dimmer (≥ 4.5:1 on raised) */
   --rgb-card-sand: 246 237 207; /* #f6edcf card wall tint (金黃) */
+  /* The five page grounds of Comms' printed testimony book (D區見證 印刷完稿, 11/06), used in turn
+     behind an opened story. */
+  --rgb-story-grey: 239 239 239; /* #efefef 淺灰 */
+  --rgb-story-slate: 130 142 158; /* #828e9e 深藍灰 */
+  --rgb-story-blue-grey: 181 190 195; /* #b5bec3 淺藍灰 */
+  --rgb-story-gold: 233 213 146; /* #e9d592 金黃 */
+  --rgb-story-taupe: 152 136 131; /* #988883 灰褐 */
+  /* The printed outreach panels' grounds (11/06), used for the partner tabs as printed. */
+  --rgb-print-gold: 218 186 99; /* #daba63 */
+  --rgb-print-navy: 41 67 92; /* #29435c */
   /* Status colours are functional, not brand; they normally stay as they are. */
   --rgb-danger: 255 154 140; /* #ff9a8c on dark (lightened from #ff8a7a for the raised surfaces) */
   --rgb-danger-on-light: 179 38 30; /* #b3261e */
@@ -135,16 +145,18 @@
 
   --header-h: 64px;
   --pad-x: clamp(16px, 5vw, 64px);
-  /* Room kept clear on the right for the fixed journey rail (FEAT-01). None at any width
-     since 11/04 (team choice): content stays centred and the rail floats over the right
-     edge where the margin is too narrow, as it already did on phones (10/30). */
-  --rail-space: 0px;
+  /* Room kept clear on the right for the fixed journey rail (FEAT-01), so the rail never
+     covers content (11/05, team choice; replaces the centred layout of 11/04). Phones and
+     tablets: the 42px capsule 6px from the edge, plus a gap. */
+  --rail-space: 56px;
   --content-max: 1200px;
 }
 
 @media (min-width: 1100px) {
   :root {
     --header-h: 72px;
+    /* The labelled rail: about 160px wide, 24px from the edge, plus a gap. */
+    --rail-space: 208px;
   }
 }
 

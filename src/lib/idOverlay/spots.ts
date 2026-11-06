@@ -43,7 +43,6 @@ export const MEDIA_SPOTS: MediaSpot[] = [
   { code: 'MED-040', label: '見證彈窗・人物肖像', hint: '彈窗內的人物照片', page: 'home', sel: 'dialog img[alt$="的示意肖像"]' },
   { code: 'MED-041', label: '見證影片', hint: '彈窗內的影片（選填）', page: 'home', sel: 'dialog iframe, dialog video' },
   { code: 'MED-050～055', label: '五大事工圖像', hint: '目前為示意插畫', page: 'home', sel: '.ministry__media' },
-  { code: 'MED-020', label: '背景音樂（音檔）', hint: '目前為測試音樂', page: 'all', sel: '.music-toggle' },
   { code: 'MED-073', label: '宣告版外框與 Header 設計', hint: '三種示範配色與外框', page: 'home', sel: '.declarations' },
   { code: 'MED-070／071／073', label: '成果卡圖片（1:1／9:16）', hint: '由網站依使用者輸入產生', page: 'home', sel: '.card-result__preview' },
   { code: 'MED-090', label: 'Prayer Map 按鈕視覺', hint: '目前為文字按鈕，無額外圖示', page: 'home', sel: '.finale__prayer-link' },

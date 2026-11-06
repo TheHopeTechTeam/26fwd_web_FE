@@ -49,21 +49,83 @@
   font-family: var(--font-heading-zh);
 }
 
+/* Date, then the two English-led lines, as one lockup (11/06): the date smaller, with a short
+   金黃 rule after it. */
 .hero__date {
-  margin-top: clamp(16px, 2.5svh, 24px);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  /* Phones: a clear break after 「2026 FORWARD 系列講道」, at least two blank lines (11/06).
+     Wider screens set 0 below (the title is in the KV there). */
+  margin-top: 56px;
   font-family: var(--font-info);
   font-weight: 700;
-  font-size: clamp(1.25rem, 1rem + 1.2vw, 2rem);
+  font-size: clamp(1.125rem, 0.9rem + 0.8vw, 1.5rem);
   color: var(--accent);
 }
 
+.hero__date::after {
+  content: '';
+  width: 56px;
+  height: 2px;
+  background: rgb(var(--rgb-accent) / 0.7);
+}
+
+/* Phones: each English word over its Chinese. Wider: the English in its own column, the
+   Chinese beside it on the same baseline. The Chinese is one size throughout. */
 .hero__lead {
-  margin-top: clamp(12px, 2svh, 20px);
-  max-width: 28em;
-  font-size: clamp(1rem, 0.9rem + 0.5vw, 1.25rem);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: 2px;
+  margin-top: 18px;
   font-weight: 700;
-  line-height: 1.8;
+  line-height: 1.65;
   color: var(--text);
+}
+
+.hero__lead-en {
+  margin-top: 26px; /* phones: room above ANTICIPATE, so the two lines read as two groups */
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 2rem;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  color: var(--accent);
+}
+
+.hero__lead-en:first-child {
+  margin-top: 0;
+}
+
+.hero__lead-zh {
+  font-size: 1rem;
+}
+
+@media (min-width: 700px) {
+  .hero__lead {
+    --lead-en: clamp(2.25rem, 1.6rem + 1.6vw, 2.75rem);
+    --lead-zh: clamp(1.0625rem, 0.95rem + 0.4vw, 1.375rem);
+    grid-template-columns: max-content minmax(0, 30em);
+    column-gap: 24px;
+    row-gap: 18px;
+    align-items: baseline;
+    margin-top: 22px;
+  }
+
+  .hero__lead-en {
+    margin-top: 0;
+    font-size: var(--lead-en);
+  }
+
+  /* On a shared baseline the Chinese looks low beside the tall capitals, so it moves up until
+     the middle of its first line meets the middle of the English letters (11/06). The factors
+     are where each font's glyphs are centred above the baseline: 0.35em for the display
+     capitals, 0.385em for the Chinese. */
+  .hero__lead-zh {
+    position: relative;
+    top: calc(var(--lead-zh) * 0.385 - var(--lead-en) * 0.35);
+    font-size: var(--lead-zh);
+  }
 }
 
 .hero__actions {
@@ -94,46 +156,31 @@
   }
 }
 
-/* Wide screens: date and lead on the left, the CTA and music prompt on the right, so the
-   band under the KV stays short instead of stacking everything down the left edge. */
+/* Wide screens: a shorter band under the KV. */
 @media (min-width: 900px) {
   .hero {
     padding-bottom: clamp(40px, 6svh, 72px);
   }
 
   .hero__content {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    column-gap: 48px;
     margin-top: clamp(28px, 3vw, 44px);
-  }
-
-  .hero__date,
-  .hero__lead {
-    grid-column: 1;
-  }
-
-  .hero__actions {
-    grid-column: 2;
-    grid-row: 1 / span 2;
-    align-self: center;
-    justify-self: end;
-    margin-top: 0;
-  }
-
-  .hero__music {
-    grid-column: 2;
-    grid-row: 3;
-    justify-self: end;
   }
 }
 
 @media (max-width: 699px) {
   .hero {
     display: flex;
-    align-items: flex-end;
+    align-items: flex-start;
     /* Leaves a sliver of the Appreciate opening visible below the fold. */
     min-height: calc(100svh - 56px);
+  }
+
+  /* The title sits a fixed distance under the header (11/06). Anchored to the bottom, it moved
+     whenever the block above the fold changed height (a font arriving, the screen height), which
+     on iPhones looked like the text being pushed down as you began to scroll. The distance keeps
+     it where it was on a 390px phone, below the bright stage in the photo. */
+  .hero__content {
+    margin-top: clamp(140px, 47vw, 210px);
   }
 
   .hero__kv {
@@ -168,8 +215,7 @@
 /* Entrance: staggered rise, only when motion is welcome. */
 html.motion-ok .hero__title,
 html.motion-ok .hero__date,
-html.motion-ok .hero__lead,
-html.motion-ok .hero__actions {
+html.motion-ok .hero__lead {
   animation: hero-rise 1.1s var(--ease-out) both;
 }
 html.motion-ok .hero__date {
@@ -178,84 +224,10 @@ html.motion-ok .hero__date {
 html.motion-ok .hero__lead {
   animation-delay: 0.24s;
 }
-html.motion-ok .hero__actions {
-  animation-delay: 0.36s;
-}
 
 @keyframes hero-rise {
   from {
     opacity: 0;
     transform: translateY(32px);
-  }
-}
-
-/* Listen-along prompt under the CTA: quieter than the button, same player as the header. */
-.hero__music {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 14px;
-  margin-top: 14px;
-  font-size: 0.9375rem;
-}
-
-.hero__music-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 48px;
-  padding: 6px 18px 6px 6px;
-  border: 1px solid rgb(var(--rgb-accent) / 0.6);
-  border-radius: var(--radius-full);
-  background: rgb(var(--rgb-accent) / 0.08);
-  color: var(--text);
-  font: inherit;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background-color 0.2s var(--ease-standard), border-color 0.2s var(--ease-standard);
-}
-
-.hero__music-btn:hover,
-.hero__music-btn[aria-pressed='true'] {
-  border-color: var(--accent);
-  background: rgb(var(--rgb-accent) / 0.16);
-}
-
-.hero__music-label {
-  text-align: left;
-}
-
-.hero__music-label > span {
-  white-space: nowrap;
-}
-
-/* 金黃 disc with the note (or pause bars), so it reads as a play control. */
-.hero__music-icon {
-  display: inline-grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: var(--accent);
-  color: var(--ink);
-  font-size: 0.875rem;
-}
-
-.hero__music-hint {
-  color: var(--text-3);
-  font-size: 0.875rem;
-}
-
-/* Phones: a blank line's room under the lead, and a smaller Start button in proportion
-   with the music pill below it. */
-@media (max-width: 699px) {
-  .hero__actions {
-    margin-top: calc(clamp(24px, 4svh, 40px) + 1.8em);
-  }
-
-  .hero__actions .btn--lg {
-    min-height: 48px;
-    padding: 0.65em 1.5em;
-    font-size: 1rem;
   }
 }

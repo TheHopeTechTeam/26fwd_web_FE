@@ -128,12 +128,6 @@ h3 {
   color: var(--accent-text);
 }
 
-.eyebrow-index {
-  font-family: var(--font-info);
-  font-weight: 800;
-  color: var(--accent-text);
-}
-
 .display-zh {
   font-family: var(--font-heading-zh);
   font-weight: 700;

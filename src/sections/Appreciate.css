@@ -12,14 +12,30 @@
 }
 
 /* Larger chapter label, number included (10/29). */
+/* Chapter label (11/06): the FORWARD display face, with the step name (第一步…) in a 金黃 pill
+   so it stands out on both the light and the dark sections. */
 .chapter__head .kicker {
-  font-size: clamp(0.875rem, 0.8rem + 0.35vw, 1.0625rem);
-  font-weight: 600;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1rem, 0.85rem + 0.6vw, 1.375rem);
+  letter-spacing: 0.06em;
   color: var(--chapter-label);
 }
 
-.chapter__head .kicker .eyebrow-index {
-  color: inherit;
+.chapter-step {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3em 0.9em;
+  border-radius: var(--radius-full);
+  background: var(--accent);
+  color: var(--ink);
+  font-family: var(--font-heading-zh);
+  font-size: 0.85em;
+  letter-spacing: 0.12em;
 }
 
 .chapter__title {
@@ -57,10 +73,12 @@
   }
 }
 
-/* A new batch fades in, one frame after another. Frames in a row share one height. */
+/* A new batch fades in, one frame after another. Frames in a row share one height. The fill
+   is backwards only: once in, the frames are let go instead of being held on the last frame,
+   which kept iPhone Safari treating them as animating while scrolling (11/06). */
 .polaroid-wall > li {
   display: grid;
-  animation: polaroid-in 0.45s var(--ease-out) both;
+  animation: polaroid-in 0.45s var(--ease-out) backwards;
   animation-delay: calc(var(--i, 0) * 40ms);
 }
 
@@ -135,8 +153,10 @@
   overflow: hidden;
   white-space: pre-line;
   font-size: 0.875rem;
+  font-weight: 500;
   line-height: 1.55;
-  color: rgb(var(--rgb-base) / 0.78);
+  /* Full 深褐 on the white frame (11/05: the lighter brown was hard to read). */
+  color: rgb(var(--rgb-base));
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -179,6 +199,32 @@
   background: rgb(var(--rgb-card-brown)) url('../assets/card/forward-card-bg-tile.webp') center top / 100% auto repeat-y;
 }
 
+/* An opened story (11/06): one of the printed testimony book's five grounds, in turn (not matched
+   to the person), plain without texture, with the story on white. */
+.testimony-modal .modal__panel {
+  background: rgb(var(--story-ground, var(--rgb-story-grey)));
+}
+
+.story-ground-0 {
+  --story-ground: var(--rgb-story-grey);
+}
+.story-ground-1 {
+  --story-ground: var(--rgb-story-slate);
+}
+.story-ground-2 {
+  --story-ground: var(--rgb-story-blue-grey);
+}
+.story-ground-3 {
+  --story-ground: var(--rgb-story-gold);
+}
+.story-ground-4 {
+  --story-ground: var(--rgb-story-taupe);
+}
+
+.testimony-modal .testimony__body {
+  background: rgb(var(--rgb-white));
+}
+
 /* 「看全部」 dialog: 2, then 3, then 4 across, like the wall. */
 .testimony-all {
   display: grid;
@@ -218,49 +264,44 @@
   font-weight: 600;
 }
 
-.appreciate__note {
-  margin-top: 28px;
-}
-
 /* Testimony modal */
 .testimony {
   display: grid;
   gap: 0;
 }
 
+/* The photo stays a small polaroid beside the story (11/05: a photo stretched to the story's
+   height looked too big); it never grows with the text. */
 .testimony__media {
-  position: relative;
-  background: var(--paper);
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  overflow: hidden;
+  justify-self: center;
+  align-self: start;
+  margin-top: clamp(28px, 5vw, 44px);
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  background: rgb(var(--rgb-white));
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
+  transform: rotate(-1.5deg);
 }
 
 .testimony__media img {
-  width: 100%;
+  display: block;
+  width: clamp(140px, 40vw, 180px);
   height: auto;
-  max-height: 42svh;
-  object-fit: cover;
   aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 3px;
 }
 
-.testimony__synthetic {
-  position: absolute;
-  left: 12px;
-  bottom: 12px;
-  padding: 4px 10px;
-  border-radius: var(--radius-full);
-  background: rgb(var(--rgb-base-deep) / 0.8);
-  color: var(--text);
-  font-family: var(--font-mono);
-  font-size: 0.625rem;
-  letter-spacing: 0.14em;
-}
-
+/* The story sits on a light card over the ground (11/05; white since 11/06, as in the printed
+   book); .tone-light turns its text dark. */
 .testimony__body {
   display: grid;
   gap: 16px;
   align-content: start;
-  padding: clamp(24px, 4vw, 44px);
+  margin: clamp(20px, 4vw, 28px) clamp(12px, 3vw, 20px) clamp(12px, 3vw, 20px);
+  padding: clamp(22px, 4vw, 40px);
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
 }
 
 .testimony__name {
@@ -299,18 +340,21 @@
 
 @media (min-width: 820px) {
   .testimony {
-    grid-template-columns: minmax(260px, 38%) 1fr;
+    grid-template-columns: auto 1fr;
   }
+  /* Stays in view while the story scrolls beside it. */
   .testimony__media {
-    border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+    position: sticky;
+    top: 56px;
+    margin: 56px 0 0 clamp(28px, 4vw, 44px);
   }
   .testimony__media img {
-    height: 100%;
-    max-height: none;
-    aspect-ratio: auto;
+    width: 220px;
   }
+  /* Below the close button, beside the photo; scrolls inside when the story is long. */
   .testimony__body {
-    max-height: calc(100svh - 64px);
+    margin: 64px 28px 28px 32px;
+    max-height: calc(100svh - 64px - 92px);
     overflow-y: auto;
     overscroll-behavior: contain;
   }

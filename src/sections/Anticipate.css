@@ -82,6 +82,160 @@
   stroke: var(--art-ink, var(--accent-bright));
 }
 
+/* Ministry photo carousel (11/05): photos crossfade in a 4:3 frame; arrows on the sides, the
+   count and 暫停 in a small bar at the bottom. Sideways swipes change the photo on touch screens. */
+.ministry-carousel {
+  position: relative;
+  touch-action: pan-y;
+}
+
+.ministry-carousel__slides {
+  position: relative;
+  aspect-ratio: 4 / 3;
+}
+
+.ministry-carousel__slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.9s var(--ease-standard);
+}
+
+.ministry-carousel__slide.is-active {
+  opacity: 1;
+}
+
+.ministry-carousel__slide img,
+.ministry-carousel__slide .ministry-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ministry-carousel__arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin-top: -20px;
+  padding: 0 0 3px;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(var(--rgb-base-deep) / 0.6);
+  color: rgb(var(--rgb-white));
+  font: inherit;
+  font-size: 1.75rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.2s var(--ease-standard);
+}
+
+.ministry-carousel__arrow:hover {
+  background: rgb(var(--rgb-base-deep) / 0.85);
+}
+
+.ministry-carousel__arrow--prev {
+  left: 10px;
+}
+
+.ministry-carousel__arrow--next {
+  right: 10px;
+}
+
+.ministry-carousel__bar {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 6px;
+  border-radius: var(--radius-full);
+  background: rgb(var(--rgb-base-deep) / 0.6);
+  transform: translateX(-50%);
+}
+
+/* The partners' short sets: 24px tap targets around a small dot; the current one is a longer
+   金黃 bar. */
+.ministry-carousel__dot {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.ministry-carousel__dot::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: rgb(var(--rgb-white) / 0.6);
+  transition:
+    width 0.3s var(--ease-out),
+    background-color 0.3s var(--ease-standard);
+}
+
+.ministry-carousel__dot.is-active::before {
+  width: 18px;
+  background: var(--accent);
+}
+
+/* The ministries: where you are in the set, 「3／18」 (11/06). */
+.ministry-carousel__count {
+  padding: 0 8px;
+  font-family: var(--font-info);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  color: rgb(var(--rgb-white));
+}
+
+/* In a partner tab: the photo frame's wider shape and smaller corners. */
+.ministry-carousel--partner {
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+}
+
+.ministry-carousel--partner .ministry-carousel__slides {
+  aspect-ratio: 16 / 10;
+}
+
+.ministry-carousel__pause {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 24px;
+  margin-left: 2px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: rgb(var(--rgb-white));
+  font: inherit;
+  font-size: 0.625rem;
+  cursor: pointer;
+}
+
+/* The placeholder note moves to the top so it clears the bar. */
+.ministry-carousel .ministry__art-note {
+  top: 12px;
+  bottom: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ministry-carousel__slide,
+  .ministry-carousel__dot::before {
+    transition: none;
+  }
+}
+
 .ministry__art-note {
   position: absolute;
   right: 12px;
@@ -141,7 +295,8 @@
 
 .ministry__stats {
   display: grid;
-  grid-template-columns: repeat(var(--stat-cols, 3), minmax(0, 1fr)); /* equal widths (11/04) */
+  /* Equal widths (11/04), except a one-line label's column (--stat-tracks, 11/06). */
+  grid-template-columns: var(--stat-tracks, repeat(var(--stat-cols, 3), minmax(0, 1fr)));
   gap: 22px clamp(28px, 5vw, 64px);
   margin: 12px 0 0;
   padding-top: 20px;
@@ -155,15 +310,29 @@
   }
 }
 
+/* Number on top of its label; the numbers line up even when a label runs longer (11/06). */
 .ministry__stat {
   display: flex;
   flex-direction: column-reverse;
+  justify-content: flex-end;
   gap: 6px;
 }
 
 .ministry__stat dt {
   font-size: 0.8125rem;
   color: var(--text-3);
+}
+
+.ministry__stat dt.is-one-line {
+  white-space: nowrap;
+}
+
+/* A one-line label is too long for half a phone, so there it wraps into two even lines (11/06). */
+@media (max-width: 479px) {
+  .ministry__stat dt.is-one-line {
+    white-space: normal;
+    text-wrap: balance;
+  }
 }
 
 .ministry__stat dd {
@@ -198,6 +367,75 @@
   font-family: var(--font-heading-zh);
   font-weight: 700;
   font-size: 1.125rem;
+}
+
+/* Phones (11/06, the user's choice): a full-width bar per partner with a 金黃 or 深藍 strip;
+   the open bar takes its colour and runs into its story below. */
+.partners__list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.partners__bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 58px;
+  padding: 14px 18px 14px 22px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: rgb(var(--rgb-light) / 0.07);
+  color: var(--text);
+  font: inherit;
+  font-family: var(--font-heading-zh);
+  font-weight: 700;
+  font-size: 1.0625rem;
+  text-align: left;
+  cursor: pointer;
+  scroll-margin-top: calc(var(--header-h) + 12px);
+  transition: background-color 0.2s var(--ease-standard);
+}
+
+.partners__bar::before {
+  content: '';
+  position: absolute;
+  inset: 12px auto 12px 0;
+  width: 5px;
+  border-radius: 0 4px 4px 0;
+  background: rgb(var(--partner-ground));
+}
+
+.partners__bar-icon {
+  flex: none;
+  font-size: 1.25rem;
+  line-height: 1;
+  opacity: 0.8;
+  transition: transform 0.25s var(--ease-standard);
+}
+
+.partners__entry.is-open .partners__bar {
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  background: rgb(var(--partner-ground));
+  color: var(--partner-ink);
+}
+
+.partners__entry.is-open .partners__bar::before {
+  display: none;
+}
+
+/* ＋ turns into × while open. */
+.partners__entry.is-open .partners__bar-icon {
+  transform: rotate(45deg);
+}
+
+.partners--accordion .partners__panel {
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
 }
 
 .partners__tabs {
@@ -240,8 +478,29 @@
 
 .partners__tab.is-on {
   border-color: transparent;
-  background: var(--paper);
-  color: var(--ink);
+  background: rgb(var(--partner-ground, var(--rgb-paper)));
+  color: var(--partner-ink, var(--ink));
+}
+
+/* On 深藍, the open tab and the panel turn their text light. */
+.partners__panel--navy {
+  color: rgb(var(--rgb-white));
+}
+
+.partners__panel--navy .partners__title,
+.partners__panel--navy .partners__body,
+.partners__panel--navy .partners__body p {
+  color: rgb(var(--rgb-white));
+}
+
+.partners__panel--navy .partners__mark {
+  color: rgb(var(--rgb-white) / 0.14);
+}
+
+.partners__panel--navy .partners__photo {
+  border-color: rgb(var(--rgb-white) / 0.35);
+  background: rgb(var(--rgb-white) / 0.08);
+  color: rgb(var(--rgb-white) / 0.8);
 }
 
 .partners__tab.is-on::before {
@@ -249,7 +508,7 @@
   position: absolute;
   inset: 0 0 auto;
   height: 5px;
-  background: var(--accent);
+  background: var(--accent-dim); /* shows on the 金黃 ground as well */
 }
 
 .partners__tab:focus-visible {
@@ -258,19 +517,76 @@
 
 .partners__panel {
   --focus: var(--ink);
+  container-type: inline-size;
   display: grid;
   gap: clamp(20px, 3vw, 40px);
   padding: clamp(20px, 3vw, 36px);
   border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md);
-  background: var(--paper);
+  background: rgb(var(--partner-ground, var(--rgb-paper)));
   color: var(--ink);
 }
 
 @media (min-width: 760px) {
   .partners__panel {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr);
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      'media text'
+      'mark text';
     align-items: start;
   }
+  .partners__media {
+    grid-area: media;
+  }
+  .partners__text {
+    grid-area: text;
+  }
+  /* Wide screens: in the space under the photo, down at the panel's bottom edge, sized so the
+     name fills that column on one line. */
+  .partners__mark {
+    grid-area: mark;
+    align-self: end;
+    justify-self: start;
+    font-size: min(4rem, 36cqi / var(--mark-chars, 4));
+  }
+  /* Under the photo but flush right, the lines too (伯大尼). */
+  .partners__panel--mark-end .partners__mark {
+    justify-self: end;
+    justify-items: end;
+  }
+  /* Under the story instead, at the bottom right (a tall photo fills its column). */
+  .partners__panel--mark-story {
+    grid-template-areas:
+      'media text'
+      'media mark';
+  }
+  .partners__panel--mark-story .partners__mark {
+    justify-self: end;
+    font-size: min(4rem, 54cqi / var(--mark-chars, 4));
+  }
+}
+
+/* The partner's name as large faint lettering (11/06), after the printed panels: always one
+   line, smaller for a longer name. On phones it closes the panel at the bottom right. */
+.partners__mark {
+  display: grid;
+  justify-self: end;
+  margin: 0;
+  font-family: var(--font-heading-zh);
+  font-weight: 700;
+  font-size: min(3.5rem, 82cqi / var(--mark-chars, 4));
+  line-height: 1.08;
+  white-space: nowrap;
+  letter-spacing: 0.04em;
+  color: rgb(var(--rgb-base) / 0.12);
+  user-select: none;
+}
+
+.partners__img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-sm);
 }
 
 .partners__photo {
@@ -284,32 +600,15 @@
   font-size: 0.8125rem;
 }
 
-.partners__nav {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 8px;
-}
-
-.partners__next {
-  margin-left: auto;
-}
-
-.partners__nav button {
-  min-height: 44px;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: rgb(var(--rgb-earth));
-  font: inherit;
-  font-weight: 700;
-  font-size: 0.875rem;
-}
-
 .partners__title {
   padding-left: 14px;
   border-left: 3px solid var(--accent);
   font-size: clamp(1.125rem, 1rem + 0.5vw, 1.375rem);
+}
+
+/* The 金黃 rule would vanish on the 金黃 ground, so there it takes the other panels' 深藍 (11/06). */
+.partners__panel--gold .partners__title {
+  border-left-color: rgb(var(--rgb-print-navy));
 }
 
 .partners__body {

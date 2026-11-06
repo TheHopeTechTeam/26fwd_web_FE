@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { Modal } from '../components/Modal';
+import { VideoPlaylist } from '../components/VideoPlaylist';
 import { Phrases } from '../components/Phrases';
 import { Reveal } from '../components/Reveal';
 import { asset } from '../config/env';
-import { APPRECIATE } from '../data/content';
-import { TESTIMONIES, type Testimony } from '../data/testimonies';
+import { APPRECIATE, TESTIMONY_VIDEOS } from '../data/content';
+import { isIllustration, TESTIMONIES, type Testimony } from '../data/testimonies';
 import { firstBatch, nextBatch, resizeBatch, shuffle } from '../lib/batches';
 import './Appreciate.css';
 
@@ -12,13 +13,16 @@ import './Appreciate.css';
 type View = { kind: 'all'; focusId?: string } | { kind: 'story'; id: string; fromAll: boolean };
 
 const ALL_IDS = TESTIMONIES.map((t) => t.id);
+
+/** Which of the printed book's five page grounds an opened story gets: in turn down the list. */
+const STORY_GROUNDS = 5;
+const storyGround = (id: string) => Math.max(0, ALL_IDS.indexOf(id)) % STORY_GROUNDS;
 const BY_ID = new Map(TESTIMONIES.map((t) => [t.id, t]));
 
 /**
  * 01 · Appreciate (US-03 / US-04, #26): a polaroid wall of testimonies. Each page load shows a
  * random batch: two rows of 5 on desktop (10), 8 on tablets and phones; 「看其他故事」
- * swaps in others, and 「看全部故事」 lists everyone in a dialog, so the page stays short and
- * the music keeps playing.
+ * swaps in others, and 「看全部故事」 lists everyone in a dialog, so the page stays short.
  */
 export function Appreciate() {
   const [view, setView] = useState<View | null>(null);
@@ -31,7 +35,7 @@ export function Appreciate() {
       <div className="wrap">
         <Reveal className="chapter__head">
           <p className="kicker">
-            <span className="eyebrow-index">01</span> · Appreciate 2026 我感謝神…
+            <span className="chapter-step">第一步</span>Appreciate 2026 我感謝神…
           </p>
           <h2 id="appreciate-title" className="chapter__title display-zh">
             <Phrases text={APPRECIATE.title} />
@@ -39,17 +43,25 @@ export function Appreciate() {
           <p className="lead">{APPRECIATE.lead}</p>
         </Reveal>
 
+        <Reveal delay={0.05}>
+          <VideoPlaylist
+            playlistId={TESTIMONY_VIDEOS.playlistId}
+            title={TESTIMONY_VIDEOS.title}
+            hint={TESTIMONY_VIDEOS.hint}
+            listLabel={TESTIMONY_VIDEOS.listLabel}
+          />
+        </Reveal>
+
         <Reveal delay={0.1}>
           <PolaroidWall onOpen={(id) => setView({ kind: 'story', id, fromAll: false })} onShowAll={() => setView({ kind: 'all' })} />
         </Reveal>
-        <p className="note appreciate__note">{APPRECIATE.note}</p>
       </div>
 
       <Modal
         open={view !== null}
         onClose={() => setView(null)}
         labelledBy={view?.kind === 'all' ? 'testimony-all-title' : 'testimony-name'}
-        className={view?.kind === 'all' ? 'testimony-all-modal' : 'testimony-modal'}
+        className={view?.kind === 'all' ? 'testimony-all-modal' : `testimony-modal story-ground-${storyGround(story?.id ?? '')}`}
       >
         {({ closing }) =>
           view?.kind === 'all' ? (
@@ -206,10 +218,14 @@ function TestimonyDetail({ testimony, playVideo, onBack }: TestimonyDetailProps)
   return (
     <article className="testimony">
       <div className="testimony__media">
-        <img src={asset(testimony.avatar_url)} alt={`${testimony.name} 的示意肖像`} width="240" height="240" />
-        {testimony.synthetic && <span className="testimony__synthetic">SYNTHETIC · 合成示意</span>}
+        <img
+          src={asset(testimony.avatar_url)}
+          alt={isIllustration(testimony) ? `${testimony.name}（照片待補，暫以插畫代替）` : `${testimony.name} 的照片`}
+          width="240"
+          height="240"
+        />
       </div>
-      <div className="testimony__body">
+      <div className="testimony__body tone-light">
         {onBack && (
           <button ref={backRef} type="button" className="testimony__back" onClick={onBack}>
             ← 返回全部
@@ -239,7 +255,6 @@ function TestimonyDetail({ testimony, playVideo, onBack }: TestimonyDetailProps)
                 loading="lazy"
               />
             ) : null}
-            {testimony.synthetic && <p className="note">測試影片：Big Buck Bunny（Blender Foundation，CC BY 3.0）</p>}
           </div>
         )}
       </div>

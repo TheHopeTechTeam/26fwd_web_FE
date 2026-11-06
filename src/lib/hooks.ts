@@ -17,6 +17,19 @@ export function usePrefersReducedMotion(): boolean {
   return reduced;
 }
 
+/** Whether a media query matches, kept up to date as the screen changes. */
+export function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(() => typeof window !== 'undefined' && window.matchMedia?.(query).matches === true);
+  useEffect(() => {
+    const list = window.matchMedia(query);
+    const update = () => setMatches(list.matches);
+    update();
+    list.addEventListener('change', update);
+    return () => list.removeEventListener('change', update);
+  }, [query]);
+  return matches;
+}
+
 /** True once the element has entered the viewport (or immediately without IO support). */
 export function useInView(ref: RefObject<Element | null>, options: IntersectionObserverInit = {}, once = true): boolean {
   const [inView, setInView] = useState(false);
