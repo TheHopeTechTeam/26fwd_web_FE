@@ -19,4 +19,9 @@ export function boot(app: ReactNode): void {
   const container = document.getElementById('root');
   if (!container) throw new Error('#root is missing');
   createRoot(container).render(<StrictMode>{app}</StrictMode>);
+
+  // Review aids (separate chunk, off otherwise): `?ids=1` tags text and images with their sheet
+  // 編號; `?review=1` also lists the sheet wording the page does not show yet.
+  const query = new URLSearchParams(location.search);
+  if (query.has('ids') || query.has('review')) void import('./idOverlay');
 }

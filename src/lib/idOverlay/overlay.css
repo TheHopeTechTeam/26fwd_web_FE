@@ -1,0 +1,345 @@
+#idov-root {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: visible;
+  pointer-events: none;
+  font: 12px/1.35 system-ui, -apple-system, 'Noto Sans TC', sans-serif;
+  color: #111;
+}
+.idov-layer {
+  position: absolute;
+  inset: 0;
+}
+.idov-box {
+  position: absolute;
+  left: 0;
+  top: 0;
+  box-sizing: border-box;
+  border: 1px dashed rgb(237 204 95 / 0.85);
+  pointer-events: none;
+}
+.idov-box--media {
+  border: 2px dashed rgb(96 181 255 / 0.9);
+}
+.idov-box.is-flash {
+  background: rgb(237 204 95 / 0.35);
+  border-style: solid;
+}
+.idov-badge {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 260px;
+  padding: 1px 6px;
+  border-radius: 9px;
+  background: #edcc5f;
+  color: #111;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.45);
+  pointer-events: auto;
+  cursor: help;
+}
+.idov-badge--media {
+  background: #60b5ff;
+}
+.idov-badge i {
+  display: none;
+  font-style: normal;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.idov-badge:hover {
+  z-index: 2;
+  max-width: 420px;
+}
+.idov-badge:hover i {
+  display: inline;
+}
+.idov-toggle {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: #0f3b59;
+  color: #fff;
+  font: 700 13px system-ui, sans-serif;
+  box-shadow: 0 2px 10px rgb(0 0 0 / 0.5);
+  pointer-events: auto;
+  cursor: pointer;
+}
+.idov-panel {
+  position: absolute;
+  left: 10px;
+  bottom: 54px;
+  width: min(380px, calc(100vw - 20px));
+  max-height: min(70vh, 560px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 6px 30px rgb(0 0 0 / 0.5);
+  pointer-events: auto;
+  overflow: hidden;
+}
+.idov-panel[hidden] {
+  display: none;
+}
+.idov-head {
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+  border-bottom: 1px solid #ddd;
+}
+.idov-head input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  font: inherit;
+}
+.idov-head button {
+  padding: 6px 10px;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  background: #f3f3f3;
+  font: inherit;
+  cursor: pointer;
+}
+.idov-note {
+  margin: 0;
+  padding: 6px 10px;
+  background: #fff8dd;
+  font-size: 11px;
+  color: #555;
+}
+.idov-panel ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow: auto;
+}
+.idov-panel li {
+  padding: 6px 10px;
+  border-bottom: 1px solid #eee;
+}
+.idov-panel li.is-link {
+  cursor: pointer;
+}
+.idov-panel li.is-link:hover {
+  background: #f3f8ff;
+}
+.idov-panel li div {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.idov-panel li b {
+  min-width: 2.2em;
+}
+.idov-panel li span {
+  flex: 1;
+  min-width: 0;
+}
+.idov-panel li em {
+  font-style: normal;
+  font-size: 11px;
+  padding: 0 6px;
+  border-radius: 8px;
+  background: #eee;
+  color: #444;
+  white-space: nowrap;
+}
+.idov-panel li em.st-ok {
+  background: #d9f2dc;
+  color: #14501f;
+}
+.idov-panel li em.st-miss {
+  background: #ffd9d9;
+  color: #7a1010;
+}
+.idov-panel li p {
+  margin: 2px 0 0;
+  color: #666;
+  font-size: 11px;
+}
+
+/* ---- ?review=1 -------------------------------------------------------------------------- */
+.idov-badge.is-pending {
+  background: #e5202a;
+  color: #fff;
+  box-shadow: 0 0 0 2px #fff, 0 1px 6px rgb(0 0 0 / 0.5);
+}
+.idov-box.is-pending {
+  border: 3px solid #e5202a;
+  background: rgb(229 32 42 / 0.08);
+}
+.idov-badge.is-maybe {
+  background: #ffa24d;
+}
+.idov-box.is-maybe {
+  border: 2px dashed #ff8a1f;
+}
+.idov-toggle--review {
+  left: auto;
+  right: 10px;
+  background: #b3341a;
+}
+.idov-review {
+  position: absolute;
+  right: 10px;
+  bottom: 54px;
+  width: min(440px, calc(100vw - 20px));
+  max-height: min(78vh, 680px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 6px 30px rgb(0 0 0 / 0.5);
+  pointer-events: auto;
+  overflow: hidden;
+}
+.idov-review[hidden] {
+  display: none;
+}
+.idov-review__head {
+  position: relative;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid #ddd;
+  background: #fff3ef;
+}
+.idov-review__head h2 {
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+.idov-review__close {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  padding: 2px 8px;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  background: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+.idov-review__list {
+  overflow: auto;
+}
+.idov-error {
+  margin: 4px 0;
+  color: #9a1b00;
+  font-weight: 600;
+}
+.idov-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+.idov-actions button,
+.idov-actions a {
+  padding: 3px 9px;
+  border: 1px solid #999;
+  border-radius: 6px;
+  background: #f6f6f6;
+  color: #111;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+.idov-group > summary {
+  position: sticky;
+  top: 0;
+  padding: 7px 12px;
+  background: #f0f0f0;
+  font-weight: 700;
+  cursor: pointer;
+}
+.idov-group > .idov-note {
+  background: transparent;
+}
+.idov-item {
+  border-bottom: 1px solid #eee;
+}
+.idov-item > summary {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+.idov-item > summary b {
+  min-width: 2.4em;
+  color: #b3341a;
+}
+.idov-item > summary span {
+  flex: 1;
+  min-width: 0;
+}
+.idov-item > summary em {
+  font-style: normal;
+  font-size: 11px;
+  padding: 0 6px;
+  border-radius: 8px;
+  background: #eee;
+  color: #444;
+}
+.idov-item__body {
+  padding: 4px 12px 10px;
+}
+.idov-item__reason {
+  margin: 2px 0 6px;
+  font-weight: 600;
+}
+.idov-label {
+  margin: 6px 0 2px;
+  color: #666;
+  font-size: 11px;
+}
+.idov-item__body ul {
+  margin: 0 0 4px;
+  padding-left: 18px;
+  color: #9a1b00;
+}
+.idov-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.idov-cols pre {
+  margin: 0;
+  padding: 6px 8px;
+  max-height: 220px;
+  overflow: auto;
+  border-radius: 6px;
+  background: #f5f5f5;
+  font: inherit;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.idov-cols > div:last-child pre {
+  background: #fff3ef;
+}
+.idov-meta {
+  margin: 6px 0 0;
+  color: #666;
+  font-size: 11px;
+}
+@media (max-width: 560px) {
+  .idov-cols {
+    grid-template-columns: 1fr;
+  }
+}

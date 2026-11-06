@@ -18,8 +18,8 @@ const TABS: Array<{ status: CardStatus; label: string }> = [
 type Action = { id: string; next: 'approved' | 'hidden' | 'deleted'; from: CardStatus };
 
 const ACTION_LABEL: Record<Action['next'], { verb: string; confirm: string; done: string }> = {
-  approved: { verb: '核准公開', confirm: '確認公開這張卡片？', done: '已核准，卡片將出現在 Hope Nation 回應牆（快取最長約 15 秒）。' },
-  hidden: { verb: '隱藏', confirm: '確認隱藏這張卡片？', done: '已隱藏，卡片將從 Hope Nation 回應牆移除（快取最長約 15 秒）。' },
+  approved: { verb: '核准公開', confirm: '確認公開這張 FORWARD 卡？', done: '已核准，FORWARD 卡將出現在2026 回應牆（快取最長約 15 秒）。' },
+  hidden: { verb: '隱藏', confirm: '確認隱藏這張 FORWARD 卡？', done: '已隱藏，FORWARD 卡將從2026 回應牆移除（快取最長約 15 秒）。' },
   deleted: { verb: '永久刪除', confirm: '確認永久刪除這張卡片？刪除後無法復原，卡片和它的 AI 判斷紀錄會一起刪除。', done: '已永久刪除。' },
 };
 
@@ -100,7 +100,7 @@ function LockScreen({ onUnlock, error }: { onUnlock: (token: string) => void; er
           setLocalError(null);
         }}
       />
-      {config.apiMode === 'mock' && <p className="admin__muted">Mock 模式：任何長度 ≥ {ADMIN_TOKEN_MIN_LENGTH} 字元的字串都可登入，資料為合成示意卡片。</p>}
+      {config.apiMode === 'mock' && <p className="admin__muted">Mock 模式：任何長度 ≥ {ADMIN_TOKEN_MIN_LENGTH} 字元的字串都可登入，資料為合成示意 FORWARD 卡。</p>}
       <div role="alert" className="admin__error">
         {localError ?? error}
       </div>
@@ -206,7 +206,7 @@ function ReviewConsole({ token, onUnauthorized }: { token: string; onUnauthorize
       </p>
 
       <div className="review__toolbar">
-        <div className="review__tabs" role="tablist" aria-label="卡片狀態">
+        <div className="review__tabs" role="tablist" aria-label="FORWARD 卡狀態">
           {TABS.map((tab) => (
             <button
               key={tab.status}
@@ -222,14 +222,14 @@ function ReviewConsole({ token, onUnauthorized }: { token: string; onUnauthorize
           ))}
         </div>
         <label className="review__search">
-          <span className="sr-only">搜尋目前載入的卡片</span>
+          <span className="sr-only">搜尋目前載入的 FORWARD 卡</span>
           <input type="search" placeholder="搜尋暱稱、內容或 ID" value={query} onChange={(e) => setQuery(e.target.value)} />
         </label>
         <button type="button" className="btn btn--outline btn--sm" onClick={() => void load(status)} disabled={loading}>
           重新整理
         </button>
       </div>
-      <p className="admin__muted">搜尋只在目前載入的這一批（最多 100 筆）中進行{hasMore ? '；此狀態還有更多卡片未載入' : ''}。</p>
+      <p className="admin__muted">搜尋只在目前載入的這一批（最多 100 筆）中進行{hasMore ? '；此狀態還有更多 FORWARD 卡未載入' : ''}。</p>
 
       <div className={`review__message ${message ? `is-${message.tone}` : ''}`} role="status" aria-live="polite">
         {message?.text}
@@ -247,7 +247,7 @@ function ReviewConsole({ token, onUnauthorized }: { token: string; onUnauthorize
           </button>
         </div>
       ) : filtered.length === 0 ? (
-        <p className="review__state">{query ? '沒有符合搜尋的卡片。' : '這個狀態目前沒有卡片。'}</p>
+        <p className="review__state">{query ? '沒有符合搜尋的 FORWARD 卡。' : '這個狀態目前沒有 FORWARD 卡。'}</p>
       ) : (
         <ul className="review__list">
           {filtered.map((card) => (

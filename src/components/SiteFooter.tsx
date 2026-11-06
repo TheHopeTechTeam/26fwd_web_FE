@@ -1,6 +1,5 @@
-import logoUrl from '../assets/brand/hope-h-white.png';
-import { asset, config, pageUrl } from '../config/env';
-import { MUSIC } from '../data/content';
+import logoUrl from '../assets/brand/the-hope-logo-white.png';
+import { pageUrl } from '../config/env';
 import './SiteFooter.css';
 
 export function SiteFooter({ railSpace = true }: { railSpace?: boolean }) {
@@ -8,13 +7,13 @@ export function SiteFooter({ railSpace = true }: { railSpace?: boolean }) {
     <footer className="site-footer">
       <div className={`wrap ${railSpace ? '' : 'wrap--no-rail'} site-footer__inner`}>
         <div className="site-footer__brand">
-          <img src={logoUrl} alt="The Hope" width="22" height="28" />
+          <img src={logoUrl} alt="The Hope" width="192" height="28" />
           <p className="site-footer__title">FORWARD · There is more</p>
         </div>
         <nav aria-label="頁尾連結">
           <ul className="site-footer__links">
             <li>
-              <a href={pageUrl('cards/')}>Forward Cards 卡片牆</a>
+              <a href={pageUrl('cards/')}>2026 回應牆</a>
             </li>
             <li>
               <a href={pageUrl('privacy/')}>隱私與資料說明</a>
@@ -26,18 +25,8 @@ export function SiteFooter({ railSpace = true }: { railSpace?: boolean }) {
             </li>
           </ul>
         </nav>
-        {/* Credit for the header's background music (MusicToggle). */}
-        <p className="site-footer__notice">
-          背景音樂：{MUSIC.track.title}・{MUSIC.track.artist}。{MUSIC.note} 授權：{MUSIC.track.license}・
-          <a href={asset(MUSIC.track.sourceUrl)} target="_blank" rel="noopener noreferrer">
-            來源說明
-          </a>
-        </p>
-        {config.showPreviewBadge && (
-          <p className="site-footer__notice">
-            本網站目前為開發預覽版：人物、見證、數據與卡片皆為合成示意內容（synthetic），不代表真實人物或正式數字。
-          </p>
-        )}
+        {/* The music credit and the preview notice were removed on 11/04; the site has no music
+            since 11/05 (team choice). */}
       </div>
     </footer>
   );

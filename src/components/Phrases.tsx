@@ -1,10 +1,17 @@
 const BREAK_AFTER = new Set(Array.from('，、：；。！？'));
+/** A zero-width space in the copy marks one more place a long clause may break (11/06). */
+const SOFT_BREAK = '\u200b';
 
 /** Splits after CJK punctuation (no regex lookbehind, which older iOS Safari rejects). */
 export function splitPhrases(text: string): string[] {
   const parts: string[] = [];
   let current = '';
   for (const ch of text) {
+    if (ch === SOFT_BREAK) {
+      if (current) parts.push(current);
+      current = '';
+      continue;
+    }
     current += ch;
     if (BREAK_AFTER.has(ch)) {
       parts.push(current);

@@ -15,7 +15,7 @@ const estimate = (card: PublicCard & { index: number }) =>
   150 + (codePointLength(card.text_gratitude) + codePointLength(card.text_anticipate)) * 1.3;
 
 /**
- * Forward Cards wall (US-10): its own page so 200+ cards never slow the journey page.
+ * 2026 回應牆, the FORWARD 卡 wall (US-10): its own page so 200+ cards never slow the journey page.
  * Approved cards only, 12 per batch, newest first, with a stable masonry layout.
  */
 export function CardsPage() {
@@ -77,17 +77,16 @@ export function CardsPage() {
       <main className="cards-page">
         <div className="wrap wrap--no-rail">
           <header className="cards-page__head">
-            <p className="kicker">Forward Cards · 卡片牆</p>
-            <h1 className="cards-page__title">Write it forward</h1>
-            <p className="lead">全 Hope Nation 寫下的感謝與期待。每一張卡片都經過審核後公開。</p>
+            <h1 className="cards-page__title display-zh">2026 回應牆</h1>
+            <p className="lead">在這面回應牆上，看見 The Hope 家人一張張真實的感謝與期待。讓彼此的故事成為鼓勵，打開我們對未來的想像，一起相信神還要成就更多新事。</p>
             <div className="cards-page__meta">
               {total !== null && (
                 <p className="cards-page__count" aria-live="polite">
-                  已有 <strong>{total}</strong> 張卡片
+                  已有 <strong>{total}</strong> 張 FORWARD 卡
                 </p>
               )}
               <a className="btn btn--gold btn--sm" href={pageUrl('#respond')}>
-                寫一張卡片
+                寫一張 FORWARD 卡
               </a>
             </div>
           </header>
@@ -123,7 +122,7 @@ export function CardsPage() {
               <div className="cards-page__empty">
                 <p>成為第一個寫卡的人！</p>
                 <a className="btn btn--gold" href={pageUrl('#respond')}>
-                  寫一張 Forward Card
+                  寫一張 FORWARD 卡
                 </a>
               </div>
             )}
@@ -138,7 +137,7 @@ export function CardsPage() {
                 )}
               </button>
             )}
-            {cards.length > 0 && !hasMore && <p className="note">已顯示全部卡片</p>}
+            {cards.length > 0 && !hasMore && <p className="note">已顯示全部 FORWARD 卡</p>}
           </div>
         </div>
       </main>

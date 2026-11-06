@@ -30,7 +30,7 @@
   font-weight: 700;
   font-size: 1rem;
   letter-spacing: 0.06em;
-  /* 深褐 prompts set apart from the 深藍 answers (金黃 on the 深褐 card). */
+  /* 深褐 prompts set apart from the dark answers (金黃 on the 深褐 card). */
   color: rgb(var(--rgb-earth));
 }
 
