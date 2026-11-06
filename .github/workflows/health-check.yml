@@ -1,0 +1,111 @@
+name: Scheduled Health Check
+
+# Every 6 hours: code quality gate, dependency audit, and read-only probes of the live sites.
+# Failure opens (or updates) a single issue labelled `health-alert`; recovery closes it.
+# Free: this repo is public, so standard GitHub-hosted runners are not billed.
+# `schedule` only fires from the default branch.
+
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  code:
+    name: Code quality & dependency audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck, test, build
+        run: npm run check
+
+      - name: Dependency audit (runtime deps, high and above)
+        run: npm audit --omit=dev --audit-level=high
+
+  probe:
+    name: Probe ${{ matrix.env }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - env: staging
+            base: https://26fwd-staging.pages.dev
+          - env: production
+            # Repo variable PROD_URL (Settings > Variables). Unset until the production domain is live.
+            base: ${{ vars.PROD_URL }}
+    steps:
+      - name: Read-only GET probes
+        env:
+          BASE: ${{ matrix.base }}
+          ENV_NAME: ${{ matrix.env }}
+        run: |
+          if [ -z "$BASE" ]; then
+            echo "::warning::$ENV_NAME has no URL configured (set repo variable PROD_URL); probe skipped"
+            echo "### $ENV_NAME: SKIPPED (no URL configured)" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          BASE="${BASE%/}"
+          fail=0
+          check() {
+            local path="$1" want_type="$2"
+            local out code ctype secs
+            out=$(curl -sS -o /dev/null --retry 2 --retry-delay 5 --retry-all-errors -m 20 \
+              -w '%{http_code} %{content_type} %{time_total}' "$BASE$path") || { echo "::error::$ENV_NAME GET $path: curl failed"; fail=1; return; }
+            code=${out%% *}; rest=${out#* }; ctype=${rest% *}; secs=${rest##* }
+            echo "$ENV_NAME GET $path -> $code $ctype ${secs}s"
+            [ "$code" = "200" ] || { echo "::error::$ENV_NAME GET $path returned $code"; fail=1; }
+            case "$ctype" in *"$want_type"*) ;; *) echo "::error::$ENV_NAME GET $path content-type '$ctype' (want $want_type)"; fail=1;; esac
+            awk -v s="$secs" 'BEGIN{exit !(s>5)}' && { echo "::error::$ENV_NAME GET $path slow: ${secs}s"; fail=1; }
+          }
+          check "/" "text/html"
+          check "/api/cards?page=1&limit=1" "application/json"
+          exit $fail
+
+  report:
+    name: Open or close alert issue
+    needs: [code, probe]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      CODE: ${{ needs.code.result }}
+      PROBE: ${{ needs.probe.result }}
+    steps:
+      - name: Sync health-alert issue
+        run: |
+          gh label create health-alert --color d73a4a --description "Scheduled health check failed" --force >/dev/null
+          open=$(gh issue list --label health-alert --state open --json number --jq '.[0].number // empty')
+          if [ "$CODE" = "success" ] && [ "$PROBE" = "success" ]; then
+            if [ -n "$open" ]; then
+              gh issue close "$open" --comment "Recovered: all checks passed. $RUN_URL"
+            fi
+            exit 0
+          fi
+          body=$(printf 'Scheduled health check failed.\n\n- code (check + audit): %s\n- probe (staging/production): %s\n- run: %s\n' "$CODE" "$PROBE" "$RUN_URL")
+          if [ -n "$open" ]; then
+            gh issue comment "$open" --body "$body"
+          else
+            gh issue create --title "Health check failed" --label health-alert --body "$body"
+          fi
