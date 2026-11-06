@@ -9,7 +9,7 @@ import { Turnstile } from '../components/Turnstile';
 import { config, pageUrl } from '../config/env';
 import { CARD_STYLES, FINALE, PRAYER_LINK, RAIL_GIVE, RESPOND, RESPOND_GUIDE } from '../data/content';
 import { trackEvent } from '../lib/analytics';
-import { CARD_FORMATS, PALETTE_SWATCH, PROMPTS, PROMPTS_EN, renderCardBlob, type CardContent, type CardFormat } from '../lib/canvasCard';
+import { PROMPTS, PROMPTS_EN, renderCardBlob, type CardContent, type CardFormat } from '../lib/canvasCard';
 import {
   FIELD_ERROR_TEXT,
   LIMITS,
@@ -35,7 +35,7 @@ export function Respond() {
       <div className="wrap">
         <Reveal className="chapter__head">
           <p className="kicker">
-            <span className="eyebrow-index">03</span> · Respond 填寫 FORWARD 卡
+            <span className="chapter-step">第三步</span>Respond 我願意這樣回應神…
           </p>
           <h2 id="respond-title" className="chapter__title respond__title">
             {RESPOND.title}
@@ -46,20 +46,17 @@ export function Respond() {
             </p>
           ))}
         </Reveal>
-        <ForwardCardForm />
+        <RespondActions />
         <CardsTeaser />
       </div>
-      <Finale />
     </section>
   );
 }
 
 const EMPTY = { nickname: '', text_gratitude: '', text_anticipate: '' };
 
-/** How the prompts are counted (#16), so a half-width-heavy text does not look miscounted. */
-const PROMPT_HINT = '英文、數字、半形符號與空格算半字';
 
-function ForwardCardForm() {
+function ForwardCardForm({ cardLabel }: { cardLabel: string }) {
   const [values, setValues] = useState<Record<CardField, string>>(EMPTY);
   const [honeypot, setHoneypot] = useState('');
   // Why the last input was cut: too long, or too many line breaks (#16).
@@ -209,84 +206,77 @@ function ForwardCardForm() {
 
   return (
     <>
-      <Reveal>
+      <Reveal id="respond-part-card" className="respond-actions__card">
         <form className="cardform" onSubmit={onSubmit} noValidate aria-describedby="cardform-guide">
-          <div className="cardform__card">
-            {/* Styled like the printed FORWARD 卡 (11/04): title, prompts with their English lines. */}
-            <p className="cardform__kicker" aria-hidden="true">
-              FORWARD CARD
-            </p>
-            {field('text_gratitude', PROMPTS.gratitude, true, PROMPT_HINT, PROMPTS_EN.gratitude)}
-            {field('text_anticipate', PROMPTS.anticipate, true, PROMPT_HINT, PROMPTS_EN.anticipate)}
-            {field('nickname', '你的名稱', false)}
-
-            {/* Bot trap: invisible to people and assistive tech; bots tend to fill it. */}
-            <div className="cardform__trap" aria-hidden="true">
-              <label htmlFor="card-website">Website</label>
-              <input id="card-website" name="website" type="text" tabIndex={-1} autoComplete="off" value={honeypot} onChange={(e) => setHoneypot(e.target.value)} />
-            </div>
-          </div>
-
-          {/* Beside the card: the two guiding questions, then the tips, consent and button. */}
-          <div className="cardform__side">
-            <ol className="cardform__steps" aria-label="寫卡引導">
-              {RESPOND_GUIDE.map((item) => (
-                <li key={item.title}>
-                  <span className="cardform__step-icon" aria-hidden="true">
-                    <GuideIcon kind={item.icon} />
-                  </span>
-                  <span>
-                    <strong className="cardform__step-title">{item.title}</strong>
-                    <span className="cardform__step-text">{item.text}</span>
-                  </span>
-                </li>
-              ))}
-            </ol>
-
-            <div id="cardform-guide" className="cardform__guide">
-              <p className="cardform__guide-title">寫卡小提醒</p>
-              <p>
-                分享至線上回應牆後，你的內容將公開顯示。請勿留下自己或他人的電話、地址、LINE ID 等個人資料；提到家人、孩子、健康或其他私密內容時，也請斟酌描述。
+          <div className="cardform__card-col">
+            <p className="respond-actions__label">{cardLabel}</p>
+            <div className="cardform__card tone-dark">
+              {/* Styled like the printed FORWARD 卡 (11/04): title, prompts with their English lines. */}
+              <p className="cardform__kicker" aria-hidden="true">
+                FORWARD CARD
               </p>
-            </div>
+              {/* Wide screens: the two prompts and the name on the left; tips, consent and button on the right (11/05). */}
+              <div className="cardform__write">
+                {/* Under each box, its guiding question (11/05, in place of the half-width counting note). */}
+                {field('text_gratitude', PROMPTS.gratitude, true, RESPOND_GUIDE[0]?.text, PROMPTS_EN.gratitude)}
+                {field('text_anticipate', PROMPTS.anticipate, true, RESPOND_GUIDE[1]?.text, PROMPTS_EN.anticipate)}
+                {field('nickname', '你的名稱', false)}
+              </div>
+              <div className="cardform__send">
 
-            <label className="cardform__consent">
-              <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} disabled={sending} />
-              {/* BB's sharing line, then Legal's consent statement (privacy policy §10, which ZY
-                  asked to be a checkbox) word for word, in one box (11/04). Legal's words are not
-                  edited; the link to the policy sits after them. */}
-              <span>
-                我了解分享後，這張 FORWARD 卡將公開顯示於線上回應牆。我已詳閱並瞭解上述條款，同意 The Hope 教會依上述內容蒐集、處理及利用我的個人資料。
-                <a href={pageUrl('privacy/')} target="_blank" rel="noopener">
-                  隱私與資料說明
-                </a>
-              </span>
-            </label>
-            {config.turnstileSiteKey && <Turnstile siteKey={config.turnstileSiteKey} onToken={setTurnstileToken} resetKey={turnstileReset} />}
+                {/* Bot trap: invisible to people and assistive tech; bots tend to fill it. */}
+                <div className="cardform__trap" aria-hidden="true">
+                  <label htmlFor="card-website">Website</label>
+                  <input id="card-website" name="website" type="text" tabIndex={-1} autoComplete="off" value={honeypot} onChange={(e) => setHoneypot(e.target.value)} />
+                </div>
 
-            <div className="cardform__submit">
-              <button
-                type="submit"
-                className="btn btn--gold btn--lg"
-                disabled={!agreed || sending}
-                aria-describedby={!agreed ? 'card-consent-needed' : undefined}
-              >
-                {sending ? (
-                  <>
-                    <span className="spinner" /> 送出中…
-                  </>
-                ) : (
-                  '分享到 Hope Nation 回應牆'
-                )}
-              </button>
-              {!agreed && (
-                <span id="card-consent-needed" className="cardform__hint">
-                  勾選同意後即可送出
-                </span>
-              )}
-            </div>
-            <div role="alert" className="cardform__alert">
-              {alert}
+                {/* Tips, consent and button inside the card (11/05). */}
+                <div id="cardform-guide" className="cardform__guide">
+                  <p className="cardform__guide-title">寫卡小提醒</p>
+                  <p>
+                    送出後，你的內容將公開顯示在 2026 回應牆。請勿留下自己或他人的電話、地址、LINE ID 等個人資料；提到家人、孩子、健康或其他私密內容時，也請斟酌描述。
+                  </p>
+                </div>
+
+                <label className="cardform__consent">
+                  <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} disabled={sending} />
+                  {/* BB's sharing line, then Legal's consent statement (privacy policy §10, which ZY
+                      asked to be a checkbox) word for word, in one box (11/04). Legal's words are not
+                      edited; the link to the policy sits after them. */}
+                  <span>
+                    我了解送出後，這張 FORWARD 卡將經過審核，並公開顯示於 2026 回應牆。我已詳閱並瞭解上述條款，同意 The Hope 教會依上述內容蒐集、處理及利用我的個人資料。
+                    <a href={pageUrl('privacy/')} target="_blank" rel="noopener">
+                      隱私與資料說明
+                    </a>
+                  </span>
+                </label>
+                {config.turnstileSiteKey && <Turnstile siteKey={config.turnstileSiteKey} onToken={setTurnstileToken} resetKey={turnstileReset} />}
+
+                <div className="cardform__submit">
+                  <button
+                    type="submit"
+                    className="btn btn--gold btn--lg"
+                    disabled={!agreed || sending}
+                    aria-describedby={!agreed ? 'card-consent-needed' : undefined}
+                  >
+                    {sending ? (
+                      <>
+                        <span className="spinner" /> 送出中…
+                      </>
+                    ) : (
+                      '分享到 2026 回應牆'
+                    )}
+                  </button>
+                  {!agreed && (
+                    <span id="card-consent-needed" className="cardform__hint">
+                      勾選同意後即可送出
+                    </span>
+                  )}
+                </div>
+                <div role="alert" className="cardform__alert">
+                  {alert}
+                </div>
+              </div>
             </div>
           </div>
         </form>
@@ -300,20 +290,9 @@ function ForwardCardForm() {
 }
 
 /** Line icons for the two guiding questions: a heart for gratitude, a sunrise for what's ahead. */
-function GuideIcon({ kind }: { kind: 'heart' | 'sunrise' }) {
-  return (
-    <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      {kind === 'heart' ? (
-        <path d="M12 20s-7.5-4.4-7.5-10.1A4.4 4.4 0 0 1 12 7.2a4.4 4.4 0 0 1 7.5 2.7C19.5 15.6 12 20 12 20z" />
-      ) : (
-        <path d="M3 18.5h18M7 18.5a5 5 0 0 1 10 0M12 7.5V10M5.6 11.6l1.7 1.7M18.4 11.6l-1.7 1.7M8 21.5h8" />
-      )}
-    </svg>
-  );
-}
-
 function CardResult({ content }: { content: CardContent }) {
-  const [format, setFormat] = useState<CardFormat>('square');
+  // One size only, 1:1 (11/06, team choice): the 貼文／限時動態 choice went.
+  const format: CardFormat = 'square';
   const [declaration, setDeclaration] = useState(CARD_STYLES[0]!);
   const [image, setImage] = useState<{ url: string; blob: Blob } | null>(null);
   const [rendering, setRendering] = useState(true);
@@ -360,36 +339,15 @@ function CardResult({ content }: { content: CardContent }) {
     showToast('已下載 FORWARD 卡圖片');
   };
 
-  const share = async () => {
-    if (!image) return;
-    const siteUrl = new URL(pageUrl(), window.location.origin).toString();
-    const file = new File([image.blob], 'forward-card.png', { type: 'image/png' });
-    try {
-      if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: '我的 FORWARD 卡', text: 'FORWARD 2026 · There is more' });
-        showToast('已開啟分享');
-      } else if (navigator.share) {
-        await navigator.share({ title: 'FORWARD 2026 · There is more', url: siteUrl });
-        showToast('已開啟分享');
-      } else {
-        await navigator.clipboard.writeText(siteUrl);
-        showToast('已複製網站連結');
-      }
-    } catch (error) {
-      if ((error as DOMException)?.name !== 'AbortError') showToast('無法分享，請改用下載 FORWARD 卡');
-    }
-  };
-
   return (
-    <div className="card-result" ref={hostRef}>
+    <div className="card-result tone-light" ref={hostRef}>
       <div className="card-result__intro">
-        <p className="kicker">Your Card · 你的 FORWARD 卡</p>
         <h3 id="card-result-title" className="card-result__title display-zh">
           謝謝你寫下這張 FORWARD 卡！
         </h3>
         <div className="card-result__sent" role="status">
           <p className="card-result__sent-title display-zh">已成功送出！</p>
-          <p>每一張 FORWARD 卡都會先經過文字審核，完成後就會出現在 Hope Nation 回應牆。</p>
+          <p>每一份 FORWARD 卡都會先經過文字審核，通過後就會出現在 2026 回應牆。</p>
         </div>
         <p className="card-result__cta">恭喜完成！立即下載專屬 FORWARD 卡保存，或分享到社群！</p>
       </div>
@@ -408,35 +366,26 @@ function CardResult({ content }: { content: CardContent }) {
         {CARD_STYLES.map((d) => (
           <label key={d.id} className={`declarations__item ${declaration.id === d.id ? 'is-on' : ''}`}>
             <input type="radio" name="card-declaration" value={d.id} checked={declaration.id === d.id} onChange={() => setDeclaration(d)} />
-            <span className="declarations__swatch" style={{ background: PALETTE_SWATCH[d.palette] }} aria-hidden="true" />
             <span className="declarations__text">
               <span className="declarations__en">{d.en}</span>
               <strong>{d.title}</strong>
-              <span>{d.text}</span>
+              <span className="declarations__sentence">{d.text}</span>
             </span>
           </label>
         ))}
       </fieldset>
 
-      <div className="card-result__controls">
-        <fieldset className="segmented">
-          <legend className="sr-only">圖片尺寸</legend>
-          {(Object.keys(CARD_FORMATS) as CardFormat[]).map((f) => (
-            <label key={f} className={format === f ? 'is-on' : ''}>
-              <input type="radio" name="card-format" value={f} checked={format === f} onChange={() => setFormat(f)} />
-              {CARD_FORMATS[f].label}
-            </label>
-          ))}
-        </fieldset>
-      </div>
-
+      {/* Download, and Give beside it (11/06: no 分享 button). */}
       <div className="card-result__actions">
         <button type="button" className="btn btn--gold" onClick={download} disabled={!image || rendering}>
           下載 FORWARD 卡
         </button>
-        <button type="button" className="btn btn--outline" onClick={share} disabled={!image || rendering}>
-          分享
-        </button>
+        <GiveButton
+          placement="card_result"
+          label={FINALE.cta}
+          className="btn card-result__give"
+          disabledHint={FINALE.disabled}
+        />
       </div>
       <p className="note">手機可長按上方圖片儲存到相簿</p>
       <a className="card-result__wall" href={pageUrl('cards/')}>
@@ -481,7 +430,7 @@ function CardsTeaser() {
     <Reveal className="teaser">
       <div className="teaser__head">
         <h3 className="teaser__title">
-          Hope Nation 回應牆
+          2026 回應牆
           {data && <span className="teaser__count">已有 {data.pagination.total_count} 張 FORWARD 卡公開</span>}
         </h3>
         <a className="btn btn--outline btn--sm" href={pageUrl('cards/')}>
@@ -500,31 +449,91 @@ function CardsTeaser() {
   );
 }
 
-function Finale() {
+/**
+ * The two ways to respond (11/05, team choice): 參與奉獻 on the left and the FORWARD 卡 on the
+ * right, the card wider, so nobody has to finish the card to reach Give. The wide card splits
+ * into two columns inside, which keeps it short; both sides end level. Narrower screens put Give
+ * first as a band, then the card. The rail's Give stop lands here.
+ */
+type RespondPart = 'give' | 'card';
+
+const RESPOND_PARTS: { id: RespondPart; label: string }[] = [
+  { id: 'give', label: '我要參與奉獻' },
+  { id: 'card', label: '我要填寫線上 FORWARD 卡' },
+];
+
+/**
+ * Both ways to respond. Below 900px, where the two would stack, two buttons side by side show
+ * one at a time, the FORWARD 卡 first (11/06, the user's choice); wider screens show both and
+ * hide the buttons. The hidden side stays mounted, so a half-written card is kept.
+ */
+function RespondActions() {
+  const [part, setPart] = useState<RespondPart>('card');
+  // Arriving at #give opens the Give side: the rail's 我要參與奉獻 stop focuses this block, and a
+  // shared link may land on it.
+  useEffect(() => {
+    if (window.location.hash === `#${RAIL_GIVE.id}`) setPart('give');
+  }, []);
+  const label = (id: RespondPart) => RESPOND_PARTS.find((p) => p.id === id)?.label ?? '';
+
   return (
-    <div id={RAIL_GIVE.id} className="finale" tabIndex={-1} aria-labelledby="finale-title">
-      <div className="wrap finale__inner">
-        <Reveal>
-          <p className="finale__kicker">{FINALE.kicker}</p>
-          <h3 id="finale-title" className="finale__title">
-            {FINALE.title[0]}
-            <br />
-            {FINALE.title[1]}
-          </h3>
-        </Reveal>
-        <Reveal className="finale__side" delay={0.1}>
-          <p className="finale__body">{FINALE.body}</p>
-          <GiveButton placement="respond_finale" label={FINALE.cta} className="btn btn--dark btn--lg finale__give" disabledHint={FINALE.disabled} />
-          {!config.giveUrl && <p className="finale__hint">{FINALE.disabled}</p>}
-          <div className="finale__prayer">
-            <p className="finale__body">{PRAYER_LINK.lead}</p>
-            <a className="btn btn--dark btn--lg finale__prayer-link" href={config.prayerMapUrl} target="_blank" rel="noopener noreferrer">
-              {PRAYER_LINK.label}
-              <span aria-hidden="true">↗</span>
-              <span className="sr-only">（在新分頁開啟）</span>
-            </a>
-          </div>
-        </Reveal>
+    <div
+      id={RAIL_GIVE.id}
+      className="respond-actions"
+      data-show={part}
+      role="group"
+      aria-label="兩種回應方式"
+      tabIndex={-1}
+      onFocus={(e) => {
+        if (e.target === e.currentTarget) setPart('give');
+      }}
+    >
+      <div className="respond-actions__switch">
+        {RESPOND_PARTS.map((p) => (
+          <button
+            key={p.id}
+            type="button"
+            className={`respond-actions__tab ${part === p.id ? 'is-on' : ''}`}
+            aria-pressed={part === p.id}
+            aria-controls={`respond-part-${p.id}`}
+            onClick={() => setPart(p.id)}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+      <div id="respond-part-give" className="respond-actions__give">
+        <p className="respond-actions__label">{label('give')}</p>
+        <GivePanel />
+      </div>
+      <ForwardCardForm cardLabel={label('card')} />
+    </div>
+  );
+}
+
+/** 參與奉獻 (There is More): the Give call and the Prayer Map link, as a 金黃 band (11/05). */
+function GivePanel() {
+  return (
+    <div className="finale" aria-labelledby="finale-title">
+      <div className="finale__head">
+        <p className="finale__kicker">{FINALE.kicker}</p>
+        <h3 id="finale-title" className="finale__title">
+          {FINALE.title[0]}
+          <br />
+          {FINALE.title[1]}
+        </h3>
+      </div>
+      <p className="finale__body">{FINALE.body}</p>
+      <div className="finale__actions">
+        <GiveButton placement="respond_finale" label={FINALE.cta} className="btn btn--dark btn--lg finale__give" disabledHint={FINALE.disabled} />
+        <div className="finale__prayer">
+          <p className="finale__body">{PRAYER_LINK.lead}</p>
+          <a className="btn btn--dark btn--lg finale__prayer-link" href={config.prayerMapUrl} target="_blank" rel="noopener noreferrer">
+            {PRAYER_LINK.label}
+            <span aria-hidden="true">↗</span>
+            <span className="sr-only">（在新分頁開啟）</span>
+          </a>
+        </div>
       </div>
     </div>
   );

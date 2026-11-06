@@ -1,4 +1,4 @@
-import logoUrl from '../assets/brand/the-hope-logo-gold.png';
+import logoUrl from '../assets/brand/the-hope-logo-white.png';
 import { pageUrl } from '../config/env';
 import './SiteFooter.css';
 
@@ -13,7 +13,7 @@ export function SiteFooter({ railSpace = true }: { railSpace?: boolean }) {
         <nav aria-label="頁尾連結">
           <ul className="site-footer__links">
             <li>
-              <a href={pageUrl('cards/')}>Hope Nation 回應牆</a>
+              <a href={pageUrl('cards/')}>2026 回應牆</a>
             </li>
             <li>
               <a href={pageUrl('privacy/')}>隱私與資料說明</a>
@@ -25,8 +25,8 @@ export function SiteFooter({ railSpace = true }: { railSpace?: boolean }) {
             </li>
           </ul>
         </nav>
-        {/* The music credit and the preview notice were removed on 11/04 (team choice). When the
-            final, licensed songs arrive, check whether their licence asks for a credit here. */}
+        {/* The music credit and the preview notice were removed on 11/04; the site has no music
+            since 11/05 (team choice). */}
       </div>
     </footer>
   );

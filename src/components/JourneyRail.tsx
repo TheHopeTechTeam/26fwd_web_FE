@@ -7,7 +7,8 @@ import './JourneyRail.css';
  * Floating journey stepper (US-01 / FEAT-01). Fixed on the right at every width:
  * labelled on desktop, a slim vertical capsule on phones. Scroll-spy uses one
  * IntersectionObserver keyed to a line across the middle of the viewport. After the three
- * chapters, a Give stop jumps to the finale at the end of Respond (11/04).
+ * chapters, a Give stop jumps to Give (11/04). Since 11/05 Give sits beside the FORWARD 卡 in
+ * Respond, so the Give stop is a jump only and Respond stays lit there.
  */
 type Stop = ChapterId | typeof RAIL_GIVE.id;
 const STOPS: Stop[] = [...CHAPTERS.map((c) => c.id), RAIL_GIVE.id];
@@ -16,7 +17,7 @@ export function JourneyRail() {
   const [active, setActive] = useState<Stop | null>(null);
 
   useEffect(() => {
-    const sections = STOPS.map((id) => document.getElementById(id)).filter((el): el is HTMLElement => !!el);
+    const sections = CHAPTERS.map((c) => document.getElementById(c.id)).filter((el): el is HTMLElement => !!el);
     if (!sections.length || typeof IntersectionObserver === 'undefined') return;
     const visible = new Set<string>();
     const observer = new IntersectionObserver(
@@ -25,7 +26,7 @@ export function JourneyRail() {
           if (entry.isIntersecting) visible.add(entry.target.id);
           else visible.delete(entry.target.id);
         }
-        // Stops are in document order (the finale sits inside Respond); the last one crossing the midline wins.
+        // Chapters are in document order; the last one crossing the midline wins.
         setActive([...STOPS].reverse().find((id) => visible.has(id)) ?? null);
       },
       { rootMargin: '-48% 0px -48% 0px' },

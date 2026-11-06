@@ -1,6 +1,5 @@
 import { Fragment } from 'react';
-import { HERO, HERO_MUSIC } from '../data/content';
-import { useMusic } from '../lib/music';
+import { HERO } from '../data/content';
 import kv1280 from '../assets/kv/kv-1280.webp';
 import kv1920 from '../assets/kv/kv-1920.webp';
 import kv2560 from '../assets/kv/kv-2560.webp';
@@ -42,51 +41,33 @@ export function Hero() {
           </span>
         </h1>
         <p className="hero__date">{HERO.date}</p>
-        {/* Lines break only at the spaces, so a phrase like 「…挪出一個空間」 never splits (11/04). */}
+        {/* Each line's English word leads it, about twice the size of the Chinese (11/06). The
+            Chinese breaks only at its spaces, so a phrase like 「…挪出一個空間」 never splits (11/04). */}
         <p className="hero__lead">
-          {HERO.lead.split('\n').map((line, i) => (
-            <Fragment key={line}>
-              {i > 0 && <br />}
-              {line.split(' ').map((phrase, j) => (
-                <Fragment key={j}>
-                  {j > 0 && ' '}
-                  <span className="phrase">{phrase}</span>
-                </Fragment>
-              ))}
-            </Fragment>
-          ))}
+          {HERO.lead.split('\n').map((line) => {
+            const [en, ...phrases] = line.split(' ');
+            return (
+              <Fragment key={line}>
+                <span className="hero__lead-en">{en}</span>
+                <span className="hero__lead-zh">
+                  {phrases.map((phrase, j) => (
+                    <Fragment key={j}>
+                      {j > 0 && ' '}
+                      <span className="phrase">
+                        {phrase.split('\u200b').map((part) => (
+                          <span key={part} className="phrase">
+                            {part}
+                          </span>
+                        ))}
+                      </span>
+                    </Fragment>
+                  ))}
+                </span>
+              </Fragment>
+            );
+          })}
         </p>
-        <div className="hero__actions">
-          <a className="btn btn--gold btn--lg" href="#appreciate">
-            {HERO.cta}
-            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-              <path d="M12 5v14M6 13l6 6 6-6" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </a>
-        </div>
-        <HeroMusic />
       </div>
     </section>
-  );
-}
-
-/** Invites the visitor to listen along; the header switch controls the same music. */
-function HeroMusic() {
-  const { state, playing, toggle } = useMusic();
-  return (
-    <p className="hero__music">
-      <button type="button" className="hero__music-btn" onClick={toggle} aria-pressed={playing}>
-        <span className="hero__music-icon" aria-hidden="true">
-          {playing ? '❚❚' : '♪'}
-        </span>
-        <span className="hero__music-label">
-          {/* Narrow phones wrap after the comma, never mid-phrase. */}
-          {(state === 'error' ? HERO_MUSIC.error : playing ? HERO_MUSIC.stop : HERO_MUSIC.start).split(/(?<=，)/).map((part) => (
-            <span key={part}>{part}</span>
-          ))}
-        </span>
-      </button>
-      {playing && <span className="hero__music-hint">{HERO_MUSIC.hint}</span>}
-    </p>
   );
 }

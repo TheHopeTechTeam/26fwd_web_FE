@@ -13,9 +13,10 @@
   display: flex;
   flex-direction: column;
   border-radius: var(--radius-full);
-  background: rgb(var(--rgb-base-deep) / 0.94); /* near solid: reads on 米白 as well as 深褐 (11/04) */
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+  /* Solid, so it reads on 米白 as well as 深褐 (11/04), in the printed card's lighter grey-brown
+     (11/06, the user's pick A). No backdrop blur: on phones a blurred fixed layer is redrawn on
+     every scrolled frame and made scrolling stutter (11/05). */
+  background: rgb(var(--rgb-card-brown));
   border: 1px solid var(--line);
 }
 
@@ -91,7 +92,6 @@
   .journey-rail__list {
     padding: 10px 0;
     border-radius: var(--radius-md);
-    background: rgb(var(--rgb-base-deep) / 0.94);
   }
   /* Text aligned left (11/04); the dots stay in one column on the right. */
   .journey-rail__item {

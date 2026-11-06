@@ -8,9 +8,8 @@ import './PrivacyPage.css';
  * 「The Hope 教會個人資料使用與隱私政策同意條款」 (ZY revised, 2025-02-22), sections 1–9. Legal's
  * text must not be edited here: any change has to come from Legal. Section 10 (the consent
  * statement) is left out as ZY's note asks; it is the checkbox on the card form instead. The
- * blanks [*] in 6.2 are shown as they are, highlighted, until Legal fills them in.
+ * blanks [*] in 6.2 (reply period and extension) were filled with 7 days by the team on 11/05.
  */
-const BLANK = <span className="privacy__tbc">[*]</span>;
 
 export function PrivacyPage() {
   return (
@@ -26,8 +25,7 @@ export function PrivacyPage() {
             <h2>FORWARD 網站說明</h2>
             <ul>
               <li>
-                你送出 FORWARD 卡時，我們會保存你填寫的名稱、兩段內容、你勾選的同意紀錄與送出時間。內容經過文字審核後，會公開顯示在 Hope
-                Nation 回應牆。
+                你送出 FORWARD 卡時，我們會保存你填寫的名稱、兩段內容、你勾選的同意紀錄與送出時間。內容經過文字審核後，會公開顯示在 2026 回應牆。
               </li>
               <li>為了防止大量灌水，我們會保存連線資訊的雜湊值，並使用一個 2 小時後自動失效的匿名 cookie，不含個人資料。</li>
               <li>
@@ -106,8 +104,8 @@ export function PrivacyPage() {
             </ul>
             <p>
               6.2 如需行使上述權利，請聯繫 The Hope 教會。The Hope 教會受理您行使各項個人權利，若為查詢或請求閱覽、請求製給複製本，The Hope
-              教會將於提出請求之{BLANK}日內回覆，必要時得再延長{BLANK}日；若為請求補充或更正、請求停止蒐集處理或利用、請求刪除，The Hope
-              教會將於提出請求之{BLANK}日內回覆，必要時得再延長{BLANK}日。
+              教會將於提出請求之7日內回覆，必要時得再延長7日；若為請求補充或更正、請求停止蒐集處理或利用、請求刪除，The Hope
+              教會將於提出請求之7日內回覆，必要時得再延長7日。
             </p>
           </section>
 

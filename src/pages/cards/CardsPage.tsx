@@ -15,7 +15,7 @@ const estimate = (card: PublicCard & { index: number }) =>
   150 + (codePointLength(card.text_gratitude) + codePointLength(card.text_anticipate)) * 1.3;
 
 /**
- * Hope Nation 回應牆, the FORWARD 卡 wall (US-10): its own page so 200+ cards never slow the journey page.
+ * 2026 回應牆, the FORWARD 卡 wall (US-10): its own page so 200+ cards never slow the journey page.
  * Approved cards only, 12 per batch, newest first, with a stable masonry layout.
  */
 export function CardsPage() {
@@ -77,8 +77,8 @@ export function CardsPage() {
       <main className="cards-page">
         <div className="wrap wrap--no-rail">
           <header className="cards-page__head">
-            <h1 className="cards-page__title display-zh">Hope Nation 回應牆</h1>
-            <p className="lead">在這面回應牆上，看見 The Hope 家人一張張真實的感謝與期待。讓彼此的故事成為鼓勵，也打開我們對未來的想像，一起相信神還要成就更多。</p>
+            <h1 className="cards-page__title display-zh">2026 回應牆</h1>
+            <p className="lead">在這面回應牆上，看見 The Hope 家人一張張真實的感謝與期待。讓彼此的故事成為鼓勵，打開我們對未來的想像，一起相信神還要成就更多新事。</p>
             <div className="cards-page__meta">
               {total !== null && (
                 <p className="cards-page__count" aria-live="polite">

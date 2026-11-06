@@ -24,11 +24,6 @@
   align-items: start;
 }
 
-@media (min-width: 980px) {
-  .cardform {
-    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
-  }
-}
 
 /* The card looks like the printed FORWARD 卡 (11/04): its brown ground with the architectural
    line drawing and paper grain (scripts/gen-card-bg.py), 金黃 text and white writing boxes. */
@@ -159,114 +154,33 @@
   overflow: hidden;
 }
 
-.cardform__side {
-  display: grid;
-  gap: 24px;
-}
-
-.cardform__side .cardform__hint {
-  color: var(--text-3);
-}
-
-/* Two guiding questions where the three steps used to be (11/04), in the same style. */
-.cardform__steps {
-  display: grid;
-  gap: 18px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.cardform__steps li {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 18px;
-  align-items: start;
-}
-
-/* A small line icon in a soft round badge, in the chapter-label 深褐. */
-.cardform__step-icon {
-  display: grid;
-  place-items: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: rgb(var(--rgb-earth) / 0.1);
-  color: var(--chapter-label);
-}
-
-.cardform__step-title {
-  display: block;
-  padding-top: 2px;
-  font-family: var(--font-heading-zh);
-  font-weight: 700;
-  font-size: 1.125rem;
-  line-height: 1.5;
-}
-
-.cardform__step-text {
-  display: block;
-  margin-top: 8px;
-  line-height: 2;
-  color: var(--text-2);
-}
-
-/* One column: the questions lead, before the card; tips and the button follow it. */
-@media (max-width: 979px) {
-  .cardform__side {
-    display: contents;
-  }
-
-  .cardform__steps {
-    order: -1;
-  }
-}
-
-/* Two columns: the questions, then the tips and the button, from the top of the card. */
-@media (min-width: 980px) {
-  .cardform__steps {
-    gap: 0;
-  }
-
-  .cardform__steps li {
-    padding-block: 32px;
-    border-bottom: 1px solid var(--line);
-  }
-
-  .cardform__steps li:first-child {
-    padding-top: 0;
-  }
-}
-
-/* A soft 金黃 note on the 米白 ground (11/04: no dark box), in the section's 深褐 text. */
+/* 寫卡小提醒 (11/06): smaller and quieter than the prompts, without a box — a thin 金黃 rule
+   beside it instead. The text stays above 6:1 on the card's brown. */
 .cardform__guide {
-  padding: 22px 24px;
-  border-radius: var(--radius-md);
-  border: 1px solid rgb(var(--rgb-accent) / 0.55);
-  background: rgb(var(--rgb-accent) / 0.16);
-  font-size: 0.9375rem;
-  font-weight: 700; /* the tip itself is bold (11/04) */
-  line-height: 1.9;
-  color: var(--text-2);
+  padding-left: 12px;
+  border-left: 2px solid rgb(var(--rgb-accent) / 0.5);
+  font-size: 0.8125rem;
+  line-height: 1.75;
+  color: rgb(var(--rgb-white) / 0.68);
 }
 
 .cardform__guide-title {
-  margin-bottom: 8px;
+  margin-bottom: 2px;
   font-family: var(--font-heading-zh);
   font-weight: 700;
-  color: var(--text);
+  color: rgb(var(--rgb-white) / 0.85);
 }
 
-/* The consent sentence and its link are bold (11/04). */
+/* The consent sentence and its link are bold (11/04), a size smaller since 11/06. */
 .cardform__consent {
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 12px;
   align-items: start;
-  padding: 18px 20px;
+  padding: 14px 16px;
   border-radius: var(--radius-md);
   border: 1px solid var(--line-strong);
-  font-size: 0.9375rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   line-height: 1.7;
   color: var(--text-2);
@@ -280,7 +194,7 @@
 .cardform__consent input {
   width: 22px;
   height: 22px;
-  margin-top: 3px;
+  margin-top: 0; /* level with the first line of the smaller text */
   accent-color: var(--accent);
 }
 
@@ -315,6 +229,13 @@
 
 .card-result-modal .modal__panel {
   width: min(640px, 100%);
+  /* 米白 ground (11/06, team choice); the content inside uses the light tone. */
+  background: var(--paper);
+}
+
+/* The light tone's own ground would square off the panel's rounded corners. */
+.card-result-modal .card-result {
+  background: transparent;
 }
 
 .card-result__intro {
@@ -418,13 +339,13 @@
   outline-offset: 2px;
 }
 
-/* Declaration of faith picker (#23): one per card, each with its own colours and frame. */
+/* Declaration of faith picker (#23): one per card. */
 .declarations {
   display: grid;
-  gap: 8px;
   margin: 0;
   padding: 0;
   border: 0;
+  counter-reset: declaration;
 }
 
 .declarations__legend {
@@ -435,55 +356,94 @@
   font-size: 1rem;
 }
 
+/* Editorial list (11/06, the user's pick A): no boxes, numbered rows between thin rules. The
+   chosen one gets the 金黃 number, a highlighter on its title and its sentence as a pull quote
+   behind a 金黃 rule, like on the card. */
 .declarations__item {
   display: flex;
-  align-items: center;
-  gap: 14px;
+  align-items: flex-start;
+  gap: 16px;
   min-height: 44px;
-  padding: 12px 14px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--line-strong);
+  padding: 14px 4px;
+  border-top: 1px solid var(--line-strong);
   cursor: pointer;
-  transition: border-color 0.2s var(--ease-standard), background-color 0.2s var(--ease-standard);
+  counter-increment: declaration;
 }
 
-.declarations__item:hover {
-  border-color: var(--text-2);
+.declarations__item:last-of-type {
+  border-bottom: 1px solid var(--line-strong);
 }
 
-.declarations__item.is-on {
-  border-color: var(--accent);
-  background: rgb(var(--rgb-accent) / 0.1);
-}
-
-.declarations__swatch {
+/* The number is decoration, so screen readers skip it. */
+.declarations__item::before {
+  content: counter(declaration, decimal-leading-zero);
+  content: counter(declaration, decimal-leading-zero) / '';
   flex: none;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  box-shadow: inset 0 0 0 1px rgb(var(--rgb-light) / 0.35);
+  width: 2.2em;
+  padding-top: 2px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.375rem;
+  line-height: 1;
+  color: rgb(var(--rgb-base) / 0.55); /* large text, 3:1 on paper */
+  transition: color 0.2s var(--ease-standard);
+}
+
+.declarations__item.is-on::before {
+  color: var(--accent-text);
 }
 
 .declarations__text {
   display: grid;
-  gap: 2px;
+  gap: 4px;
   font-size: 0.9375rem;
   line-height: 1.5;
 }
 
 .declarations__text .declarations__en {
-  font-family: var(--font-info);
-  font-size: 0.75rem;
-  letter-spacing: 0.12em;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1rem;
+  letter-spacing: 0.06em;
+  color: var(--text-3);
+}
+
+.declarations__item.is-on .declarations__en {
   color: var(--accent-text);
 }
 
 .declarations__text strong {
+  justify-self: start;
+  padding: 0 0.08em;
   font-family: var(--font-heading-zh);
+  font-size: 1.0625rem;
+  color: var(--text-3);
+  transition: color 0.2s var(--ease-standard);
 }
 
-.declarations__text span {
-  color: var(--text-2);
+.declarations__item:hover strong {
+  color: var(--text);
+}
+
+.declarations__item.is-on strong {
+  color: var(--text);
+  background: linear-gradient(180deg, transparent 56%, rgb(var(--rgb-accent) / 0.6) 56%, rgb(var(--rgb-accent) / 0.6) 94%, transparent 94%);
+}
+
+/* Only the chosen declaration shows its sentence (11/06): the list stays short, and on a phone
+   the sentence is right where you choose, not only on the card further up. */
+.declarations__item:not(.is-on) .declarations__sentence {
+  display: none;
+}
+
+.declarations__text .declarations__sentence {
+  margin-top: 8px;
+  padding-left: 12px;
+  border-left: 3px solid var(--accent);
+  font-family: var(--font-heading-zh);
+  font-weight: 700;
+  line-height: 1.7;
+  color: var(--text);
 }
 
 .card-result__actions {
@@ -491,6 +451,21 @@
   flex-wrap: wrap;
   justify-content: center;
   gap: 12px;
+}
+
+/* Give beside Download (11/06): as strong as Download but clearly another action — 深褐 with
+   金黃 text on the 米白 ground — and in full colour even before the giving link is live. */
+.card-result__give,
+.card-result__give[aria-disabled='true'] {
+  gap: 8px;
+  background: var(--ink);
+  color: var(--accent);
+  opacity: 1;
+  box-shadow: 0 8px 24px rgb(var(--rgb-base) / 0.22);
+}
+
+.card-result__give:hover {
+  background: rgb(var(--rgb-base-raised));
 }
 
 /* The card has been sent (11/04): it is shown before the card image to save. */
@@ -573,28 +548,193 @@
   }
 }
 
-/* Give finale */
-.finale {
-  background: var(--accent);
-  color: var(--ink);
-  padding-block: clamp(80px, 14svh, 168px) clamp(72px, 12svh, 140px);
-}
-
-.finale__inner {
+/* The two ways to respond (11/05, team choice): 參與奉獻 left, the FORWARD 卡 right and wider,
+   both ending level, from 1100px; below that Give comes first (a band from 900px), then the card. */
+.respond-actions {
   display: grid;
-  gap: clamp(28px, 4vw, 64px);
-  align-items: start;
+  gap: clamp(32px, 5vw, 48px);
+  scroll-margin-top: 16px; /* on top of the header room html already keeps */
 }
 
-/* The Give text gets the wider column, starting a little right of "There is" (11/04). */
-@media (min-width: 900px) {
-  .finale__inner {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
-    column-gap: clamp(48px, 6vw, 96px);
+.respond-actions__label {
+  margin: 0 0 14px;
+  font-family: var(--font-heading-zh);
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+
+/* Below 900px: two buttons side by side pick the side that shows (11/06). They name the two
+   sides, so the labels above the panels go. */
+.respond-actions__switch {
+  display: none;
+}
+
+@media (max-width: 899px) {
+  .respond-actions {
+    gap: 20px;
+  }
+
+  .respond-actions__switch {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .respond-actions__tab {
+    min-height: 56px;
+    padding: 10px 12px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-family: var(--font-heading-zh);
+    font-weight: 700;
+    font-size: 1rem;
+    line-height: 1.35;
+    cursor: pointer;
+    transition: background-color 0.2s var(--ease-standard), border-color 0.2s var(--ease-standard);
+  }
+
+  .respond-actions__tab.is-on {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--ink);
+  }
+
+  .respond-actions[data-show='card'] .respond-actions__give,
+  .respond-actions[data-show='give'] .respond-actions__card,
+  .respond-actions__label {
+    display: none;
   }
 }
 
-/* Same size and 深褐 as the chapter labels (01 · Appreciate…). */
+@media (min-width: 1100px) {
+  .respond-actions {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.85fr);
+    column-gap: clamp(24px, 2.5vw, 36px);
+    align-items: stretch;
+  }
+  /* Each side: its label, then a panel that grows to the taller side. */
+  .respond-actions__give,
+  .respond-actions__card,
+  .respond-actions__card > .cardform,
+  .cardform__card-col {
+    display: flex;
+    flex-direction: column;
+  }
+  .respond-actions__give > .finale,
+  .respond-actions__card > .cardform,
+  .cardform__card-col,
+  .cardform__card-col > .cardform__card {
+    flex: 1;
+  }
+  /* Full width: the card column measures its own width for the split below. */
+  .respond-actions__card > .cardform {
+    align-items: stretch;
+  }
+}
+
+/* The card splits into the writing side (prompts, name) and the sending side when it has room. */
+.cardform__card-col {
+  container-type: inline-size;
+}
+
+@container (min-width: 620px) {
+  .cardform__card {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    column-gap: clamp(24px, 3vw, 44px);
+    align-items: start;
+  }
+  .cardform__card > .cardform__kicker {
+    grid-column: 1 / -1;
+  }
+  /* Starts level with the first writing box (11/06): the height of its two-line prompt
+     (.cardform__prompt and its English line) plus the field's gap. */
+  .cardform__send {
+    margin-top: calc(1.3 * clamp(1.25rem, 1rem + 1vw, 1.6875rem) + 1.2 * clamp(0.875rem, 0.8rem + 0.4vw, 1.0625rem) + 2px + 10px);
+  }
+}
+
+.cardform__write,
+.cardform__send {
+  display: grid;
+  gap: 24px;
+  align-content: start;
+}
+
+/* Each box's guiding question sits where the counting note was (11/05). */
+.cardform__field .cardform__hint {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+/* 參與奉獻: a 金黃 panel (11/05; a full-width band at the very end until then). Stacked on phones,
+   one low row from 900px, and a column beside the card from 1100px. */
+.finale {
+  display: grid;
+  gap: 20px;
+  justify-items: start;
+  padding: clamp(28px, 4vw, 40px) clamp(22px, 3vw, 40px);
+  border-radius: var(--radius-lg);
+  background: var(--accent);
+  color: var(--ink);
+  box-shadow: var(--shadow-card);
+}
+
+.finale__head {
+  display: grid;
+  gap: 20px; /* a little more room between YEAR END FORWARD 2026 and There is More (11/06) */
+}
+
+.finale__actions {
+  display: grid;
+  gap: 14px;
+  justify-items: start;
+}
+
+/* Phones (11/06): the panel's type a size down and its corners less round, so it doesn't feel
+   oversized on a small screen. */
+@media (max-width: 699px) {
+  .finale {
+    gap: 16px;
+    border-radius: var(--radius-md);
+  }
+
+  .finale__head {
+    gap: 14px;
+  }
+
+  .finale .finale__kicker {
+    font-size: 0.8125rem;
+    letter-spacing: 0.16em;
+  }
+
+  .finale .finale__title {
+    font-size: 2.5rem;
+  }
+
+  .finale .finale__body {
+    font-size: 0.9375rem;
+    line-height: 1.8;
+  }
+}
+
+@media (min-width: 900px) and (max-width: 1099px) {
+  .finale {
+    grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.5fr) minmax(0, 1fr);
+    column-gap: clamp(28px, 3.5vw, 48px);
+    align-items: center;
+  }
+}
+
+/* Beside the card it starts at the top; the panel's extra height stays below (11/05). */
+@media (min-width: 1100px) {
+  .finale {
+    align-content: start;
+  }
+}
+
 .finale__kicker {
   font-family: var(--font-mono);
   font-size: clamp(0.875rem, 0.8rem + 0.35vw, 1.0625rem);
@@ -602,21 +742,14 @@
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: rgb(var(--rgb-earth));
-  margin-bottom: 18px;
 }
 
 .finale__title {
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: clamp(3rem, 1.6rem + 7vw, 8.5rem);
+  font-size: clamp(3rem, 2rem + 2.4vw, 4.5rem);
   line-height: 0.88;
   letter-spacing: 0;
-}
-
-.finale__side {
-  display: grid;
-  gap: 22px;
-  justify-items: start;
 }
 
 .finale__body {
@@ -636,18 +769,13 @@
   outline-color: var(--ink);
 }
 
-.finale__hint {
-  font-size: 0.875rem;
-  color: rgb(var(--rgb-base) / 0.72);
-}
-
 /* Prayer Map (#19): same size and colours as Give (dark ground with 金黃 text). */
 .finale__prayer {
   display: grid;
   gap: 14px;
   justify-items: start;
-  margin-top: 18px;
-  padding-top: 26px;
+  margin-top: 6px;
+  padding-top: 18px;
   border-top: 1px solid rgb(var(--rgb-base) / 0.18);
 }
 

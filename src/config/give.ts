@@ -2,7 +2,7 @@
  * Where a Give CTA sits on the site. Sent as utm_content so Central Giving can tell
  * which button converted. Naming is provisional until BB signs off (FEAT-13 / US-12).
  */
-export type GivePlacement = 'header' | 'respond_finale';
+export type GivePlacement = 'header' | 'respond_finale' | 'card_result';
 
 export const GIVE_UTM = {
   source: 'forward_site',
