@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ApiError, createApiClient, describeError, type FetchLike } from './client';
 import { createMockFetch } from './mock/server';
 import { createSeedCards } from './mock/seed';
-import type { SubmitCardRequest } from './types';
+import type { CardStatus, SubmitCardRequest } from './types';
 
 const ADMIN_TOKEN = 'x'.repeat(32);
 
@@ -264,7 +264,7 @@ describe('admin API', () => {
     expect((await client.adminListCards(ADMIN_TOKEN, 'pending')).items.some((c) => c.id === target.id)).toBe(true);
   });
 
-  it('always sends `from`, and lists every card with its model judgment (none in the mock)', async () => {
+  it('always sends `from`, and lists every card with its model judgment (synthetic ones in the mock)', async () => {
     const calls: Array<{ path: string; body?: string }> = [];
     const ok = { success: true, card_id: 'c_1', status: 'hidden' };
     const fetch: FetchLike = async (input, init = {}) => {
@@ -279,9 +279,18 @@ describe('admin API', () => {
       JSON.stringify({ from: 'approved' }),
     ]);
 
+    // The mock never runs the model; a few seed cards carry synthetic judgments, one of each kind.
     const { client: mocked } = setup();
-    const pending = await mocked.adminListCards(ADMIN_TOKEN, 'pending');
-    expect(pending.items.every((c) => c.moderation === null)).toBe(true);
+    const judgments = async (status: CardStatus) =>
+      new Map((await mocked.adminListCards(ADMIN_TOKEN, status)).items.map((c) => [c.id, c.moderation]));
+    const approved = await judgments('approved');
+    expect(approved.get('seed_001')).toMatchObject({ outcome: 'clear', reason: 'none', auto_published: true });
+    expect(approved.get('seed_010')).toBeNull();
+    const pending = await judgments('pending');
+    expect(pending.get('seed_p04')).toMatchObject({ outcome: 'flagged', reason: 'flag_a', auto_published: false });
+    expect(pending.get('seed_p03')).toMatchObject({ outcome: 'timeout', reason: null, auto_published: false });
+    expect(pending.get('seed_p01')).toBeNull();
+    expect((await judgments('hidden')).get('seed_h01')).toMatchObject({ outcome: 'flagged', auto_published: false });
   });
 
   it('deletes a hidden card for good (#35): it leaves the hidden list and a second delete is 404', async () => {
