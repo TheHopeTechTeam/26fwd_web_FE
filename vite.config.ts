@@ -20,6 +20,7 @@ if (process.env.VITE_API_MODE !== 'live') {
   pages['design-trial'] = 'design-trial/index.html';
   pages['design-trial-2'] = 'design-trial-2/index.html';
   pages['design-trial-3'] = 'design-trial-3/index.html';
+  pages.compare = 'compare/index.html';
 }
 
 export default defineConfig({
