@@ -6,12 +6,16 @@ const root = fileURLToPath(new URL('.', import.meta.url));
 
 // Each page is its own HTML entry so GitHub Pages can serve /cards/, /admin/ and
 // /privacy/ as plain directories without SPA routing tricks.
-const pages = {
+const pages: Record<string, string> = {
   main: 'index.html',
   cards: 'cards/index.html',
   admin: 'admin/index.html',
   privacy: 'privacy/index.html',
 };
+// /design/ (the annotated home page for front-end designers) needs the in-browser mock backend to
+// show the result card, so it is built wherever VITE_API_MODE is not `live` (the GitHub Pages
+// preview, local runs) and never into a build that talks to the real API (staging, production).
+if (process.env.VITE_API_MODE !== 'live') pages.design = 'design/index.html';
 
 export default defineConfig({
   // GitHub Pages project sites live under /<repo>/; the deploy workflow sets VITE_BASE.

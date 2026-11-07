@@ -8,6 +8,7 @@ The Hope 2026 FORWARD campaign 線上數位展覽與互動網站。旅程依規�
 ## 技術
 
 - Vite 8 + React 19 + TypeScript（多頁：`/`、`/cards/`、`/admin/`、`/privacy/`，GitHub Pages 可直接部署，不需 SPA 路由）
+- 設計標註頁 `/design/`（內部用，只在 mock 建置（GitHub Pages 預覽、本機；`VITE_API_MODE=live` 的 staging／正式站不含此頁），且 `noindex`）：首頁加上每個設計區塊的框與文字表編號，規格寫在試算表分頁「設計強化規格」。區塊清單在 `src/lib/designOverlay/blocks.ts`。
 - 純 CSS（`src/styles/tokens.css` 集中色票與字型，主視覺定案後只要改 tokens）
 - 無動畫套件；卡片圖片用原生 Canvas 2D 產生
 - 首頁 JS 約 97 KB gzip（規格上限 200 KB）
