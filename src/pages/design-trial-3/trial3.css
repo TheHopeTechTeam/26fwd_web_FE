@@ -47,10 +47,8 @@ html.trial3 .chapter__head .lead {
   font-size: 1.125rem;
   font-weight: 500;
   line-height: 1.9;
-  color: rgb(var(--rgb-base) / 0.92);
-}
-html.trial3 .tone-dark .chapter__head .lead {
-  color: rgb(var(--rgb-white) / 0.92);
+  /* --rgb-light is white on the dark 期待 and brown inside .tone-light, so it reads on both. */
+  color: rgb(var(--rgb-light) / 0.92);
 }
 html.trial3 #appreciate-title .phrase:last-child {
   background: linear-gradient(180deg, transparent 62%, rgb(var(--rgb-accent) / 0.7) 62%, rgb(var(--rgb-accent) / 0.7) 92%, transparent 92%);
@@ -62,7 +60,7 @@ html.trial3 .polaroid__name {
   font-weight: 800;
 }
 html.trial3 .polaroid__quote {
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
   font-weight: 600;
   line-height: 1.55;
 }
@@ -176,4 +174,68 @@ html.trial3 .teaser__count {
   html.trial3 #respond .chapter__head .lead {
     max-width: 32em;
   }
+}
+
+/* ── Campaign keywords: always larger than the rest of their line (keywords.ts) ─────────── */
+html.trial3 .kw {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.32em;
+  line-height: 1; /* close to the text around it, but never 0: its glyphs would overlap the next line */
+  letter-spacing: 0.01em;
+  color: var(--accent-text);
+}
+html.trial3 .kw--zh {
+  font-family: var(--font-heading-zh);
+  font-size: 1.2em;
+}
+/* In big headings a smaller step is enough, and keeps the line inside the column. */
+html.trial3 :is(h1, h2, h3, .chapter__title, .ministry__title, .ministry__headline, .declarations__text strong) .kw {
+  font-size: 1.12em;
+}
+/* On the 金黃 panels, buttons and the header the colour stays, only the size changes. */
+html.trial3 :is(.btn, .site-nav, .site-header__give, .finale, .journey-rail, .chapter-step, .card-result__sent) .kw {
+  color: inherit;
+}
+html.trial3 :is(.btn, .site-nav, .journey-rail) .kw {
+  font-size: 1.15em;
+}
+
+/* ── No overlaps, no cut-off text ───────────────────────────────────────────────────────── */
+/* Chinese glyphs fill the whole em, so a line height under ~1.1 lets two lines touch. */
+html.trial3 .chapter__title {
+  line-height: 1.14;
+}
+html.trial3 #appreciate-title .phrase:last-child {
+  font-size: 1.16em;
+}
+/* The ministry number sits above its title instead of behind it. */
+html.trial3 .ministry__index {
+  margin-bottom: 0.06em;
+  line-height: 0.9;
+}
+/* Every quote and video title is shown whole, never clipped with 「…」 or cut mid-line. */
+html.trial3 .polaroid__quote,
+html.trial3 .video-playlist__title,
+html.trial3 .video-playlist__item-title {
+  display: block;
+  -webkit-line-clamp: unset;
+  line-clamp: none;
+  overflow: visible;
+  overflow-wrap: anywhere;
+}
+html.trial3 .video-playlist__item-title {
+  min-height: 0;
+}
+/* The lead number gets a row of its own, so it can be large without touching its neighbours;
+   the other figures share the row below. */
+html.trial3 .ministry__stats {
+  grid-template-columns: repeat(auto-fit, minmax(8.5em, 1fr));
+}
+html.trial3 .ministry__stat:first-child {
+  grid-column: 1 / -1;
+}
+/* Keep a visible space between a keyword and the Chinese around it. */
+html.trial3 .kw:not(.kw--zh) {
+  margin-inline: 0.12em;
 }
