@@ -15,7 +15,10 @@ const pages: Record<string, string> = {
 // /design/ (the annotated home page for front-end designers) needs the in-browser mock backend to
 // show the result card, so it is built wherever VITE_API_MODE is not `live` (the GitHub Pages
 // preview, local runs) and never into a build that talks to the real API (staging, production).
-if (process.env.VITE_API_MODE !== 'live') pages.design = 'design/index.html';
+if (process.env.VITE_API_MODE !== 'live') {
+  pages.design = 'design/index.html';
+  pages['design-trial'] = 'design-trial/index.html';
+}
 
 export default defineConfig({
   // GitHub Pages project sites live under /<repo>/; the deploy workflow sets VITE_BASE.
