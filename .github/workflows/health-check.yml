@@ -73,7 +73,9 @@ jobs:
             echo "$ENV_NAME GET $path -> $code $ctype ${secs}s"
             [ "$code" = "200" ] || { echo "::error::$ENV_NAME GET $path returned $code"; fail=1; }
             case "$ctype" in *"$want_type"*) ;; *) echo "::error::$ENV_NAME GET $path content-type '$ctype' (want $want_type)"; fail=1;; esac
-            awk -v s="$secs" 'BEGIN{exit !(s>5)}' && { echo "::error::$ENV_NAME GET $path slow: ${secs}s"; fail=1; }
+            # `if`, not `awk … && { … }`: when the GET is not slow that list returns 1, check() returns 1
+            # with it, and the run shell (`bash -e`) stops after the first probe (#60).
+            if awk -v s="$secs" 'BEGIN{exit !(s>5)}'; then echo "::error::$ENV_NAME GET $path slow: ${secs}s"; fail=1; fi
           }
           check "/" "text/html"
           check "/api/cards?page=1&limit=1" "application/json"
