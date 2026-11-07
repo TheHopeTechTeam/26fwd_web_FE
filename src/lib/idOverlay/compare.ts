@@ -84,10 +84,10 @@ export function compareChange(next: string, region: string): Verdict {
   return { state, found, total, missing };
 }
 
-/** 「刪除」: the old wording must be gone from the page. */
-export function compareRemoval(old: string, page: string): Verdict {
+/** 「刪除」: the old wording must be gone from the page. `minLen` drops clauses too short to be a safe match. */
+export function compareRemoval(old: string, page: string, minLen = 6): Verdict {
   const hay = stripKey(page);
-  const clauses = clausesOf(old).filter((c) => stripKey(c).length >= 6);
+  const clauses = clausesOf(old).filter((c) => stripKey(c).length >= minLen);
   const present = clauses.filter((c) => hay.includes(stripKey(c)));
   return { state: present.length > 0 ? 'still-there' : 'removed', found: clauses.length - present.length, total: clauses.length, missing: present };
 }

@@ -193,6 +193,27 @@
 .idov-box.is-maybe {
   border: 2px dashed #ff8a1f;
 }
+.idov-flag {
+  position: absolute;
+  left: 0;
+  top: 0;
+  max-width: min(300px, calc(100vw - 8px));
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: #e5202a;
+  color: #fff;
+  font-weight: 600;
+  white-space: pre-line;
+  box-shadow: 0 0 0 2px #fff, 0 2px 8px rgb(0 0 0 / 0.5);
+  pointer-events: none;
+}
+.idov-design {
+  margin: 2px 0 6px;
+  padding: 6px 8px;
+  border-left: 3px solid #e5202a;
+  background: #fff1f1;
+  white-space: pre-wrap;
+}
 .idov-toggle--review {
   left: auto;
   right: 10px;

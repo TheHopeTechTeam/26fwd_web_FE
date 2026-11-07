@@ -23,6 +23,11 @@ export const TEXT_SELECTORS: Record<number, string> = {
   57: 'input[placeholder="暱稱或名字"]',
   73: '.card-result__preview',
   96: '.finale__title',
+  156: '.site-header img',
+  103: '.site-footer__links a',
+  113: '.cards-page__title',
+  116: '.cards-page__meta a.btn',
+  158: '.music-toggle',
   101: '.finale__prayer-link',
 };
 

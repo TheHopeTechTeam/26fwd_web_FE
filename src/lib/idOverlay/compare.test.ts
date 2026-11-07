@@ -45,4 +45,10 @@ describe('compareRemoval', () => {
     expect(compareRemoval('只下載保存的卡片不會送出；打算公開到卡片牆的話，請留意：', '請勿留下個人資料').state).toBe('removed');
     expect(compareRemoval('只下載保存的卡片不會送出；打算公開到卡片牆的話，請留意：', '只下載保存的卡片不會送出').state).toBe('still-there');
   });
+
+  it('catches short labels when the caller lowers the minimum clause length', () => {
+    expect(compareRemoval('開始旅程', '開始旅程 ↓').state).toBe('removed');
+    expect(compareRemoval('開始旅程', '開始旅程 ↓', 2).state).toBe('still-there');
+    expect(compareRemoval('開始旅程', '寫下一張 FORWARD 卡', 2).state).toBe('removed');
+  });
 });
