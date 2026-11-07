@@ -18,6 +18,7 @@ const pages: Record<string, string> = {
 if (process.env.VITE_API_MODE !== 'live') {
   pages.design = 'design/index.html';
   pages['design-trial'] = 'design-trial/index.html';
+  pages['design-trial-2'] = 'design-trial-2/index.html';
 }
 
 export default defineConfig({
