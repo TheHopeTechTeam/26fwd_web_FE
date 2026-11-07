@@ -1,0 +1,179 @@
+/*
+ * Design trial 3 (/design-trial-3/): on top of v1 + v2.
+ *  1. Small text is never small: nothing is set below 14px, and light text on dark grounds is a
+ *     weight heavier so the thin strokes of the Chinese face stay visible.
+ *  2. Line breaks: headings are balanced and paragraphs avoid a stray last line, so no word or
+ *     phrase is left alone (and no 「。」 starts a line).
+ *  3. More deliberate emphasis: a highlighter under the key phrase, the first number of each
+ *     ministry larger than the rest, bolder names on the polaroids.
+ * Scoped to `html.trial3`, which only this page sets.
+ */
+html.trial3 body::after {
+  content: '設計試作版 3｜僅供設計討論';
+}
+
+/* ── Line breaks ────────────────────────────────────────────────────────────────────────── */
+/* Chrome's `pretty` does not rebalance Chinese lines, so every block of text is balanced: the
+   lines come out even and no last line is left with two or three characters. (Chrome balances
+   up to six lines; anything longer falls back to normal wrapping.) */
+html.trial3 :is(p, li, dd, dt, label, h2, h3, h4, strong, .lead, .cardform__hint, .cardform__guide, .cardform__consent, .polaroid__quote, .fcard__text) {
+  text-wrap: balance;
+  line-break: strict;
+  hanging-punctuation: allow-end;
+}
+
+/* ── Hero ───────────────────────────────────────────────────────────────────────────────── */
+html.trial3 .hero__date {
+  font-size: 1.0625rem;
+  letter-spacing: 0.2em;
+}
+html.trial3 .hero__lead-zh {
+  font-size: 1.1875rem;
+  font-weight: 500;
+  color: rgb(var(--rgb-white) / 0.94);
+}
+@media (min-width: 700px) {
+  html.trial3 .hero__lead-zh {
+    font-size: 1.3125rem;
+  }
+}
+
+/* ── Chapter heads: a highlighter under the key phrase; the lead comfortably readable ─────── */
+html.trial3 .chapter__head .kicker {
+  font-size: 1.0625rem;
+  font-weight: 800;
+}
+html.trial3 .chapter__head .lead {
+  font-size: 1.125rem;
+  font-weight: 500;
+  line-height: 1.9;
+  color: rgb(var(--rgb-base) / 0.92);
+}
+html.trial3 .tone-dark .chapter__head .lead {
+  color: rgb(var(--rgb-white) / 0.92);
+}
+html.trial3 #appreciate-title .phrase:last-child {
+  background: linear-gradient(180deg, transparent 62%, rgb(var(--rgb-accent) / 0.7) 62%, rgb(var(--rgb-accent) / 0.7) 92%, transparent 92%);
+}
+
+/* ── Polaroids ──────────────────────────────────────────────────────────────────────────── */
+html.trial3 .polaroid__name {
+  font-size: 1.1875rem;
+  font-weight: 800;
+}
+html.trial3 .polaroid__quote {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.55;
+}
+
+/* ── Ministries: body readable; the first number leads the others ──────────────────────────── */
+html.trial3 .ministry__body {
+  font-size: 1.0625rem;
+  font-weight: 500;
+  color: rgb(var(--rgb-white) / 0.92);
+  line-height: 1.95;
+}
+html.trial3 .ministry__en {
+  font-size: 1.125rem;
+  letter-spacing: 0.14em;
+}
+html.trial3 .ministry__stats dd {
+  font-weight: 800;
+}
+html.trial3 .ministry__stat:first-child dd {
+  font-size: clamp(3.25rem, 2.2rem + 3vw, 5rem);
+}
+html.trial3 .ministry__stats dt {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: rgb(var(--rgb-white) / 0.88);
+}
+
+/* ── Card form ──────────────────────────────────────────────────────────────────────────── */
+html.trial3 .cardform__prompt-en {
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  color: rgb(var(--rgb-white) / 0.88);
+}
+html.trial3 .cardform__label {
+  font-size: 1rem;
+  color: rgb(var(--rgb-white) / 0.92);
+}
+html.trial3 .cardform__hint {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: rgb(var(--rgb-white) / 0.86);
+}
+html.trial3 .cardform__count {
+  font-size: 0.875rem;
+  color: rgb(var(--rgb-white) / 0.8);
+}
+html.trial3 .cardform__guide {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: rgb(var(--rgb-white) / 0.84);
+  line-height: 1.85;
+}
+html.trial3 .cardform__guide-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: rgb(var(--rgb-white) / 0.9);
+}
+html.trial3 .cardform__consent {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: rgb(var(--rgb-white) / 0.9);
+  line-height: 1.75;
+}
+html.trial3 .cardform__submit .btn {
+  font-size: 1.1875rem;
+}
+
+/* ── Declarations ───────────────────────────────────────────────────────────────────────── */
+html.trial3 .declarations__text .declarations__en {
+  font-size: 0.875rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+html.trial3 .declarations__text .declarations__sentence {
+  font-size: 1.0625rem;
+  font-weight: 700;
+}
+html.trial3 .declarations__item:not(.is-on) strong {
+  opacity: 0.8;
+}
+
+/* ── Give ───────────────────────────────────────────────────────────────────────────────── */
+html.trial3 .finale__kicker {
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+html.trial3 .finale__body {
+  font-size: 1.125rem;
+  font-weight: 500;
+  line-height: 1.85;
+  color: rgb(var(--rgb-base) / 0.95);
+}
+
+/* ── Header rail, footer, teaser: nothing under 14px ────────────────────────────────────── */
+html.trial3 .journey-rail__en {
+  font-size: 0.75rem;
+}
+html.trial3 .journey-rail__zh {
+  font-size: 0.8125rem;
+}
+html.trial3 .fcard__name,
+html.trial3 .teaser__count {
+  font-size: 0.875rem;
+}
+
+/* The Respond lead is two sentences on two lines: give each sentence room for one line. */
+@media (min-width: 900px) {
+  html.trial3 #respond .chapter__head .lead {
+    max-width: 32em;
+  }
+}
