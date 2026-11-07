@@ -98,6 +98,9 @@ function drawPaperCard(
 ) {
   const { width: w, height: h } = CARD_FORMATS[format];
   const story = format === 'story';
+  // Only /design-trial/ sets this class: the declaration sentence leads, the title and the labels
+  // step back (設計強化規格, 成果卡圖片).
+  const trial = typeof document !== 'undefined' && document.documentElement.classList.contains('trial');
   const pad = story ? 96 : 80;
   const gold = color('accent');
   const ink = color('base');
@@ -116,10 +119,10 @@ function drawPaperCard(
   const measure = (s: string) => ctx.measureText(s).width;
 
   let y = pad;
-  const kicker = story ? 28 : 22;
+  const kicker = story ? 28 : trial ? 18 : 22;
 
   // Title, stacked on the story like the paper card.
-  const titleSize = story ? 150 : declaration ? 84 : 96;
+  const titleSize = story ? 150 : declaration ? (trial ? 72 : 84) : 96;
   ctx.fillStyle = gold;
   ctx.font = `800 ${titleSize}px ${DISPLAY}`;
   for (const line of story ? ['FORWARD', 'CARD'] : ['FORWARD CARD']) {
@@ -135,7 +138,7 @@ function drawPaperCard(
     const column = maxWidth - indent;
     // wrapText lets a 「，」 or 「。」 hang past the line it ends rather than start the next one, so the
     // sentence steps down a pixel at a time (at most 6) until every line, mark included, fits (11/06).
-    let hero = story ? 54 : 40;
+    let hero = story ? 54 : trial ? 44 : 40;
     let lines: string[] = [];
     for (const min = hero - 6; ; hero -= 1) {
       ctx.font = `700 ${hero}px ${BODY}`;
@@ -225,8 +228,8 @@ function drawPaperCard(
 
   // Small sign-off in the bottom corner.
   ctx.fillStyle = color('accent', 0.72);
-  ctx.font = `700 ${story ? 26 : 22}px ${DISPLAY}`;
-  spaced(ctx, 'THE HOPE · FORWARD 2026', pad, h - pad * 0.62 - (story ? 26 : 22), 4);
+  ctx.font = `700 ${story ? 26 : trial ? 18 : 22}px ${DISPLAY}`;
+  spaced(ctx, 'THE HOPE · FORWARD 2026', pad, h - pad * 0.62 - (story ? 26 : trial ? 18 : 22), 4);
 }
 
 /** The downloadable FORWARD 卡 (11/06, team choice): one 1:1 design, the paper card, with the

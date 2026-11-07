@@ -1,0 +1,86 @@
+/* /compare/: an internal review tool, not part of the site's design, so plain system styles. */
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+body {
+  display: flex;
+  flex-direction: column;
+  font: 14px/1.4 system-ui, -apple-system, 'Noto Sans TC', sans-serif;
+  color: rgb(17 17 17);
+  background: rgb(232 232 232);
+}
+.cmp-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 8px 14px;
+  background: rgb(255 255 255);
+  border-bottom: 1px solid rgb(204 204 204);
+}
+.cmp-group {
+  display: inline-flex;
+}
+.cmp-bar button {
+  min-height: 34px;
+  padding: 4px 14px;
+  border: 1px solid rgb(170 170 170);
+  background: rgb(243 243 243);
+  font: inherit;
+  cursor: pointer;
+}
+.cmp-group button:first-child {
+  border-radius: 6px 0 0 6px;
+}
+.cmp-group button:last-child {
+  border-radius: 0 6px 6px 0;
+  border-left: 0;
+}
+.cmp-marks {
+  border-radius: 6px;
+}
+.cmp-bar button[aria-pressed='true'] {
+  background: rgb(15 59 89);
+  border-color: rgb(15 59 89);
+  color: rgb(255 255 255);
+}
+.cmp-note {
+  color: rgb(85 85 85);
+  font-size: 12px;
+}
+.cmp-panes {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 8px;
+}
+.cmp-pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.cmp-pane h2 {
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+.cmp-frame {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: rgb(255 255 255);
+  border: 1px solid rgb(187 187 187);
+}
+.cmp-frame iframe {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  border: 0;
+  transform-origin: top center;
+  background: rgb(255 255 255);
+}

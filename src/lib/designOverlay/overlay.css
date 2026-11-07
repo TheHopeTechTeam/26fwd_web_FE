@@ -1,0 +1,243 @@
+#dsg-root {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: visible;
+  pointer-events: none;
+  font: 12px/1.35 system-ui, -apple-system, 'Noto Sans TC', sans-serif;
+  color: #111;
+}
+.dsg-layer {
+  position: absolute;
+  inset: 0;
+}
+.dsg-layer[hidden] {
+  display: none;
+}
+.dsg-box {
+  position: absolute;
+  left: 0;
+  top: 0;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+.dsg-box--p1 {
+  border: 3px solid #e5202a;
+  background: rgb(229 32 42 / 0.05);
+}
+.dsg-box--p2 {
+  border: 2px dashed #3b8fe0;
+}
+.dsg-badge {
+  position: absolute;
+  left: 0;
+  top: 0;
+  max-width: min(420px, 90vw);
+  padding: 2px 8px;
+  border-radius: 0 0 8px 0;
+  color: #fff;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.45);
+  pointer-events: auto;
+  cursor: pointer;
+}
+.dsg-badge--p1 {
+  background: #e5202a;
+}
+.dsg-badge--p2 {
+  background: #2b6fb8;
+}
+.dsg-toggle {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: #0f3b59;
+  color: #fff;
+  font: 700 13px system-ui, sans-serif;
+  box-shadow: 0 2px 10px rgb(0 0 0 / 0.5);
+  pointer-events: auto;
+  cursor: pointer;
+}
+.dsg-panel {
+  position: absolute;
+  left: 10px;
+  bottom: 54px;
+  width: min(400px, calc(100vw - 20px));
+  max-height: min(70vh, 560px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 6px 30px rgb(0 0 0 / 0.5);
+  pointer-events: auto;
+  overflow: hidden;
+}
+.dsg-panel[hidden] {
+  display: none;
+}
+.dsg-head {
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+  border-bottom: 1px solid #ddd;
+}
+.dsg-head button {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  background: #f3f3f3;
+  font: inherit;
+  cursor: pointer;
+}
+.dsg-head button[aria-pressed='true'] {
+  background: #0f3b59;
+  border-color: #0f3b59;
+  color: #fff;
+}
+.dsg-note {
+  margin: 0;
+  padding: 6px 10px;
+  background: #fff8dd;
+  font-size: 11px;
+  color: #555;
+}
+.dsg-panel ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow: auto;
+}
+.dsg-panel li {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 6px 10px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+}
+.dsg-panel li:hover {
+  background: #f3f8ff;
+}
+.dsg-panel li.is-off {
+  color: #888;
+  cursor: default;
+}
+.dsg-panel li b {
+  min-width: 5.5em;
+}
+.dsg-panel li span {
+  flex: 1;
+  min-width: 0;
+}
+.dsg-panel li em {
+  font-style: normal;
+  font-size: 11px;
+  padding: 0 6px;
+  border-radius: 8px;
+  color: #fff;
+  white-space: nowrap;
+}
+.dsg-panel li em.p1 {
+  background: #e5202a;
+}
+.dsg-panel li em.p2 {
+  background: #2b6fb8;
+}
+
+.dsg-drawer {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  bottom: 10px;
+  width: min(440px, calc(100vw - 20px));
+  padding: 14px 16px 18px;
+  overflow: auto;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 6px 30px rgb(0 0 0 / 0.5);
+  pointer-events: auto;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.dsg-drawer[hidden] {
+  display: none;
+}
+.dsg-drawer__close {
+  position: sticky;
+  top: 0;
+  float: right;
+  padding: 4px 10px;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  background: #f3f3f3;
+  font: inherit;
+  cursor: pointer;
+}
+.dsg-drawer__head {
+  margin-bottom: 8px;
+}
+.dsg-drawer h3 {
+  margin: 4px 0 0;
+  font-size: 16px;
+  line-height: 1.35;
+}
+.dsg-drawer h4 {
+  margin: 12px 0 2px;
+  font-size: 12px;
+  color: #0f3b59;
+}
+.dsg-drawer p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+.dsg-drawer em {
+  display: inline-block;
+  padding: 0 8px;
+  border-radius: 8px;
+  color: #fff;
+  font-style: normal;
+  font-size: 11px;
+}
+.dsg-drawer em.p1 {
+  background: #e5202a;
+}
+.dsg-drawer em.p2 {
+  background: #2b6fb8;
+}
+
+.dsg-drawer__changes {
+  margin: 4px 0 0;
+  padding-left: 1.2em;
+}
+.dsg-drawer__changes li {
+  margin-bottom: 6px;
+}
+
+/* Scaled down inside /compare/: size the notes by the frame's width so they stay readable. */
+#dsg-root.is-framed .dsg-drawer {
+  width: min(46vw, calc(100vw - 20px));
+  min-width: min(360px, calc(100vw - 20px));
+  font-size: max(13px, 2.4vw);
+}
+#dsg-root.is-framed .dsg-drawer h3 {
+  font-size: 1.25em;
+}
+#dsg-root.is-framed .dsg-drawer h4 {
+  font-size: 0.95em;
+}
+#dsg-root.is-framed .dsg-badge,
+#dsg-root.is-framed .dsg-toggle {
+  font-size: max(12px, 1.5vw);
+}

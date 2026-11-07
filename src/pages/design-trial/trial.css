@@ -1,0 +1,238 @@
+/*
+ * Design trial (/design-trial/): the 優先 blocks of the sheet tab 「設計強化規格」 applied as
+ * overrides. Everything is scoped to `html.trial`, which only main.tsx sets, so the real pages
+ * never load or match any of it. Values are the suggested ones from the spec.
+ */
+
+/* Marker, so nobody mistakes the trial for the live site. */
+html.trial body::after {
+  content: '設計試作版｜僅供設計討論';
+  position: fixed;
+  left: 10px;
+  bottom: 10px;
+  z-index: 60;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgb(var(--rgb-base-deep) / 0.92);
+  color: var(--accent);
+  font: 700 12px/1.4 var(--font-body);
+  letter-spacing: 0.08em;
+  pointer-events: none;
+}
+
+/* ── #1–#5 Header and journey rail ─────────────────────────────────────────────────────── */
+html.trial .site-nav__list a {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: rgb(var(--rgb-white) / 0.8);
+}
+html.trial .site-nav__list a:hover {
+  color: var(--accent);
+}
+html.trial .site-header__give::before {
+  content: '♥';
+  font-size: 0.95em;
+}
+html.trial .journey-rail__item:not(.is-active) {
+  opacity: 0.75;
+}
+html.trial .journey-rail__item.is-active {
+  background: rgb(var(--rgb-accent) / 0.14);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+/* ── #6–#9 Hero: the date becomes an eyebrow; two groups with a clear break ──────────────── */
+html.trial .hero__date {
+  font-size: 1rem;
+  letter-spacing: 0.16em;
+}
+html.trial .hero__lead {
+  margin-top: 28px;
+}
+html.trial .hero__lead-en {
+  font-size: 2.5rem;
+  line-height: 1.1;
+  margin-top: 24px;
+}
+html.trial .hero__lead-en:first-child {
+  margin-top: 0;
+}
+html.trial .hero__lead-zh {
+  font-weight: 400;
+  line-height: 1.7;
+  color: rgb(var(--rgb-white) / 0.9);
+}
+@media (min-width: 700px) {
+  html.trial .hero__lead {
+    --lead-en: clamp(2.75rem, 1.8rem + 2vw, 3.5rem);
+    --lead-zh: clamp(1.125rem, 1rem + 0.4vw, 1.375rem);
+    column-gap: 32px;
+    row-gap: 32px;
+    margin-top: 28px;
+  }
+  html.trial .hero__lead-en {
+    margin-top: 0;
+    font-size: var(--lead-en);
+  }
+}
+
+/* ── #15–#17、#23–#25、#49–#51 Chapter heads ─────────────────────────────────────────────── */
+html.trial .chapter__head {
+  gap: 16px;
+  margin-bottom: clamp(48px, 8svh, 64px);
+}
+html.trial .chapter__head .kicker {
+  font-size: clamp(0.875rem, 0.8rem + 0.25vw, 1rem);
+  letter-spacing: 0.14em;
+}
+html.trial .chapter__title {
+  font-size: clamp(2rem, 1.2rem + 3.4vw, 4rem);
+  line-height: 1.15;
+  margin-bottom: 8px;
+}
+html.trial .chapter__head .lead {
+  max-width: 34em;
+  text-wrap: pretty;
+}
+
+/* ── #52–#63 Card form: FORWARD CARD is the lead; the questions step back ────────────────── */
+html.trial .cardform__kicker {
+  font-size: clamp(2.5rem, 2rem + 2vw, 4rem);
+  line-height: 1;
+}
+html.trial .cardform__write {
+  gap: 40px;
+}
+html.trial .cardform__field {
+  gap: 12px;
+}
+html.trial .cardform__prompt {
+  font-size: clamp(1.375rem, 1.2rem + 0.4vw, 1.625rem);
+  font-weight: 600;
+}
+html.trial .cardform__prompt-en {
+  font-size: 0.8125rem;
+  letter-spacing: 0.14em;
+  color: rgb(var(--rgb-white) / 0.7);
+}
+html.trial .cardform__label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgb(var(--rgb-white) / 0.85);
+}
+html.trial .cardform__hint {
+  font-size: 0.875rem;
+  color: rgb(var(--rgb-white) / 0.7);
+}
+html.trial .cardform__count {
+  font-size: 0.75rem;
+}
+
+/* ── #64–#67 Reminder: the lightest thing in the form ────────────────────────────────────── */
+html.trial .cardform__guide {
+  border-left-color: rgb(var(--rgb-accent) / 0.3);
+  color: rgb(var(--rgb-white) / 0.7);
+}
+html.trial .cardform__guide-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: rgb(var(--rgb-white) / 0.6);
+}
+
+/* ── #83–#84 Consent: no longer one bold block ───────────────────────────────────────────── */
+html.trial .cardform__consent {
+  font-weight: 400;
+  color: rgb(var(--rgb-white) / 0.8);
+}
+html.trial .cardform__consent a {
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ── #60、#85 Send button: full width, with room around it ──────────────────────────────── */
+html.trial .cardform__submit {
+  margin-top: 16px;
+}
+html.trial .cardform__submit .btn {
+  flex: 1 1 100%;
+  min-height: 56px;
+  font-size: 1.125rem;
+}
+
+/* ── #68–#71、#77–#80 Result modal: the card is the lead, the notices are one quiet line ──── */
+html.trial .card-result {
+  gap: 14px;
+}
+html.trial .card-result__title {
+  font-size: clamp(1.5rem, 1.2rem + 1vw, 1.75rem);
+}
+html.trial .card-result__sent {
+  padding: 8px 14px;
+}
+html.trial .card-result__sent-title {
+  font-size: 1rem;
+}
+html.trial .card-result__cta {
+  font-size: 0.9375rem;
+}
+html.trial .card-result__preview {
+  margin-bottom: 32px;
+}
+
+/* ── #72–#76 Declaration choice: the Chinese theme title leads, the English steps back ───── */
+html.trial .declarations__item {
+  padding-block: 20px;
+}
+html.trial .declarations__text .declarations__en {
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+}
+html.trial .declarations__text strong {
+  font-size: 1.625rem;
+  line-height: 1.3;
+}
+html.trial .declarations__item:not(.is-on) strong {
+  opacity: 0.65;
+}
+html.trial .declarations__item.is-on {
+  background: rgb(var(--rgb-accent) / 0.12);
+  border-radius: 8px;
+}
+html.trial .declarations__text .declarations__sentence {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+}
+
+/* ── #95–#101 Give: the big title is the only lead, the body is no longer one bold block ──── */
+html.trial .finale__kicker {
+  font-size: 0.8125rem;
+  letter-spacing: 0.2em;
+}
+html.trial .finale__title {
+  font-size: clamp(3rem, 2rem + 3.2vw, 4.5rem);
+  line-height: 0.95;
+}
+html.trial .finale__body {
+  font-weight: 400;
+  font-size: 1.0625rem;
+  line-height: 1.75;
+}
+html.trial .finale__give::before {
+  content: '♥';
+  margin-right: 0.4em;
+}
+/* Prayer Map is the quiet second action: a text link, not a second button. */
+html.trial .finale .finale__prayer-link {
+  min-height: 44px;
+  padding-inline: 0;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}

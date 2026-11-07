@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>新舊對照 · FORWARD 2026 | The Hope</title>
+    <link rel="icon" href="%BASE_URL%favicon.svg" type="image/svg+xml" />
+  </head>
+  <body>
+    <header class="cmp-bar">
+      <strong>新舊對照</strong>
+      <div class="cmp-group" role="group" aria-label="螢幕尺寸">
+        <button type="button" data-device="desktop" aria-pressed="true">桌機</button>
+        <button type="button" data-device="phone" aria-pressed="false">手機</button>
+      </div>
+      <button type="button" class="cmp-marks" aria-pressed="false">顯示框與編號</button>
+      <span class="cmp-note">上下捲動任一邊，另一邊會停在同一個區塊的相同位置。</span>
+    </header>
+    <main class="cmp-panes">
+      <section class="cmp-pane">
+        <h2>原版（目前網站）</h2>
+        <div class="cmp-frame"><iframe title="原版" data-side="old"></iframe></div>
+      </section>
+      <section class="cmp-pane">
+        <h2>試作版 3</h2>
+        <div class="cmp-frame"><iframe title="試作版 3" data-side="new"></iframe></div>
+      </section>
+    </main>
+    <script type="module" src="/src/pages/compare/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,241 @@
+/*
+ * Design trial 3 (/design-trial-3/): on top of v1 + v2.
+ *  1. Small text is never small: nothing is set below 14px, and light text on dark grounds is a
+ *     weight heavier so the thin strokes of the Chinese face stay visible.
+ *  2. Line breaks: headings are balanced and paragraphs avoid a stray last line, so no word or
+ *     phrase is left alone (and no 「。」 starts a line).
+ *  3. More deliberate emphasis: a highlighter under the key phrase, the first number of each
+ *     ministry larger than the rest, bolder names on the polaroids.
+ * Scoped to `html.trial3`, which only this page sets.
+ */
+html.trial3 body::after {
+  content: '設計試作版 3｜僅供設計討論';
+}
+
+/* ── Line breaks ────────────────────────────────────────────────────────────────────────── */
+/* Chrome's `pretty` does not rebalance Chinese lines, so every block of text is balanced: the
+   lines come out even and no last line is left with two or three characters. (Chrome balances
+   up to six lines; anything longer falls back to normal wrapping.) */
+html.trial3 :is(p, li, dd, dt, label, h2, h3, h4, strong, .lead, .cardform__hint, .cardform__guide, .cardform__consent, .polaroid__quote, .fcard__text) {
+  text-wrap: balance;
+  line-break: strict;
+  hanging-punctuation: allow-end;
+}
+
+/* ── Hero ───────────────────────────────────────────────────────────────────────────────── */
+html.trial3 .hero__date {
+  font-size: 1.0625rem;
+  letter-spacing: 0.2em;
+}
+html.trial3 .hero__lead-zh {
+  font-size: 1.1875rem;
+  font-weight: 500;
+  color: rgb(var(--rgb-white) / 0.94);
+}
+@media (min-width: 700px) {
+  html.trial3 .hero__lead-zh {
+    font-size: 1.3125rem;
+  }
+}
+
+/* ── Chapter heads: a highlighter under the key phrase; the lead comfortably readable ─────── */
+html.trial3 .chapter__head .kicker {
+  font-size: 1.0625rem;
+  font-weight: 800;
+}
+html.trial3 .chapter__head .lead {
+  font-size: 1.125rem;
+  font-weight: 500;
+  line-height: 1.9;
+  /* --rgb-light is white on the dark 期待 and brown inside .tone-light, so it reads on both. */
+  color: rgb(var(--rgb-light) / 0.92);
+}
+html.trial3 #appreciate-title .phrase:last-child {
+  background: linear-gradient(180deg, transparent 62%, rgb(var(--rgb-accent) / 0.7) 62%, rgb(var(--rgb-accent) / 0.7) 92%, transparent 92%);
+}
+
+/* ── Polaroids ──────────────────────────────────────────────────────────────────────────── */
+html.trial3 .polaroid__name {
+  font-size: 1.1875rem;
+  font-weight: 800;
+}
+html.trial3 .polaroid__quote {
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.55;
+}
+
+/* ── Ministries: body readable; the first number leads the others ──────────────────────────── */
+html.trial3 .ministry__body {
+  font-size: 1.0625rem;
+  font-weight: 500;
+  color: rgb(var(--rgb-white) / 0.92);
+  line-height: 1.95;
+}
+html.trial3 .ministry__en {
+  font-size: 1.125rem;
+  letter-spacing: 0.14em;
+}
+html.trial3 .ministry__stats dd {
+  font-weight: 800;
+}
+html.trial3 .ministry__stat:first-child dd {
+  font-size: clamp(3.25rem, 2.2rem + 3vw, 5rem);
+}
+html.trial3 .ministry__stats dt {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: rgb(var(--rgb-white) / 0.88);
+}
+
+/* ── Card form ──────────────────────────────────────────────────────────────────────────── */
+html.trial3 .cardform__prompt-en {
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  color: rgb(var(--rgb-white) / 0.88);
+}
+html.trial3 .cardform__label {
+  font-size: 1rem;
+  color: rgb(var(--rgb-white) / 0.92);
+}
+html.trial3 .cardform__hint {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: rgb(var(--rgb-white) / 0.86);
+}
+html.trial3 .cardform__count {
+  font-size: 0.875rem;
+  color: rgb(var(--rgb-white) / 0.8);
+}
+html.trial3 .cardform__guide {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: rgb(var(--rgb-white) / 0.84);
+  line-height: 1.85;
+}
+html.trial3 .cardform__guide-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: rgb(var(--rgb-white) / 0.9);
+}
+html.trial3 .cardform__consent {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: rgb(var(--rgb-white) / 0.9);
+  line-height: 1.75;
+}
+html.trial3 .cardform__submit .btn {
+  font-size: 1.1875rem;
+}
+
+/* ── Declarations ───────────────────────────────────────────────────────────────────────── */
+html.trial3 .declarations__text .declarations__en {
+  font-size: 0.875rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+html.trial3 .declarations__text .declarations__sentence {
+  font-size: 1.0625rem;
+  font-weight: 700;
+}
+html.trial3 .declarations__item:not(.is-on) strong {
+  opacity: 0.8;
+}
+
+/* ── Give ───────────────────────────────────────────────────────────────────────────────── */
+html.trial3 .finale__kicker {
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+html.trial3 .finale__body {
+  font-size: 1.125rem;
+  font-weight: 500;
+  line-height: 1.85;
+  color: rgb(var(--rgb-base) / 0.95);
+}
+
+/* ── Header rail, footer, teaser: nothing under 14px ────────────────────────────────────── */
+html.trial3 .journey-rail__en {
+  font-size: 0.75rem;
+}
+html.trial3 .journey-rail__zh {
+  font-size: 0.8125rem;
+}
+html.trial3 .fcard__name,
+html.trial3 .teaser__count {
+  font-size: 0.875rem;
+}
+
+/* The Respond lead is two sentences on two lines: give each sentence room for one line. */
+@media (min-width: 900px) {
+  html.trial3 #respond .chapter__head .lead {
+    max-width: 32em;
+  }
+}
+
+/* ── Campaign keywords: always larger than the rest of their line (keywords.ts) ─────────── */
+html.trial3 .kw {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.32em;
+  line-height: 1; /* close to the text around it, but never 0: its glyphs would overlap the next line */
+  letter-spacing: 0.01em;
+  color: var(--accent-text);
+}
+html.trial3 .kw--zh {
+  font-family: var(--font-heading-zh);
+  font-size: 1.2em;
+}
+/* In big headings a smaller step is enough, and keeps the line inside the column. */
+html.trial3 :is(h1, h2, h3, .chapter__title, .ministry__title, .ministry__headline, .declarations__text strong) .kw {
+  font-size: 1.12em;
+}
+/* On the 金黃 panels, buttons and the header the colour stays, only the size changes. */
+html.trial3 :is(.btn, .site-nav, .site-header__give, .finale, .journey-rail, .chapter-step, .card-result__sent) .kw {
+  color: inherit;
+}
+html.trial3 :is(.btn, .site-nav, .journey-rail) .kw {
+  font-size: 1.15em;
+}
+
+/* ── No overlaps, no cut-off text ───────────────────────────────────────────────────────── */
+/* Chinese glyphs fill the whole em, so a line height under ~1.1 lets two lines touch. */
+html.trial3 .chapter__title {
+  line-height: 1.14;
+}
+html.trial3 #appreciate-title .phrase:last-child {
+  font-size: 1.16em;
+}
+/* The ministry number sits above its title instead of behind it. */
+html.trial3 .ministry__index {
+  margin-bottom: 0.06em;
+  line-height: 0.9;
+}
+/* Every quote and video title is shown whole, never clipped with 「…」 or cut mid-line. */
+html.trial3 .polaroid__quote,
+html.trial3 .video-playlist__title,
+html.trial3 .video-playlist__item-title {
+  display: block;
+  -webkit-line-clamp: unset;
+  line-clamp: none;
+  overflow: visible;
+  overflow-wrap: anywhere;
+}
+html.trial3 .video-playlist__item-title {
+  min-height: 0;
+}
+/* The lead number gets a row of its own, so it can be large without touching its neighbours;
+   the other figures share the row below. */
+html.trial3 .ministry__stats {
+  grid-template-columns: repeat(auto-fit, minmax(8.5em, 1fr));
+}
+html.trial3 .ministry__stat:first-child {
+  grid-column: 1 / -1;
+}
+/* Keep a visible space between a keyword and the Chinese around it. */
+html.trial3 .kw:not(.kw--zh) {
+  margin-inline: 0.12em;
+}
