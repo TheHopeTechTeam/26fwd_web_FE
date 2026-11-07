@@ -4,7 +4,7 @@
  * layer, and never runs on the production host.
  */
 import './overlay.css';
-import { DESIGN_BLOCKS, PRIORITY_LABEL, idsLabel, type DesignBlock, type Priority } from './blocks';
+import { DESIGN_BLOCKS, GENERAL_SPECS, PRIORITY_LABEL, idsLabel, type DesignBlock, type Priority } from './blocks';
 
 const PRODUCTION_HOSTS = ['forward.thehope.co'];
 
@@ -53,6 +53,7 @@ function start(): void {
         const badge = document.createElement('span');
         badge.className = `dsg-badge dsg-badge--${block.priority}`;
         badge.textContent = `${PRIORITY_LABEL[block.priority]}｜${idsLabel(block.ids)}｜${block.name}`;
+        badge.addEventListener('click', () => openSpec(block));
         layer.append(box, badge);
         frames.set(el, { el, block, box, badge });
         changed = true;
@@ -91,14 +92,74 @@ function start(): void {
     requestAnimationFrame(() => {
       queued = false;
       const changed = scan();
-      // A modal opened after the frames were drawn sits above them: show the layer again.
+      // A modal makes everything outside it inert, so the layer lives inside the open modal (its
+      // labels stay clickable) and goes back to <body> when the modal closes.
+      const modal = document.querySelector('dialog[open]');
+      const host = modal ?? document.body;
+      const moved = root.parentElement !== host;
+      if (moved) host.append(root);
       const dialogs = document.querySelectorAll('dialog[open]').length;
-      if (changed || dialogs !== openDialogs) stack();
+      if (changed || moved || dialogs !== openDialogs) stack();
       openDialogs = dialogs;
       paint();
       renderList();
     });
   };
+
+  // ---- spec drawer ------------------------------------------------------------------------
+  const drawer = document.createElement('aside');
+  drawer.className = 'dsg-drawer';
+  drawer.hidden = true;
+  const closeDrawer = () => {
+    drawer.hidden = true;
+  };
+  const section = (title: string, text: string) => {
+    const wrap = document.createElement('section');
+    const h = document.createElement('h4');
+    h.textContent = title;
+    const p = document.createElement('p');
+    p.textContent = text;
+    wrap.append(h, p);
+    return wrap;
+  };
+  const showDrawer = (head: HTMLElement, ...parts: HTMLElement[]) => {
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'dsg-drawer__close';
+    close.textContent = '關閉';
+    close.addEventListener('click', closeDrawer);
+    drawer.replaceChildren(close, head, ...parts);
+    drawer.scrollTop = 0;
+    drawer.hidden = false;
+  };
+  function openSpec(block: DesignBlock): void {
+    const head = document.createElement('div');
+    head.className = 'dsg-drawer__head';
+    const tag = document.createElement('em');
+    tag.className = block.priority;
+    tag.textContent = PRIORITY_LABEL[block.priority];
+    const title = document.createElement('h3');
+    title.textContent = `${idsLabel(block.ids)}　${block.name}`;
+    head.append(tag, title);
+    const { spec } = block;
+    showDrawer(
+      head,
+      section('現況（實測）', spec.now),
+      section('設計問題', spec.issue),
+      section('調整後規格・桌機（建議值）', spec.desktop),
+      section('調整後規格・手機（建議值）', spec.mobile),
+      section('對應設計指引', spec.guides),
+      section('驗收方式', spec.check),
+    );
+  }
+  function openGeneral(): void {
+    const head = document.createElement('div');
+    head.className = 'dsg-drawer__head';
+    const title = document.createElement('h3');
+    title.textContent = '通用規格（所有區塊共用）';
+    head.append(title);
+    showDrawer(head, ...GENERAL_SPECS.map((g) => section(g.title, g.text)));
+  }
 
   // ---- panel ------------------------------------------------------------------------------
   const toggle = document.createElement('button');
@@ -111,7 +172,7 @@ function start(): void {
   head.className = 'dsg-head';
   const note = document.createElement('p');
   note.className = 'dsg-note';
-  note.textContent = '紅框＝優先、藍虛線＝選做；標籤上的編號是文字表編號。成果卡與信心宣告要先送出一張卡才會出現。';
+  note.textContent = '紅框＝優先、藍虛線＝選做；標籤上的編號是文字表編號。點框上的標籤或清單項目，右側會顯示該區塊的現況與調整後規格。成果卡與信心宣告要先送出一張卡才會出現。';
   const list = document.createElement('ul');
 
   const mkBtn = (text: string, pressed: boolean, on: () => void) => {
@@ -132,6 +193,7 @@ function start(): void {
           schedule();
         }),
       ),
+      mkBtn('通用規格', false, openGeneral),
       mkBtn(framesOn ? '隱藏框' : '顯示框', !framesOn, () => {
         framesOn = !framesOn;
         layer.hidden = !framesOn;
@@ -153,7 +215,10 @@ function start(): void {
         name.textContent = els.length ? b.name : `${b.name}（${b.hidden ?? '目前不在畫面上'}）`;
         li.append(tag, ids, name);
         li.classList.toggle('is-off', els.length === 0);
-        li.addEventListener('click', () => els[0]?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+        li.addEventListener('click', () => {
+          els[0]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          openSpec(b);
+        });
         return li;
       }),
     );
@@ -166,7 +231,7 @@ function start(): void {
     syncToggle();
   });
   panel.append(head, note, list);
-  layer.after(panel, toggle);
+  layer.after(panel, toggle, drawer);
   syncToggle();
   renderHead();
 

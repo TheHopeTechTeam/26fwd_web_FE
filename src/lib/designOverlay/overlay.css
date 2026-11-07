@@ -46,7 +46,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   box-shadow: 0 1px 4px rgb(0 0 0 / 0.45);
-  pointer-events: none;
+  pointer-events: auto;
+  cursor: pointer;
 }
 .dsg-badge--p1 {
   background: #e5202a;
@@ -152,5 +153,66 @@
   background: #e5202a;
 }
 .dsg-panel li em.p2 {
+  background: #2b6fb8;
+}
+
+.dsg-drawer {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  bottom: 10px;
+  width: min(440px, calc(100vw - 20px));
+  padding: 14px 16px 18px;
+  overflow: auto;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 6px 30px rgb(0 0 0 / 0.5);
+  pointer-events: auto;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.dsg-drawer[hidden] {
+  display: none;
+}
+.dsg-drawer__close {
+  position: sticky;
+  top: 0;
+  float: right;
+  padding: 4px 10px;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  background: #f3f3f3;
+  font: inherit;
+  cursor: pointer;
+}
+.dsg-drawer__head {
+  margin-bottom: 8px;
+}
+.dsg-drawer h3 {
+  margin: 4px 0 0;
+  font-size: 16px;
+  line-height: 1.35;
+}
+.dsg-drawer h4 {
+  margin: 12px 0 2px;
+  font-size: 12px;
+  color: #0f3b59;
+}
+.dsg-drawer p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+.dsg-drawer em {
+  display: inline-block;
+  padding: 0 8px;
+  border-radius: 8px;
+  color: #fff;
+  font-style: normal;
+  font-size: 11px;
+}
+.dsg-drawer em.p1 {
+  background: #e5202a;
+}
+.dsg-drawer em.p2 {
   background: #2b6fb8;
 }
