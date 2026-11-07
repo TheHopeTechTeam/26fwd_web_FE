@@ -216,3 +216,28 @@
 .dsg-drawer em.p2 {
   background: #2b6fb8;
 }
+
+.dsg-drawer__changes {
+  margin: 4px 0 0;
+  padding-left: 1.2em;
+}
+.dsg-drawer__changes li {
+  margin-bottom: 6px;
+}
+
+/* Scaled down inside /compare/: size the notes by the frame's width so they stay readable. */
+#dsg-root.is-framed .dsg-drawer {
+  width: min(46vw, calc(100vw - 20px));
+  min-width: min(360px, calc(100vw - 20px));
+  font-size: max(13px, 2.4vw);
+}
+#dsg-root.is-framed .dsg-drawer h3 {
+  font-size: 1.25em;
+}
+#dsg-root.is-framed .dsg-drawer h4 {
+  font-size: 0.95em;
+}
+#dsg-root.is-framed .dsg-badge,
+#dsg-root.is-framed .dsg-toggle {
+  font-size: max(12px, 1.5vw);
+}

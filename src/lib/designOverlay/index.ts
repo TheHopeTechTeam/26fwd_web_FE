@@ -4,7 +4,7 @@
  * layer, and never runs on the production host.
  */
 import './overlay.css';
-import { DESIGN_BLOCKS, GENERAL_SPECS, PRIORITY_LABEL, idsLabel, type DesignBlock, type Priority } from './blocks';
+import { DESIGN_BLOCKS, PRIORITY_LABEL, idsLabel, type DesignBlock, type Priority } from './blocks';
 
 const PRODUCTION_HOSTS = ['forward.thehope.co'];
 
@@ -21,6 +21,9 @@ function start(): void {
   const root = document.createElement('div');
   root.id = 'dsg-root';
   root.setAttribute('popover', 'manual');
+  // Inside /compare/ the page is shown scaled down: start with the list closed and the notes larger.
+  const framed = window.self !== window.top;
+  root.classList.toggle('is-framed', framed);
   const layer = document.createElement('div');
   layer.className = 'dsg-layer';
   root.append(layer);
@@ -113,15 +116,6 @@ function start(): void {
   const closeDrawer = () => {
     drawer.hidden = true;
   };
-  const section = (title: string, text: string) => {
-    const wrap = document.createElement('section');
-    const h = document.createElement('h4');
-    h.textContent = title;
-    const p = document.createElement('p');
-    p.textContent = text;
-    wrap.append(h, p);
-    return wrap;
-  };
   const showDrawer = (head: HTMLElement, ...parts: HTMLElement[]) => {
     const close = document.createElement('button');
     close.type = 'button';
@@ -141,24 +135,16 @@ function start(): void {
     const title = document.createElement('h3');
     title.textContent = `${idsLabel(block.ids)}　${block.name}`;
     head.append(tag, title);
-    const { spec } = block;
-    showDrawer(
-      head,
-      section('現況（實測）', spec.now),
-      section('設計問題', spec.issue),
-      section('調整後規格・桌機（建議值）', spec.desktop),
-      section('調整後規格・手機（建議值）', spec.mobile),
-      section('對應設計指引', spec.guides),
-      section('驗收方式', spec.check),
-    );
-  }
-  function openGeneral(): void {
-    const head = document.createElement('div');
-    head.className = 'dsg-drawer__head';
-    const title = document.createElement('h3');
-    title.textContent = '通用規格（所有區塊共用）';
-    head.append(title);
-    showDrawer(head, ...GENERAL_SPECS.map((g) => section(g.title, g.text)));
+    const list = document.createElement('ul');
+    list.className = 'dsg-drawer__changes';
+    for (const line of block.changes) {
+      const li = document.createElement('li');
+      li.textContent = line;
+      list.append(li);
+    }
+    const intro = document.createElement('h4');
+    intro.textContent = '試作版 3 相較原版的調整';
+    showDrawer(head, intro, list);
   }
 
   // ---- panel ------------------------------------------------------------------------------
@@ -167,12 +153,12 @@ function start(): void {
   toggle.className = 'dsg-toggle';
   const panel = document.createElement('div');
   panel.className = 'dsg-panel';
-  panel.hidden = innerWidth < 700;
+  panel.hidden = framed || innerWidth < 700;
   const head = document.createElement('div');
   head.className = 'dsg-head';
   const note = document.createElement('p');
   note.className = 'dsg-note';
-  note.textContent = '紅框＝優先、藍虛線＝選做；標籤上的編號是文字表編號。點框上的標籤或清單項目，右側會顯示該區塊的現況與調整後規格。成果卡與信心宣告要先送出一張卡才會出現。';
+  note.textContent = '紅框＝優先、藍虛線＝選做；標籤上的編號是文字表編號。點框上的標籤或清單項目，右側會簡要列出試作版 3 在該區塊調整了什麼（完整規格見試算表「設計強化規格」）。成果卡與信心宣告要先送出一張卡才會出現。';
   const list = document.createElement('ul');
 
   const mkBtn = (text: string, pressed: boolean, on: () => void) => {
@@ -193,7 +179,6 @@ function start(): void {
           schedule();
         }),
       ),
-      mkBtn('通用規格', false, openGeneral),
       mkBtn(framesOn ? '隱藏框' : '顯示框', !framesOn, () => {
         framesOn = !framesOn;
         layer.hidden = !framesOn;
