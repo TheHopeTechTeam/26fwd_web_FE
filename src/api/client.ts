@@ -1,4 +1,5 @@
 import type {
+  AdminDeleteResponse,
   AdminListResponse,
   AdminStatusResponse,
   ApiErrorBody,
@@ -186,6 +187,13 @@ export function createApiClient({ baseUrl, fetch: fetchImpl, timeoutMs = 15000 }
         body: { from },
         token,
       });
+    },
+    /**
+     * Deletes a hidden card for good (#35). No `from`: only hidden cards can be deleted, so if the
+     * card is no longer hidden it fails with CARD_STATUS_CHANGED (409) and the card's status now.
+     */
+    adminDeleteCard(token: string, id: string) {
+      return request<AdminDeleteResponse>('DELETE', `/api/admin/cards/${encodeURIComponent(id)}`, { token });
     },
   };
 }

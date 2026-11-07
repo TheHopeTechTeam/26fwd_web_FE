@@ -283,4 +283,39 @@ describe('admin API', () => {
     const pending = await mocked.adminListCards(ADMIN_TOKEN, 'pending');
     expect(pending.items.every((c) => c.moderation === null)).toBe(true);
   });
+
+  it('deletes a hidden card for good (#35): it leaves the hidden list and a second delete is 404', async () => {
+    const { client } = setup();
+    const target = (await client.adminListCards(ADMIN_TOKEN, 'hidden')).items[0]!;
+    await expect(client.adminDeleteCard(ADMIN_TOKEN, target.id)).resolves.toEqual({ success: true, card_id: target.id });
+    expect((await client.adminListCards(ADMIN_TOKEN, 'hidden')).items.some((c) => c.id === target.id)).toBe(false);
+    await expectError(client.adminDeleteCard(ADMIN_TOKEN, target.id), 404, 'NOT_FOUND');
+  });
+
+  it('only hidden cards can be deleted: one published again by someone else gets CARD_STATUS_CHANGED and stays', async () => {
+    const { client } = setup();
+    const target = (await client.adminListCards(ADMIN_TOKEN, 'hidden')).items[0]!;
+    // A saw it as hidden; B publishes it again before A deletes.
+    await client.adminSetStatus(ADMIN_TOKEN, target.id, 'approved', 'hidden');
+    const error = await expectError(client.adminDeleteCard(ADMIN_TOKEN, target.id), 409, 'CARD_STATUS_CHANGED');
+    expect(error.currentStatus).toBe('approved');
+    expect(describeError(error)).toBe('這張卡已被其他人處理，請重新整理後再操作。');
+    expect((await client.adminListCards(ADMIN_TOKEN, 'approved')).items.some((c) => c.id === target.id)).toBe(true);
+
+    const pending = (await client.adminListCards(ADMIN_TOKEN, 'pending')).items[0]!;
+    expect((await expectError(client.adminDeleteCard(ADMIN_TOKEN, pending.id), 409, 'CARD_STATUS_CHANGED')).currentStatus).toBe('pending');
+  });
+
+  it('a delete needs the admin token and a valid id, and sends DELETE with no body', async () => {
+    await expectError(setup().client.adminDeleteCard('short', 'seed_h01'), 401, 'UNAUTHORIZED');
+    await expectError(setup().client.adminDeleteCard(ADMIN_TOKEN, 'bad id!'), 400, 'VALIDATION_ERROR');
+
+    const calls: Array<{ method?: string; path: string; body?: unknown }> = [];
+    const fetch: FetchLike = async (input, init = {}) => {
+      calls.push({ method: init.method, path: input, body: init.body });
+      return new Response(JSON.stringify({ success: true, card_id: 'c_1' }), { status: 200 });
+    };
+    await createApiClient({ baseUrl: '', fetch }).adminDeleteCard(ADMIN_TOKEN, 'c_1');
+    expect(calls).toEqual([{ method: 'DELETE', path: '/api/admin/cards/c_1', body: undefined }]);
+  });
 });

@@ -58,16 +58,19 @@ npx wrangler d1 execute forward_cards_staging --remote --file=./migrations/0001_
 npx wrangler d1 execute forward_cards_staging --remote --file=./migrations/0002_client_token_rate_limits.sql
 npx wrangler d1 execute forward_cards_staging --remote --file=./migrations/0003_approved_card_count.sql
 npx wrangler d1 execute forward_cards_staging --remote --file=./migrations/0004_moderation.sql
+npx wrangler d1 execute forward_cards_staging --remote --file=./migrations/0005_card_deletions.sql
 npx wrangler d1 execute forward_cards_prod --remote --file=./migrations/0001_initial.sql
 npx wrangler d1 execute forward_cards_prod --remote --file=./migrations/0002_client_token_rate_limits.sql
 npx wrangler d1 execute forward_cards_prod --remote --file=./migrations/0003_approved_card_count.sql
 npx wrangler d1 execute forward_cards_prod --remote --file=./migrations/0004_moderation.sql
+npx wrangler d1 execute forward_cards_prod --remote --file=./migrations/0005_card_deletions.sql
 ```
 
 > - 已經套用過的 migration 不可修改，之後的變更一律新增下一個編號。
 > - `0002` 會把限流表的鍵欄位改名，**舊版程式在套用後無法送卡**。對已上線的資料庫，套用 `0002` 後要立刻部署包含 Client Token 的版本；新建的資料庫（例如 M4 的正式庫）則在第一次部署前套用即可。
 > - `0003` 新增「已核准總數」小表與三個觸發器，以當下已核准的張數為起點。與部署的先後順序不影響運作：尚未套用時，卡片牆會改為逐張計數並在 log 記錄錯誤。重新執行一次會依實際卡片重新計算總數，可用來修正總數。
 > - `0004` 新增自動公開開關（預設關閉）、模型判斷紀錄表與狀態變更紀錄表。**要在部署 M1.6 的程式之前套用**：後台列表會讀判斷紀錄表，核准與隱藏會寫入狀態變更紀錄，未套用時這些操作都會失敗。套用後舊版程式不受影響。
+> - `0005` 新增刪除紀錄表（#35）。**要在部署後台刪除的程式之前套用**：刪除會寫入這張表，未套用時每次刪除都會失敗（回 500），卡片不會被刪。套用後舊版程式不受影響。回復時要先回復程式，再刪除這張表，表裡的刪除紀錄會一起消失。
 
 #### `0003` 的對帳與回復
 

@@ -35,6 +35,31 @@ export async function changeStatus(db: D1Database, id: string, next: CardStatus,
       SELECT ?, ?, ?, 'reviewer', ? WHERE changes() = 1 AND ? <> ?`).bind(id, from, next, new Date().toISOString(), from, next),
   ])
   if (update?.meta.changes) return
+  await refuse(db, id)
+}
+
+// Deletes a card only while it is hidden (#35), so a card someone published again after the reviewer
+// loaded the list is never deleted: that is the same 409 as above. In the same transaction its
+// judgment and status history go too, by statement rather than only through ON DELETE CASCADE, so
+// nothing is left behind where foreign keys are not enforced; one row in card_deletions, with no
+// card text, records the deletion.
+export async function deleteHiddenCard(db: D1Database, id: string): Promise<void> {
+  const gone = 'NOT EXISTS (SELECT 1 FROM forward_cards WHERE id=?)'
+  const [removal] = await db.batch([
+    db.prepare("DELETE FROM forward_cards WHERE id=? AND status='hidden'").bind(id),
+    // changes() is the DELETE's: a card that was not deleted leaves no record.
+    db.prepare(`INSERT INTO card_deletions (card_id, actor, deleted_at)
+      SELECT ?, 'reviewer', ? WHERE changes() = 1`).bind(id, new Date().toISOString()),
+    db.prepare(`DELETE FROM card_moderations WHERE card_id=? AND ${gone}`).bind(id, id),
+    db.prepare(`DELETE FROM card_status_changes WHERE card_id=? AND ${gone}`).bind(id, id),
+  ])
+  if (removal?.meta.changes) return
+  await refuse(db, id)
+}
+
+// Why a change or a delete did not apply: the card does not exist (404), or it no longer has the
+// status the reviewer saw (409, with the status it has now).
+async function refuse(db: D1Database, id: string): Promise<never> {
   const card = await db.prepare('SELECT status FROM forward_cards WHERE id=?').bind(id).first<{ status: CardStatus }>()
   if (!card) throw new ApiError(404, 'NOT_FOUND', 'Card not found')
   throw new ApiError(409, 'CARD_STATUS_CHANGED', 'The card was changed by someone else', { currentStatus: card.status })
