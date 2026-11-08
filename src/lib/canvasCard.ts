@@ -5,8 +5,9 @@ import type { Declaration } from '../data/content';
 
 /**
  * Personal FORWARD 卡 image (US-09): native Canvas 2D, no html2canvas. Since 11/06 one design,
- * 1:1: the printed FORWARD 卡's look with the declaration of faith the visitor picks (#23) in a
- * 金黃 band. The 9:16 size is kept in the drawing code but no longer offered.
+ * 1:1: the printed FORWARD 卡's look with the declaration of faith the visitor picks (#23) closing
+ * the card, on that declaration's ground (11/08). The 9:16 size is kept in the drawing code but
+ * no longer offered.
  */
 export type CardFormat = 'square' | 'story';
 
@@ -15,7 +16,7 @@ export const CARD_FORMATS: Record<CardFormat, { width: number; height: number; l
   story: { width: 1080, height: 1920, label: '限時動態 9:16' },
 };
 
-type Channel = 'base' | 'navy' | 'accent' | 'earth' | 'light' | 'white' | 'card-brown';
+type Channel = 'base' | 'navy' | 'accent' | 'earth' | 'light' | 'white' | 'card-brown' | 'card-slate' | 'print-gold';
 
 /**
  * Canvas cannot resolve CSS var(), so card colours are read from the theme channels in
@@ -72,6 +73,44 @@ function spaced(ctx: CanvasRenderingContext2D, text: string, x: number, y: numbe
   }
 }
 
+/** Draws an image to cover the whole card, centred (like CSS background-size: cover). */
+function drawCover(ctx: CanvasRenderingContext2D, img: CanvasImageSource, w: number, h: number) {
+  const iw = (img as HTMLImageElement).naturalWidth || w;
+  const ih = (img as HTMLImageElement).naturalHeight || h;
+  const scale = Math.max(w / iw, h / ih);
+  ctx.drawImage(img, (w - iw * scale) / 2, (h - ih * scale) / 2, iw * scale, ih * scale);
+}
+
+let linesCache: { src: CanvasImageSource; w: number; h: number; canvas: HTMLCanvasElement } | null = null;
+
+/**
+ * The paper's line drawing and grain on their own, centred on mid grey, so a light ground can
+ * carry them (blended soft-light) without being darkened by the brown they were printed on.
+ * Built once per background and size.
+ */
+function paperLines(bg: CanvasImageSource, w: number, h: number): HTMLCanvasElement | null {
+  if (linesCache && linesCache.src === bg && linesCache.w === w && linesCache.h === h) return linesCache.canvas;
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const c = canvas.getContext('2d');
+  if (!c) return null;
+  drawCover(c, bg, w, h);
+  const image = c.getImageData(0, 0, w, h);
+  const px = image.data;
+  let sum = 0;
+  for (let i = 0; i < px.length; i += 4) sum += 0.3 * px[i]! + 0.59 * px[i + 1]! + 0.11 * px[i + 2]!;
+  const mean = sum / (px.length / 4);
+  for (let i = 0; i < px.length; i += 4) {
+    const lum = 0.3 * px[i]! + 0.59 * px[i + 1]! + 0.11 * px[i + 2]!;
+    const v = Math.max(0, Math.min(255, 128 + (lum - mean) * 3));
+    px[i] = px[i + 1] = px[i + 2] = v;
+  }
+  c.putImageData(image, 0, 0);
+  linesCache = { src: bg, w, h, canvas };
+  return canvas;
+}
+
 /** Rounded rectangle path (ctx.roundRect is missing in older Safari). */
 function roundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath();
@@ -86,8 +125,10 @@ function roundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: num
 /**
  * The paper style (11/04): the printed FORWARD 卡 — brown with its line drawing, a large FORWARD
  * CARD title, each prompt with its English line over a white answer box, then the signature.
- * With a declaration (11/06, team choice): its sentence 「我參與 FORWARD，…」 large — the line the
- * visitor takes away — under the title, behind a 金黃 rule, with its English title small above it.
+ * With a declaration: its sentence 「我參與 FORWARD，…」 behind a 金黃 rule, its English title small
+ * above it, closing the card (11/08, the user's pick B; it sat under the title from 11/06), so
+ * the top reads like the printed card; the visitor's name signs it at the bottom right. Each declaration has its ground
+ * (11/08): the card's grey-brown, 灰藍 (the same paper re-hued), or 印刷金 with dark text.
  */
 function drawPaperCard(
   ctx: CanvasRenderingContext2D,
@@ -98,17 +139,35 @@ function drawPaperCard(
 ) {
   const { width: w, height: h } = CARD_FORMATS[format];
   const story = format === 'story';
+  // Only /design-trial/ sets this class: the declaration sentence leads, the title and the labels
+  // step back (設計強化規格, 成果卡圖片).
+  const trial = typeof document !== 'undefined' && document.documentElement.classList.contains('trial');
   const pad = story ? 96 : 80;
-  const gold = color('accent');
+  const ground = declaration?.ground ?? 'card';
+  // 印刷金 is light: the 金黃 and white text turn dark brown on it, like the site's 金黃 panels.
+  const light = ground === 'gold';
+  const gold = light ? color('base') : color('accent');
+  const onGround = light ? color('base') : color('white');
   const ink = color('base');
 
-  ctx.fillStyle = color('card-brown');
+  ctx.fillStyle = color(light ? 'print-gold' : ground === 'slate' ? 'card-slate' : 'card-brown');
   ctx.fillRect(0, 0, w, h);
-  if (bg) {
-    const iw = (bg as HTMLImageElement).naturalWidth || w;
-    const ih = (bg as HTMLImageElement).naturalHeight || h;
-    const scale = Math.max(w / iw, h / ih);
-    ctx.drawImage(bg, (w - iw * scale) / 2, (h - ih * scale) / 2, iw * scale, ih * scale);
+  if (bg && light) {
+    const lines = paperLines(bg, w, h);
+    if (lines) {
+      ctx.globalCompositeOperation = 'soft-light';
+      ctx.drawImage(lines, 0, 0);
+      ctx.globalCompositeOperation = 'source-over';
+    }
+  } else if (bg) {
+    drawCover(ctx, bg, w, h);
+    // 灰藍: the same paper with its hue changed; its lightness, lines and grain stay.
+    if (ground === 'slate') {
+      ctx.globalCompositeOperation = 'color';
+      ctx.fillStyle = color('card-slate');
+      ctx.fillRect(0, 0, w, h);
+      ctx.globalCompositeOperation = 'source-over';
+    }
   }
 
   ctx.textBaseline = 'top';
@@ -116,46 +175,37 @@ function drawPaperCard(
   const measure = (s: string) => ctx.measureText(s).width;
 
   let y = pad;
-  const kicker = story ? 28 : 22;
+  const kicker = story ? 28 : trial ? 18 : 22;
+  const footer = story ? 26 : trial ? 18 : 22;
 
   // Title, stacked on the story like the paper card.
-  const titleSize = story ? 150 : declaration ? 84 : 96;
+  const titleSize = story ? 150 : trial && declaration ? 72 : 96;
   ctx.fillStyle = gold;
   ctx.font = `800 ${titleSize}px ${DISPLAY}`;
   for (const line of story ? ['FORWARD', 'CARD'] : ['FORWARD CARD']) {
     ctx.fillText(line, pad, y);
     y += titleSize * 0.9;
   }
-  y += story ? 80 : declaration ? 34 : 44;
+  y += story ? 80 : 44;
 
-  // The declaration: its English title as a small label right above the sentence (11/06, the
-  // user's choice over heading the card), then the sentence, large, behind one 金黃 rule.
+  // The declaration, measured now and drawn last: its English title as a small label right above
+  // the sentence (32px, 11/08: a size down), behind one 金黃 rule, near the bottom of the card.
+  // wrapText lets a 「，」 or 「。」 hang past the line it ends rather than start the next one, so the
+  // sentence steps down a pixel at a time (at most 6) until every line, mark included, fits (11/06).
+  const indent = 30;
+  const column = maxWidth - indent;
+  let hero = story ? 44 : trial ? 36 : 32;
+  let declLines: string[] = [];
   if (declaration) {
-    const indent = 30;
-    const column = maxWidth - indent;
-    // wrapText lets a 「，」 or 「。」 hang past the line it ends rather than start the next one, so the
-    // sentence steps down a pixel at a time (at most 6) until every line, mark included, fits (11/06).
-    let hero = story ? 54 : 40;
-    let lines: string[] = [];
     for (const min = hero - 6; ; hero -= 1) {
       ctx.font = `700 ${hero}px ${BODY}`;
-      lines = wrapText(declaration.text, column, measure);
-      if (hero <= min || lines.every((line) => measure(line) <= column)) break;
+      declLines = wrapText(declaration.text, column, measure);
+      if (hero <= min || declLines.every((line) => measure(line) <= column)) break;
     }
-    const heroLine = Math.round(hero * 1.45);
-    const start = y;
-    ctx.fillStyle = gold;
-    ctx.font = `700 ${kicker}px ${DISPLAY}`;
-    spaced(ctx, declaration.en, pad + indent, y, 5);
-    y += kicker + (story ? 18 : 12);
-    ctx.font = `700 ${hero}px ${BODY}`;
-    ctx.fillStyle = color('white');
-    lines.forEach((line, i) => ctx.fillText(line, pad + indent, y + i * heroLine + (heroLine - hero) / 2));
-    y += lines.length * heroLine;
-    ctx.fillStyle = gold;
-    ctx.fillRect(pad, start + 2, 6, y - start - 6);
-    y += story ? 64 : 40;
   }
+  const heroLine = Math.round(hero * 1.45);
+  const labelGap = story ? 18 : 12;
+  const declHeight = declaration ? kicker + labelGap + declLines.length * heroLine : 0;
 
   const top = y;
   const bottom = h - pad;
@@ -165,18 +215,24 @@ function drawPaperCard(
     const a = wrapText(gratitude, maxWidth - boxPad * 2, measure);
     const b = wrapText(anticipate, maxWidth - boxPad * 2, measure);
     const prompt = Math.max(Math.round(size * 1.05), story ? 36 : 30);
-    const en = Math.round(prompt * 0.62);
+    // The English line under each prompt, larger since 11/08 (it was 62% and hard to read).
+    const en = Math.round(prompt * 0.8);
     const line = Math.round(size * 1.55);
     // Boxes keep a few lines' height even for a short answer, like the large boxes on paper.
     const minLines = story ? 4 : 3;
     const boxA = boxPad * 2 + Math.max(a.length, minLines) * line;
     const boxB = boxPad * 2 + Math.max(b.length, minLines) * line;
-    const head = prompt * 1.3 + en * 1.4 + 14;
+    // A little more room between each prompt and its English line (11/08).
+    const promptGap = Math.round(prompt * 0.3);
+    const head = prompt * 1.3 + promptGap + en * 1.4 + 14;
     const gap = Math.round(size * 1.2);
     // The signature a little larger (11/06), never below 30px even when the answers are long.
     const sign = Math.max(Math.round(size * 1.2), story ? 36 : 30);
-    const total = head * 2 + boxA + boxB + gap + sign * 2.2;
-    return { size, a, b, boxPad, prompt, en, line, boxA, boxB, head, gap, sign, total };
+    // Under the boxes: the declaration, the signature under it, then clear space above the
+    // sign-off (11/08); without a declaration, just the signature.
+    const tail = declaration ? Math.round(size * 0.8) + declHeight + sign * 1.6 + footer + 18 : sign * 2;
+    const total = head * 2 + boxA + boxB + gap + tail;
+    return { size, a, b, boxPad, prompt, promptGap, en, line, boxA, boxB, head, gap, sign, total };
   };
   // Shrink until both boxes fit; very long answers lose their line breaks before overflowing.
   const fit = (gratitude: string, anticipate: string) => {
@@ -196,7 +252,7 @@ function drawPaperCard(
     ctx.fillStyle = gold;
     ctx.font = `400 ${layout.prompt}px ${HEADING}`;
     ctx.fillText(prompt, pad, y);
-    y += layout.prompt * 1.3;
+    y += layout.prompt * 1.3 + layout.promptGap;
     ctx.font = `700 ${layout.en}px ${DISPLAY}`;
     ctx.fillText(promptEn, pad, y);
     y += layout.en * 1.4 + 14;
@@ -215,22 +271,40 @@ function drawPaperCard(
   block(PROMPTS.gratitude, PROMPTS_EN.gratitude, layout.a, layout.boxA);
   y += layout.gap;
   block(PROMPTS.anticipate, PROMPTS_EN.anticipate, layout.b, layout.boxB);
-  y += layout.sign;
 
-  ctx.fillStyle = gold;
-  ctx.font = `600 ${layout.sign}px ${BODY}`;
-  ctx.textAlign = 'right';
-  ctx.fillText(`— ${content.nickname}`, w - pad, y);
-  ctx.textAlign = 'left';
+  const signature = (top: number) => {
+    ctx.fillStyle = gold;
+    ctx.font = `600 ${layout.sign}px ${BODY}`;
+    ctx.textAlign = 'right';
+    ctx.fillText(`— ${content.nickname}`, w - pad, top);
+    ctx.textAlign = 'left';
+  };
+
+  // The declaration closes the card, near the bottom (or right under the boxes when the answers
+  // are long), and the visitor's name signs it at the bottom right (11/08).
+  if (!declaration) signature(y + layout.sign * 0.8);
+  if (declaration) {
+    const start = Math.max(y + Math.round(layout.size * 0.8), bottom - footer - 18 - layout.sign * 1.6 - declHeight);
+    ctx.fillStyle = gold;
+    ctx.font = `700 ${kicker}px ${DISPLAY}`;
+    spaced(ctx, declaration.en, pad + indent, start, 5);
+    const textTop = start + kicker + labelGap;
+    ctx.font = `700 ${hero}px ${BODY}`;
+    ctx.fillStyle = onGround;
+    declLines.forEach((line, i) => ctx.fillText(line, pad + indent, textTop + i * heroLine + (heroLine - hero) / 2));
+    ctx.fillStyle = gold;
+    ctx.fillRect(pad, start + 2, 6, declHeight - 6);
+    signature(start + declHeight + layout.sign * 0.5);
+  }
 
   // Small sign-off in the bottom corner.
-  ctx.fillStyle = color('accent', 0.72);
-  ctx.font = `700 ${story ? 26 : 22}px ${DISPLAY}`;
-  spaced(ctx, 'THE HOPE · FORWARD 2026', pad, h - pad * 0.62 - (story ? 26 : 22), 4);
+  ctx.fillStyle = light ? color('base', 0.7) : color('accent', 0.72);
+  ctx.font = `700 ${footer}px ${DISPLAY}`;
+  spaced(ctx, 'THE HOPE · FORWARD 2026', pad, h - pad * 0.62 - footer, 4);
 }
 
 /** The downloadable FORWARD 卡 (11/06, team choice): one 1:1 design, the paper card, with the
- *  chosen declaration under its title (the paper style alone has none). */
+ *  chosen declaration closing it (the paper style alone has none). */
 export function drawCard(
   ctx: CanvasRenderingContext2D,
   content: CardContent,
@@ -238,7 +312,7 @@ export function drawCard(
   declaration: Declaration,
   paperBg?: CanvasImageSource,
 ): void {
-  drawPaperCard(ctx, content, format, paperBg, declaration.palette === 'paper' ? null : declaration);
+  drawPaperCard(ctx, content, format, paperBg, declaration);
 }
 
 let paperBg: Promise<HTMLImageElement | undefined> | null = null;

@@ -14,7 +14,11 @@ export function Anticipate() {
       <div className="wrap">
         <Reveal className="chapter__head">
           <p className="kicker">
-            <span className="chapter-step">第二步</span>Anticipate 2027 我和神一起期待…
+            <span className="chapter-step">第二步</span>
+            <span className="chapter-label">
+              <span className="chapter-en">Anticipate</span>
+              2027 我和神一起期待…
+            </span>
           </p>
           <h2 id="anticipate-title" className="chapter__title display-zh">
             <Phrases text={ANTICIPATE.title} />
@@ -72,7 +76,10 @@ function MinistryBlock({ ministry, order }: { ministry: Ministry; order: number 
           >
             {ministry.stats.map((s) => (
               <div key={s.label} className="ministry__stat">
-                <dt className={s.oneLine ? 'is-one-line' : undefined}>{s.label}</dt>
+                {/* Breaks at its comma first, so no single character is left on a line (11/08). */}
+                <dt className={s.oneLine ? 'is-one-line' : undefined}>
+                  <Phrases text={s.label} />
+                </dt>
                 <dd>
                   <CountUp value={s.value} suffix={s.suffix} />
                 </dd>
@@ -109,8 +116,9 @@ const groundOf = (tone: PartnerTone) =>
  */
 function Partners() {
   const phone = useMediaQuery(PARTNERS_PHONE);
-  // Shared, so turning a tablet keeps the story that was open.
-  const [active, setActive] = useState(0);
+  // Shared, so turning a tablet keeps the story that was open. Phones start with every partner
+  // closed (11/08); the tabs always show one (the first).
+  const [active, setActive] = useState(() => (typeof window !== 'undefined' && window.matchMedia?.(PARTNERS_PHONE).matches ? -1 : 0));
   return phone ? <PartnerAccordion active={active} setActive={setActive} /> : <PartnerTabs active={Math.max(active, 0)} setActive={setActive} />;
 }
 
@@ -223,14 +231,14 @@ function PartnerPanel({ partner, tone, id, role, labelledBy }: { partner: Partne
     <div
       id={id}
       style={groundOf(tone)}
-      className={`partners__panel partners__panel--${tone}${partner.markUnder === 'story' ? ' partners__panel--mark-story' : ''}${partner.markAlign === 'end' ? ' partners__panel--mark-end' : ''}`}
+      className={`partners__panel partners__panel--${tone}${partner.photos?.length ? '' : ' partners__panel--no-media'}${partner.markUnder === 'story' ? ' partners__panel--mark-story' : ''}${partner.markAlign === 'end' ? ' partners__panel--mark-end' : ''}`}
       role={role}
       aria-labelledby={labelledBy}
     >
-      <div className="partners__media">
-        {/* Several photos turn like the ministries' (11/06); a single one keeps its own shape, so a
-            tall picture is not cut; the previous / next links went. */}
-        {partner.photos && partner.photos.length > 1 ? (
+      {/* Several photos turn like the ministries' (11/06); a single one keeps its own shape, so a
+          tall picture is not cut. A partner without photos shows its story alone (11/07). */}
+      {partner.photos && partner.photos.length > 1 ? (
+        <div className="partners__media">
           <PhotoCarousel
             key={partner.id}
             label={`${partner.name}照片`}
@@ -238,14 +246,20 @@ function PartnerPanel({ partner, tone, id, role, labelledBy }: { partner: Partne
             indicator="dots"
             className="ministry-carousel--partner"
           />
-        ) : partner.photos?.[0] ? (
-          <img className="partners__img" src={asset(partner.photos[0].src)} alt={partner.photos[0].alt} loading="lazy" decoding="async" />
-        ) : (
-          <div className="partners__photo" aria-hidden="true">
-            機構照片（待提供）
-          </div>
-        )}
-      </div>
+        </div>
+      ) : partner.photos?.[0] ? (
+        <div className="partners__media">
+          <img
+            className="partners__img"
+            src={asset(partner.photos[0].src)}
+            alt={partner.photos[0].alt}
+            width={partner.photos[0].width}
+            height={partner.photos[0].height}
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
+      ) : null}
       <div className="partners__text">
         <p className="partners__title display-zh">{partner.title}</p>
         <div className="partners__body">
@@ -278,8 +292,11 @@ const ART_GROUNDS: CSSProperties[] = [
 ];
 
 const PLACEHOLDER_FRAMES = 3;
-/** Each photo stays 5 s (team choice; 3 s was tried on 11/06 and felt too fast). */
-const SLIDE_MS = 5000;
+/** Each photo stays 3 s (11/07, the user's choice; it was 5 s while photos could still be
+ *  loading when their turn came — now a photo only comes up once it has loaded). */
+const SLIDE_MS = 3000;
+/** How long the page has to be still before a photo may change (11/08). */
+const SCROLL_REST_MS = 700;
 
 interface CarouselPhoto {
   src: string;
@@ -298,7 +315,7 @@ interface PhotoCarouselProps {
 
 /**
  * Photos as a crossfading carousel (11/05), for the ministries and, since 11/06, the outreach
- * partners. It moves on every 5 s while on screen, holds while the pointer or focus is on it, and
+ * partners. It moves on every 3 s while on screen, holds while the pointer or focus is on it, and
  * never moves by itself under reduced motion or after 暫停. Arrows and a sideways swipe change the
  * photo; a 「3／18」 count (or, for the partners' two or three photos, dots) shows where you are.
  * Without photos it cycles the placeholder frames.
@@ -314,18 +331,45 @@ function PhotoCarousel({ label, photos, placeholder, indicator = 'count', classN
   const reduced = usePrefersReducedMotion();
   const auto = count > 1 && !reduced && !stopped;
 
-  // A fresh timer per photo, so a manual change also restarts the wait.
+  // Photos load as they come up, not all at once (11/07): nothing until the carousel is about a
+  // screen away, then the one on show and the two after it. On a slow connection all five
+  // carousels used to fetch at once with the top of the page, and photos came up empty.
+  const near = useInView(rootRef, { rootMargin: '600px 0px' });
+  const [loaded, setLoaded] = useState(() => new Set([0, 1 % count, 2 % count]));
   useEffect(() => {
-    if (!auto || held || !inView) return;
-    const timer = window.setTimeout(() => setIndex((i) => (i + 1) % count), SLIDE_MS);
-    return () => window.clearTimeout(timer);
-  }, [auto, held, inView, index, count]);
-
-  // Photos load as they come up (the one on show and the next), not all at once.
-  const [loaded, setLoaded] = useState(() => new Set([0, 1 % count]));
-  useEffect(() => {
-    setLoaded((prev) => (prev.has(index) && prev.has((index + 1) % count) ? prev : new Set([...prev, index, (index + 1) % count])));
+    const want = [index, (index + 1) % count, (index + 2) % count];
+    setLoaded((prev) => (want.every((i) => prev.has(i)) ? prev : new Set([...prev, ...want])));
   }, [index, count]);
+  const [ready, setReady] = useState<Set<number>>(() => new Set());
+  const markReady = (i: number) => setReady((prev) => (prev.has(i) ? prev : new Set([...prev, i])));
+  const nextReady = !photos[(index + 1) % count] || ready.has((index + 1) % count);
+
+  // A fresh wait per photo (a manual change, coming back on screen or letting go restarts it).
+  // It moves on once the wait is over and the next photo has loaded, never to an empty frame.
+  // While the page is being scrolled it holds and counts again once the scrolling stops: a
+  // crossfade mid-scroll made phones stutter (11/08).
+  const shownAt = useRef(0);
+  useEffect(() => {
+    shownAt.current = performance.now();
+  }, [index, inView, held]);
+  useEffect(() => {
+    if (!auto || held || !inView || !nextReady) return;
+    let timer = 0;
+    const arm = (ms: number) => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => setIndex((i) => (i + 1) % count), ms);
+    };
+    const onScroll = () => {
+      shownAt.current = Math.max(shownAt.current, performance.now() - SLIDE_MS + SCROLL_REST_MS);
+      arm(Math.max(SCROLL_REST_MS, SLIDE_MS - (performance.now() - shownAt.current)));
+    };
+    arm(Math.max(0, SLIDE_MS - (performance.now() - shownAt.current)));
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener('scroll', onScroll);
+    };
+  }, [auto, held, inView, index, count, nextReady]);
 
   const go = (step: number) => setIndex((i) => (i + step + count) % count);
   const onBlur = (e: FocusEvent<HTMLDivElement>) => {
@@ -367,7 +411,27 @@ function PhotoCarousel({ label, photos, placeholder, indicator = 'count', classN
               aria-label={`${i + 1}／${count}`}
               aria-hidden={i !== index}
             >
-              {photo ? loaded.has(i) && <img src={asset(photo.src)} alt={photo.alt} decoding="async" /> : placeholder?.(i)}
+              {photo
+                ? near &&
+                  loaded.has(i) && (
+                    <img
+                      ref={(el) => {
+                        if (el?.complete && el.naturalWidth) markReady(i);
+                      }}
+                      src={asset(photo.src)}
+                      alt={photo.alt}
+                      decoding="async"
+                      // Decoded before its turn, so showing it never decodes a photo mid-scroll.
+                      onLoad={(e) => {
+                        void e.currentTarget
+                          .decode()
+                          .catch(() => {})
+                          .then(() => markReady(i));
+                      }}
+                      onError={() => markReady(i)}
+                    />
+                  )
+                : placeholder?.(i)}
             </div>
           );
         })}

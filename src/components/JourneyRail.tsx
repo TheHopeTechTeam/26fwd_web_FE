@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { CHAPTERS, RAIL_GIVE, type ChapterId } from '../data/content';
-import { jumpToSection } from '../lib/scroll';
+import { SHOW_CARD_EVENT, SHOW_GIVE_EVENT, jumpToSection } from '../lib/scroll';
 import './JourneyRail.css';
 
 /**
@@ -46,7 +46,10 @@ export function JourneyRail() {
                 href={`#${chapter.id}`}
                 className={`journey-rail__item ${isActive ? 'is-active' : ''}`}
                 aria-current={isActive ? 'step' : undefined}
-                onClick={(e) => jumpToSection(e, chapter.id)}
+                onClick={(e) => {
+                  if (chapter.id === 'respond') window.dispatchEvent(new Event(SHOW_CARD_EVENT));
+                  jumpToSection(e, chapter.id);
+                }}
               >
                 <span className="journey-rail__label">
                   <span className="journey-rail__index">{chapter.index}</span>
@@ -64,7 +67,10 @@ export function JourneyRail() {
             href={`#${RAIL_GIVE.id}`}
             className={`journey-rail__item journey-rail__item--give ${active === RAIL_GIVE.id ? 'is-active' : ''}`}
             aria-current={active === RAIL_GIVE.id ? 'step' : undefined}
-            onClick={(e) => jumpToSection(e, RAIL_GIVE.id)}
+            onClick={(e) => {
+              window.dispatchEvent(new Event(SHOW_GIVE_EVENT));
+              jumpToSection(e, RAIL_GIVE.id);
+            }}
           >
             <span className="journey-rail__label">
               <span className="journey-rail__en">{RAIL_GIVE.en}</span>

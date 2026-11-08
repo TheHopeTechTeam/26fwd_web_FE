@@ -78,14 +78,14 @@ export function CardsPage() {
         <div className="wrap wrap--no-rail">
           <header className="cards-page__head">
             <h1 className="cards-page__title display-zh">2026 回應牆</h1>
-            <p className="lead">在這面回應牆上，看見 The Hope 家人一張張真實的感謝與期待。讓彼此的故事成為鼓勵，打開我們對未來的想像，一起相信神還要成就更多新事。</p>
+            <p className="lead">在這面回應牆上，看見 The Hope 家人一張張真實的感謝與期待。讓彼此的故事成為鼓勵，<span className="phrase">打開</span>我們對未來的想像，一起相信神還要成就更多新事。</p>
             <div className="cards-page__meta">
               {total !== null && (
                 <p className="cards-page__count" aria-live="polite">
                   已有 <strong>{total}</strong> 張 FORWARD 卡
                 </p>
               )}
-              <a className="btn btn--gold btn--sm" href={pageUrl('#respond')}>
+              <a className="btn btn--gold btn--sm" href={pageUrl('#respond-part-card')}>
                 寫一張 FORWARD 卡
               </a>
             </div>
@@ -121,7 +121,7 @@ export function CardsPage() {
             {state !== 'error' && cards.length === 0 && state === 'idle' && (
               <div className="cards-page__empty">
                 <p>成為第一個寫卡的人！</p>
-                <a className="btn btn--gold" href={pageUrl('#respond')}>
+                <a className="btn btn--gold" href={pageUrl('#respond-part-card')}>
                   寫一張 FORWARD 卡
                 </a>
               </div>

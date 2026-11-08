@@ -133,8 +133,9 @@ export function PrivacyPage() {
           </section>
 
           <p>
-            <a className="btn btn--gold" href={pageUrl('#respond')}>
-              回到寫卡
+            {/* Straight to the card itself, not the top of 第三步 (11/08). */}
+            <a className="btn btn--gold" href={pageUrl('#respond-part-card')}>
+              回到填寫 FORWARD 卡
             </a>
           </p>
         </div>

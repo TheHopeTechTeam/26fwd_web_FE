@@ -3,7 +3,11 @@
   background: linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
 }
 
-/* Two paragraphs; the first breaks between its two questions. */
+/* Two paragraphs; the first breaks between its two questions. No lone 「神？」 on a last line. */
+.respond__lead {
+  text-wrap: pretty;
+}
+
 .respond__lead + .respond__lead {
   margin-top: 0.8em;
 }
@@ -66,7 +70,7 @@
 .cardform__prompt-en {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: clamp(0.875rem, 0.8rem + 0.4vw, 1.0625rem);
+  font-size: clamp(1rem, 0.9rem + 0.5vw, 1.25rem); /* larger since 11/08 */
   letter-spacing: 0.02em;
   line-height: 1.2;
 }
@@ -224,7 +228,7 @@
   display: grid;
   gap: 18px;
   padding: clamp(24px, 4vw, 40px);
-  padding-top: 56px;
+  padding-top: 22px; /* the title up level with the close button (11/08) */
 }
 
 .card-result-modal .modal__panel {
@@ -240,14 +244,16 @@
 
 .card-result__intro {
   display: grid;
-  gap: 8px;
+  gap: 16px; /* some room between the title and the 已成功送出 box (11/08) */
 }
 
 .card-result__title {
-  font-size: clamp(1.5rem, 1.2rem + 1.4vw, 2.125rem);
+  padding-right: 52px; /* clear of the close button beside it */
+  font-size: clamp(1.25rem, 1.1rem + 0.8vw, 1.625rem); /* a size smaller (11/08) */
 }
 
 .card-result__cta {
+  text-align: center; /* over the centred buttons (11/08) */
   padding: 10px 14px;
   border-radius: var(--radius-sm);
   background: rgb(var(--rgb-accent) / 0.12);
@@ -475,6 +481,7 @@
   padding: 12px 14px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--line-strong);
+  background: rgb(var(--rgb-white) / 0.75); /* a light ground on the 米白 panel (11/08) */
   color: var(--text-2);
 }
 
@@ -527,6 +534,21 @@
   font-weight: 400;
   font-size: 0.875rem;
   color: var(--text-3);
+}
+
+/* The number larger, in a 金黃 pill like the step labels (11/08): 金黃 text alone would not read
+   on the 米白 ground. */
+.teaser__num {
+  display: inline-block;
+  margin: 0 0.2em;
+  padding: 0.1em 0.5em;
+  border-radius: var(--radius-full);
+  background: var(--accent);
+  color: var(--ink);
+  font-family: var(--font-info);
+  font-weight: 800;
+  font-size: 1.35em;
+  line-height: 1.15;
 }
 
 .teaser__grid {

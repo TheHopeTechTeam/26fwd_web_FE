@@ -25,7 +25,7 @@ export interface Chapter {
 export const CHAPTERS: Chapter[] = [
   { id: 'appreciate', index: '01', step: '第一步', en: 'Appreciate', zh: '感謝', rail: '我感謝神…' },
   { id: 'anticipate', index: '02', step: '第二步', en: 'Anticipate', zh: '期待', rail: '一起期待…' },
-  { id: 'respond', index: '03', step: '第三步', en: 'Respond', zh: '回應', rail: '我願意這樣回應神…' },
+  { id: 'respond', index: '03', step: '第三步', en: 'Respond', zh: '回應', rail: '線上 FORWARD 卡' },
 ];
 
 /** Header nav labels (網站文字表 #1, BB): shown as numbered steps 1–4; the 4th opens the wall page. */
@@ -120,9 +120,10 @@ export interface OutreachPartner {
   title: string;
   /** Paragraphs separated by a blank line. */
   body: string;
-  /** Photos under public/ (Comms', 16:10), shown in turn when there are several; the tab shows a
-   *  placeholder without any. */
-  photos?: { src: string; alt: string }[];
+  /** Photos under public/ (Comms', 16:10), shown in turn when there are several; without any the
+   *  story shows alone. A lone photo keeps its own shape, so it carries its pixel size, which
+   *  holds its space before it loads (11/08: otherwise the text under it jumps on phones). */
+  photos?: { src: string; alt: string; width?: number; height?: number }[];
   /** Where the large faint name goes on wide screens: under the photo (default) or, when the
    *  photo is tall and leaves no room, under the story (11/06). */
   markUnder?: 'photo' | 'story';
@@ -183,7 +184,7 @@ export const OUTREACH_PARTNERS: OutreachPartner[] = [
     id: 'partner-kaohsiung-women',
     markUnder: 'story',
     photos: [
-      { src: 'partners/partner-kaohsiung-women-01.webp', alt: '高雄女子監獄' },
+      { src: 'partners/partner-kaohsiung-women-01.webp', alt: '高雄女子監獄', width: 1000, height: 913 },
     ],
     name: '高雄女子監獄',
     title: '高牆之內，眼前不會只剩絕望的風景',
@@ -235,11 +236,9 @@ export const MINISTRIES: Ministry[] = [
     zh: '宣教資助',
     en: 'Missions',
     headline: '宣教，是你我一起的事。讓福音去到我們到不了的地方。',
-    body: '我們與長期宣教夥伴同行，支持他們在各地的服事與生活，也差派短宣隊實地參與。所有資助項目與使用方式都會定期向會眾報告。',
-    stats: [
-      { value: 3, suffix: ' 個', label: '長期宣教夥伴' },
-      { value: 40, suffix: '+', label: '短宣隊員' },
-    ],
+    body: '過去六年，我們持續支持不同的福音事工，也資助宣教士在台灣與海外的服事。The Hope College 每年更差派學生短宣隊，實際走進金門、泰北、馬來西亞等地，與當地教會一起參與神正在做的事，讓福音去到更多地方。',
+    // The figures (3 個長期宣教夥伴, 40+ 短宣隊員) were taken off on 11/08.
+    stats: [],
     art: 'missions',
     // Comms' photos (見證與五大事工照片, 11/06), cropped 4:3 into public/ministries/.
     photos: [
@@ -262,7 +261,7 @@ export const MINISTRIES: Ministry[] = [
     en: 'Outreach & Hope Week',
     // 網站文字表 #38–40 (BB's blue edits): headline, body and figures.
     headline: '走出教會與機構合作，建立長久關懷陪伴的關係。',
-    body: '過去一年，我們的長期合作機構增加到 5 個，40 位穩定參與的服事夥伴，持續走進兒少家園、戒癮機構，也走進偏鄉教會與社區，透過陪伴、關懷、營隊、活動與福音行動，持續把教會的愛帶到需要的地方。\n\n我們在意的，從來不只是「今天做了什麼」，而是「關係有沒有留下來」。\n\n因為我們相信，當我們願意一次又一次走進人的生命，在一段真實的關係裡，人可以被看見、被陪伴，也有機會遇見神的愛。',
+    body: '過去一年，我們的長期合作機構增加到 5 個，40 位穩定參與的服事夥伴，持續走進兒少家園、戒癮機構，也走進偏鄉教會與社區，持續推動「無邊界事工」，透過陪伴、關懷、營隊、活動與福音行動，持續把教會的愛帶到需要的地方。讓服事跨越地域與場地的限制，把愛與祝福帶到更多地方。從來就不只是「今天做了什麼事」，而是「留下了真實的關係」。',
     stats: [
       { value: 500, suffix: '+', label: '過去四年，服事志工參與在 Hope Week 機構志工服務的外展行動' },
       { value: 191, label: '位夥伴參與愛心樹禮物認領', oneLine: true },
@@ -376,30 +375,31 @@ export const RESPOND_GUIDE: { icon: 'heart' | 'sunrise'; title: string; text: st
  * share-to-wall flow ("也可以分享" became "會分享") until BB confirms it.
  */
 export const RESPOND = {
-  title: '寫下一張屬於你的 FORWARD 卡',
+  // The no-break space keeps 「FORWARD 卡」 on one line; phones break after 「你的」 (11/08).
+  title: '寫下屬於你的 FORWARD\u00a0卡',
   lead: [
-    '回顧過去一年，你最想為什麼感謝神？\n展望明年，你期待神在哪裡擴張你的信心？你願意如何回應？',
-    '完成後，這張 FORWARD 卡會經過文字審核並公開在 2026 回應牆；你也可以下載保存。讓你的感謝成為別人的鼓勵，也讓我們彼此的信心，一起走向神要成就的更多。',
+    '回頭看看這一年，你最想為了什麼事感謝神？\n展望新的一年，你期待神如何擴張你？你又願意如何回應？',
+    '寫完以後，你可以下載保存。這張 FORWARD 卡也會經過文字審核並分享到 2026 回應牆。讓你的感謝，成為別人的鼓勵；也讓我們帶著彼此的期待，一起相信神會按著祂的旨意成就！',
   ],
 };
 
-/** Ground colours a card style can use; canvasCard maps them to the KV swatch. `paper` is
-    the printed FORWARD 卡's brown with its line drawing. */
-export type DeclarationPalette = 'navy' | 'gold' | 'earth' | 'paper';
-/** How the frame on the card is drawn, so each declaration has its own look (#23). */
-export type DeclarationFrame = 'line' | 'double' | 'arch' | 'none';
+/**
+ * The ground of the downloadable FORWARD 卡 for each declaration (11/08, the user's choice):
+ * the printed card's grey-brown, 灰藍, or 印刷金 (with dark brown text). The paper's line
+ * drawing and grain show on all three.
+ */
+export type DeclarationGround = 'card' | 'slate' | 'gold';
 
 export interface Declaration {
   id: string;
   title: string;
   en: string;
   text: string;
-  palette: DeclarationPalette;
-  frame: DeclarationFrame;
+  ground: DeclarationGround;
 }
 
 /**
- * The FORWARD 卡 styles (#23): each declaration has its own header, colours and frame.
+ * The FORWARD 卡's declarations (#23): each has its English title and its own card ground.
  * Wording from BB's 網站文字表 (11/04), titles and sentences revised 11/06; visitors only pick
  * one, never write their own, and the choice is not stored.
  */
@@ -409,24 +409,21 @@ export const DECLARATIONS: Declaration[] = [
     title: '讓愛走進這城市',
     en: 'LOVE IN ACTION',
     text: '我參與 FORWARD，為了那些還沒走進教會的人，讓更多人有機會聽見福音、遇見耶穌。',
-    palette: 'navy',
-    frame: 'line',
+    ground: 'card',
   },
   {
     id: 'hope-without-borders',
     title: '讓福音跨越距離',
     en: 'HOPE WITHOUT BORDERS',
     text: '我參與 FORWARD，相信福音能透過網路，進到更多城市，讓每個尋找盼望的人，都能在手中的手機裡，看見福音。',
-    palette: 'gold',
-    frame: 'double',
+    ground: 'slate',
   },
   {
     id: 'one-church-many-cities',
     title: '在更多城市建造祂的教會',
     en: 'ONE CHURCH, MANY CITIES',
     text: '我參與 FORWARD，相信神要在新的城市預備人、團隊與合適的時機，帶領更多人一起建造祂的教會。',
-    palette: 'earth',
-    frame: 'arch',
+    ground: 'gold',
   },
 ];
 

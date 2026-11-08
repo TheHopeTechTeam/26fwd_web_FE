@@ -8,7 +8,7 @@ export function SiteFooter({ railSpace = true }: { railSpace?: boolean }) {
       <div className={`wrap ${railSpace ? '' : 'wrap--no-rail'} site-footer__inner`}>
         <div className="site-footer__brand">
           <img src={logoUrl} alt="The Hope" width="192" height="28" />
-          <p className="site-footer__title">FORWARD · There is more</p>
+          <p className="site-footer__title">FORWARD · There is More</p>
         </div>
         <nav aria-label="頁尾連結">
           <ul className="site-footer__links">
