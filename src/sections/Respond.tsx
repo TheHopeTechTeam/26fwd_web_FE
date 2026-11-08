@@ -3,6 +3,8 @@ import { api, ApiError, describeError, type ListCardsResponse } from '../api';
 import { ForwardCardSkeleton, ForwardCardView } from '../components/ForwardCardView';
 import { GiveButton } from '../components/GiveButton';
 import { Modal } from '../components/Modal';
+import { Phrases } from '../components/Phrases';
+import { SHOW_CARD_EVENT, SHOW_GIVE_EVENT } from '../lib/scroll';
 import { Reveal } from '../components/Reveal';
 import { useToast } from '../components/Toast';
 import { Turnstile } from '../components/Turnstile';
@@ -35,10 +37,14 @@ export function Respond() {
       <div className="wrap">
         <Reveal className="chapter__head">
           <p className="kicker">
-            <span className="chapter-step">第三步</span>Respond 我願意這樣回應神…
+            <span className="chapter-step">第三步</span>
+            <span className="chapter-label">
+              <span className="chapter-en">Respond</span>
+              我願意這樣回應神…
+            </span>
           </p>
           <h2 id="respond-title" className="chapter__title respond__title">
-            {RESPOND.title}
+            <Phrases text={RESPOND.title} />
           </h2>
           {RESPOND.lead.map((paragraph) => (
             <p key={paragraph} className="lead respond__lead">
@@ -311,7 +317,7 @@ function CardResult({ content }: { content: CardContent }) {
         setImage({ url: urlRef.current, blob });
       })
       .catch(() => {
-        if (!cancelled) showToast('FORWARD 卡圖片產生失敗，請再試一次');
+        if (!cancelled) showToast('圖片產生失敗，請再試一次');
       })
       .finally(() => {
         if (!cancelled) setRendering(false);
@@ -336,20 +342,19 @@ function CardResult({ content }: { content: CardContent }) {
     (hostRef.current ?? document.body).appendChild(link);
     link.click();
     link.remove();
-    showToast('已下載 FORWARD 卡圖片');
+    showToast('已下載保存');
   };
 
   return (
     <div className="card-result tone-light" ref={hostRef}>
       <div className="card-result__intro">
         <h3 id="card-result-title" className="card-result__title display-zh">
-          謝謝你寫下這張 FORWARD 卡！
+          <Phrases text={'謝謝你寫下這張 FORWARD\u00a0卡！'} />
         </h3>
         <div className="card-result__sent" role="status">
           <p className="card-result__sent-title display-zh">已成功送出！</p>
           <p>每一份 FORWARD 卡都會先經過文字審核，通過後就會出現在 2026 回應牆。</p>
         </div>
-        <p className="card-result__cta">恭喜完成！立即下載專屬 FORWARD 卡保存，或分享到社群！</p>
       </div>
 
       <div className={`card-result__preview card-result__preview--${format}`} aria-busy={rendering}>
@@ -375,6 +380,8 @@ function CardResult({ content }: { content: CardContent }) {
         ))}
       </fieldset>
 
+      {/* Right above the two buttons it is about (11/08). */}
+      <p className="card-result__cta">恭喜完成！立即下載專屬 FORWARD 卡保存，或分享到社群！</p>
       {/* Download, and Give beside it (11/06: no 分享 button). */}
       <div className="card-result__actions">
         <button type="button" className="btn btn--gold" onClick={download} disabled={!image || rendering}>
@@ -431,7 +438,11 @@ function CardsTeaser() {
       <div className="teaser__head">
         <h3 className="teaser__title">
           2026 回應牆
-          {data && <span className="teaser__count">已有 {data.pagination.total_count} 張 FORWARD 卡公開</span>}
+          {data && (
+            <span className="teaser__count">
+              已有 <strong className="teaser__num">{data.pagination.total_count}</strong> 張 FORWARD 卡公開
+            </span>
+          )}
         </h3>
         <a className="btn btn--outline btn--sm" href={pageUrl('cards/')}>
           看全部 FORWARD 卡 →
@@ -462,17 +473,31 @@ const RESPOND_PARTS: { id: RespondPart; label: string }[] = [
   { id: 'card', label: '我要填寫線上 FORWARD 卡' },
 ];
 
+/** The side a phone shows first: 奉獻 (11/08, the user's choice), unless the visitor came by a
+ *  link to write a card (#respond, #respond-part-card) or to #give. */
+function firstPart(): RespondPart {
+  const hash = typeof window === 'undefined' ? '' : window.location.hash;
+  return hash === '#respond' || hash === '#respond-part-card' ? 'card' : 'give';
+}
+
 /**
  * Both ways to respond. Below 900px, where the two would stack, two buttons side by side show
- * one at a time, the FORWARD 卡 first (11/06, the user's choice); wider screens show both and
+ * one at a time, 奉獻 first (11/08; the card was first from 11/06); wider screens show both and
  * hide the buttons. The hidden side stays mounted, so a half-written card is kept.
  */
 function RespondActions() {
-  const [part, setPart] = useState<RespondPart>('card');
-  // Arriving at #give opens the Give side: the rail's 我要參與奉獻 stop focuses this block, and a
-  // shared link may land on it.
+  const [part, setPart] = useState<RespondPart>(firstPart);
+  // The 填寫 FORWARD 卡 links (header nav, rail) open the card; the rail's 我要參與奉獻 the Give
+  // side. (Not on focus: iPhone Safari focuses this block when the consent box is tapped.)
   useEffect(() => {
-    if (window.location.hash === `#${RAIL_GIVE.id}`) setPart('give');
+    const showGive = () => setPart('give');
+    const showCard = () => setPart('card');
+    window.addEventListener(SHOW_GIVE_EVENT, showGive);
+    window.addEventListener(SHOW_CARD_EVENT, showCard);
+    return () => {
+      window.removeEventListener(SHOW_GIVE_EVENT, showGive);
+      window.removeEventListener(SHOW_CARD_EVENT, showCard);
+    };
   }, []);
   const label = (id: RespondPart) => RESPOND_PARTS.find((p) => p.id === id)?.label ?? '';
 
@@ -484,9 +509,6 @@ function RespondActions() {
       role="group"
       aria-label="兩種回應方式"
       tabIndex={-1}
-      onFocus={(e) => {
-        if (e.target === e.currentTarget) setPart('give');
-      }}
     >
       <div className="respond-actions__switch">
         {RESPOND_PARTS.map((p) => (

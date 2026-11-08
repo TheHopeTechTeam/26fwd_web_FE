@@ -67,6 +67,7 @@
   --rgb-accent-on-light: 122 92 14; /* #7a5c0e 金黃 dark enough to read on paper (5.4:1) */
   --rgb-earth: 62 37 30; /* #3e251e 深褐: text on 金黃 (the Give buttons) */
   --rgb-card-brown: 72 60 58; /* #483c3a ground of the printed FORWARD 卡 (Comms' print file) */
+  --rgb-card-slate: 79 106 128; /* #4f6a80 灰藍: FORWARD 卡 ground for HOPE WITHOUT BORDERS (11/08) */
   --rgb-mist: 244 239 228; /* #f4efe4 米白 paper: ground of the light sections (感謝, 回應) */
   --rgb-paper: 244 239 228; /* #f4efe4 */
   --rgb-light: 255 255 255; /* light ink; flips to the brown inside .tone-light */

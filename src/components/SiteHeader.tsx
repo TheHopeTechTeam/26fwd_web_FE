@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState, type MouseEvent } from 'react';
 import logoUrl from '../assets/brand/the-hope-logo-white.png';
 import { pageUrl } from '../config/env';
 import { CHAPTERS, NAV_LABELS } from '../data/content';
-import { jumpToSection } from '../lib/scroll';
+import { SHOW_CARD_EVENT, jumpToSection } from '../lib/scroll';
 import { GiveButton } from './GiveButton';
 import './SiteHeader.css';
 
@@ -69,6 +69,8 @@ export function SiteHeader({ progress = false, backLabel }: SiteHeaderProps) {
 
   const followChapter = (event: MouseEvent<HTMLAnchorElement>, id: string) => {
     setMenuOpen(false);
+    // 「填寫 FORWARD 卡」 opens the card, also where phones show one side at a time (11/08).
+    if (onHome && id === 'respond') window.dispatchEvent(new Event(SHOW_CARD_EVENT));
     if (onHome) jumpToSection(event, id);
   };
 

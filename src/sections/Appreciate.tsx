@@ -35,7 +35,11 @@ export function Appreciate() {
       <div className="wrap">
         <Reveal className="chapter__head">
           <p className="kicker">
-            <span className="chapter-step">第一步</span>Appreciate 2026 我感謝神…
+            <span className="chapter-step">第一步</span>
+            <span className="chapter-label">
+              <span className="chapter-en">Appreciate</span>
+              2026 我感謝神…
+            </span>
           </p>
           <h2 id="appreciate-title" className="chapter__title display-zh">
             <Phrases text={APPRECIATE.title} />
@@ -60,6 +64,8 @@ export function Appreciate() {
       <Modal
         open={view !== null}
         onClose={() => setView(null)}
+        // Each story opens at its top, also when picked from a scrolled 「看全部故事」 list.
+        scrollKey={view?.kind === 'story' ? view.id : undefined}
         labelledBy={view?.kind === 'all' ? 'testimony-all-title' : 'testimony-name'}
         className={view?.kind === 'all' ? 'testimony-all-modal' : `testimony-modal story-ground-${storyGround(story?.id ?? '')}`}
       >
@@ -217,6 +223,13 @@ function TestimonyDetail({ testimony, playVideo, onBack }: TestimonyDetailProps)
 
   return (
     <article className="testimony">
+      {/* Opened from 「看全部故事」: a way back at the top left, level with the close button at the
+          top right (11/08). The ✕ still closes it all. */}
+      {onBack && (
+        <button ref={backRef} type="button" className="testimony__back" onClick={onBack}>
+          <span aria-hidden="true">←</span> 全部故事
+        </button>
+      )}
       <div className="testimony__media">
         <img
           src={asset(testimony.avatar_url)}
@@ -226,11 +239,6 @@ function TestimonyDetail({ testimony, playVideo, onBack }: TestimonyDetailProps)
         />
       </div>
       <div className="testimony__body tone-light">
-        {onBack && (
-          <button ref={backRef} type="button" className="testimony__back" onClick={onBack}>
-            ← 返回全部
-          </button>
-        )}
         <p className="kicker">Appreciate 2026 我感謝神…</p>
         <h3 id="testimony-name" className="testimony__name">
           {testimony.name}

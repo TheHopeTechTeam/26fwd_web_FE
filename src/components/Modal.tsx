@@ -7,6 +7,8 @@ interface ModalProps {
   onClose: () => void;
   labelledBy: string;
   className?: string;
+  /** When this changes while open, the dialog scrolls back to its top (a new story, 11/08). */
+  scrollKey?: string;
   /** Children may be a function to know when the exit animation has started. */
   children: ReactNode | ((state: { closing: boolean }) => ReactNode);
 }
@@ -18,7 +20,7 @@ const EXIT_MS = 220;
  * background, ESC / backdrop click / close button all route through requestClose so
  * the exit animation plays and callers can stop media immediately (US-04).
  */
-export function Modal({ open, onClose, labelledBy, className = '', children }: ModalProps) {
+export function Modal({ open, onClose, labelledBy, className = '', scrollKey, children }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
   const [closing, setClosing] = useState(false);
@@ -38,6 +40,11 @@ export function Modal({ open, onClose, labelledBy, className = '', children }: M
       returnFocus.current?.focus({ preventScroll: true });
     }
   }, [open]);
+
+  useEffect(() => {
+    if (scrollKey === undefined || !ref.current) return;
+    ref.current.scrollTop = 0;
+  }, [scrollKey]);
 
   useEffect(
     () => () => {

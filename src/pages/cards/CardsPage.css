@@ -32,8 +32,10 @@
 }
 
 .cards-page__count strong {
+  margin: 0 0.3em; /* about a space either side of the number (11/08) */
   font-family: var(--font-info);
-  font-size: 1.5rem;
+  font-size: 2rem; /* a little larger (11/08) */
+  line-height: 1;
   color: var(--accent);
 }
 

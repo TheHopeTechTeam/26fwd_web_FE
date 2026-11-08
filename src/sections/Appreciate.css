@@ -38,6 +38,24 @@
   letter-spacing: 0.12em;
 }
 
+/* The English word and the words after it stay one group, so on a narrow phone they move to
+   the next line together rather than splitting. */
+.chapter-label {
+  min-width: 0;
+}
+
+.chapter-en {
+  margin-right: 0.55em; /* about two spaces (11/08) */
+}
+
+/* Phones: a size smaller, so 「第二步 ANTICIPATE 2027 我和神一起期待…」 fits one line from a
+   390px phone up (11/08). */
+@media (max-width: 479px) {
+  .chapter__head .kicker {
+    font-size: 0.9375rem;
+  }
+}
+
 .chapter__title {
   font-size: clamp(1.75rem, 1.1rem + 3.2vw, 3.75rem);
   line-height: 1.22;
@@ -205,6 +223,20 @@
   background: rgb(var(--story-ground, var(--rgb-story-grey)));
 }
 
+.testimony-modal .modal__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  margin: 0;
+}
+
+/* Phones: the photo starts below the two buttons, never under them. */
+@media (max-width: 819px) {
+  .testimony-modal .testimony {
+    padding-top: 44px;
+  }
+}
+
 .story-ground-0 {
   --story-ground: var(--rgb-story-grey);
 }
@@ -253,15 +285,34 @@
   animation: none;
 }
 
+/* Top left, mirroring the close button at the top right. In a story both stay at the top of the
+   dialog and scroll away with it rather than floating over the text (11/08). */
 .testimony__back {
-  justify-self: start;
-  min-height: 44px;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--accent-text);
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 44px;
+  margin: 0;
+  padding: 0 16px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--line-strong);
+  background: rgb(var(--rgb-base-deep) / 0.7);
+  color: var(--text);
   font: inherit;
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 0.9375rem;
+  transition:
+    background-color 0.2s var(--ease-standard),
+    color 0.2s var(--ease-standard);
+}
+
+.testimony__back:hover {
+  background: var(--accent);
+  color: var(--ink);
 }
 
 /* Testimony modal */
