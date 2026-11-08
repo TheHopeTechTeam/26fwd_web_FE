@@ -368,9 +368,13 @@ function CardResult({ content }: { content: CardContent }) {
 
       <fieldset className="declarations">
         <legend className="declarations__legend display-zh">選擇你的 FORWARD 卡樣式</legend>
-        {CARD_STYLES.map((d) => (
+        {CARD_STYLES.map((d, i) => (
           <label key={d.id} className={`declarations__item ${declaration.id === d.id ? 'is-on' : ''}`}>
             <input type="radio" name="card-declaration" value={d.id} checked={declaration.id === d.id} onChange={() => setDeclaration(d)} />
+            {/* 「樣式 01」 (11/08): the number a little larger than 樣式; decoration for screen readers. */}
+            <span className="declarations__num" aria-hidden="true">
+              樣式 <b>{String(i + 1).padStart(2, '0')}</b>
+            </span>
             <span className="declarations__text">
               <span className="declarations__en">{d.en}</span>
               <strong>{d.title}</strong>
@@ -394,7 +398,7 @@ function CardResult({ content }: { content: CardContent }) {
           disabledHint={FINALE.disabled}
         />
       </div>
-      <p className="note">手機可長按上方圖片儲存到相簿</p>
+      <p className="note card-result__note">手機可長按上方圖片儲存到相簿</p>
       <a className="card-result__wall" href={pageUrl('cards/')}>
         看看大家寫的 FORWARD 卡 →
       </a>

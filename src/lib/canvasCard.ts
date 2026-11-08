@@ -189,12 +189,12 @@ function drawPaperCard(
   y += story ? 80 : 44;
 
   // The declaration, measured now and drawn last: its English title as a small label right above
-  // the sentence (32px, 11/08: a size down), behind one 金黃 rule, near the bottom of the card.
+  // the sentence (28px since 11/08), behind one 金黃 rule, near the bottom of the card.
   // wrapText lets a 「，」 or 「。」 hang past the line it ends rather than start the next one, so the
   // sentence steps down a pixel at a time (at most 6) until every line, mark included, fits (11/06).
   const indent = 30;
   const column = maxWidth - indent;
-  let hero = story ? 44 : trial ? 36 : 32;
+  let hero = story ? 44 : trial ? 36 : 28; // a size down (11/08)
   let declLines: string[] = [];
   if (declaration) {
     for (const min = hero - 6; ; hero -= 1) {
@@ -230,7 +230,8 @@ function drawPaperCard(
     const sign = Math.max(Math.round(size * 1.2), story ? 36 : 30);
     // Under the boxes: the declaration, the signature under it, then clear space above the
     // sign-off (11/08); without a declaration, just the signature.
-    const tail = declaration ? Math.round(size * 0.8) + declHeight + sign * 1.6 + footer + 18 : sign * 2;
+    // At least size × 1.6 between the last box and the declaration (11/08: it sat too close).
+    const tail = declaration ? Math.round(size * 1.6) + declHeight + sign * 1.6 + footer + 18 : sign * 2;
     const total = head * 2 + boxA + boxB + gap + tail;
     return { size, a, b, boxPad, prompt, promptGap, en, line, boxA, boxB, head, gap, sign, total };
   };
@@ -284,7 +285,7 @@ function drawPaperCard(
   // are long), and the visitor's name signs it at the bottom right (11/08).
   if (!declaration) signature(y + layout.sign * 0.8);
   if (declaration) {
-    const start = Math.max(y + Math.round(layout.size * 0.8), bottom - footer - 18 - layout.sign * 1.6 - declHeight);
+    const start = Math.max(y + Math.round(layout.size * 1.6), bottom - footer - 18 - layout.sign * 1.6 - declHeight);
     ctx.fillStyle = gold;
     ctx.font = `700 ${kicker}px ${DISPLAY}`;
     spaced(ctx, declaration.en, pad + indent, start, 5);
