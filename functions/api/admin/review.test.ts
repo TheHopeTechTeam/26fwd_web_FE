@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { Env } from '../../_lib/cards'
 import { createTestDb, sqliteAvailable, type TestDb } from '../../_test/d1'
 import { onRequestGet as listCards } from './cards'
+import { onRequestDelete as deleteCard } from './cards/[id]'
 import { onRequestPatch as hideCard } from './cards/[id]/hide'
 import { onRequestPatch as setCardStatus } from './cards/[id]/status'
 
@@ -23,6 +24,8 @@ function patch(path: string, body?: unknown, contentType = 'application/json') {
 }
 const setStatus = (env: Env, body: unknown, id = 'c_1') => setCardStatus({ request: patch(`${id}/status`, body), env, params: { id } })
 const hide = (env: Env, body: unknown, id = 'c_1', contentType?: string) => hideCard({ request: patch(`${id}/hide`, body, contentType), env, params: { id } })
+const remove = (env: Env, id = 'c_1', token = TOKEN) =>
+  deleteCard({ request: new Request(`https://example.test/api/admin/cards/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }), env, params: { id } })
 const errorOf = async (response: Response) => ((await response.json()) as { error: { code: string; current_status?: string; fields?: Record<string, string> } }).error
 
 describe.skipIf(!sqliteAvailable)('two reviewers on one card (409, Ian 10/23)', () => {
@@ -154,5 +157,111 @@ describe.skipIf(!sqliteAvailable)('GET /api/admin/cards: the model\'s judgment w
       reason_probability: 0.8, needs_attention_probability: 0.9, auto_published: false, judged_at: '2026-11-14T12:00:02.000Z',
     })
     expect(body.items[1]?.moderation).toBeNull()
+  })
+})
+
+describe.skipIf(!sqliteAvailable)('DELETE /api/admin/cards/:id: hidden cards only (#35)', () => {
+  const judge = (t: TestDb, id: string) =>
+    t.query("INSERT INTO card_moderations VALUES (?, '@cf/cloudflare/clef', 'abcdef123456', 'clear', 'none', 0.9, 0.1, 0, 700, 420, '2026-11-14T12:00:02.000Z')", id)
+  const rowsOf = (t: TestDb, id = 'c_1') => ({
+    card: t.query('SELECT id FROM forward_cards WHERE id = ?', id).length,
+    judgment: t.query('SELECT card_id FROM card_moderations WHERE card_id = ?', id).length,
+    history: t.query('SELECT id FROM card_status_changes WHERE card_id = ?', id).length,
+  })
+  const deletions = (t: TestDb) => t.query('SELECT card_id, actor FROM card_deletions ORDER BY id')
+
+  // ON as on D1, where ON DELETE CASCADE also removes them; OFF shows the handler does not rely on it.
+  for (const foreignKeys of ['ON', 'OFF']) {
+    it(`deletes a hidden card with its judgment and status history, and records the deletion (foreign keys ${foreignKeys})`, async () => {
+      const { t, env } = setup()
+      t.query(`PRAGMA foreign_keys = ${foreignKeys}`)
+      t.query("INSERT INTO forward_cards VALUES ('c_2', 'n', 'g', 'a', 'pending', 1, '2026-11-14T12:00:01.000Z')")
+      judge(t, 'c_1')
+      judge(t, 'c_2')
+      await hide(env, { from: 'pending' })
+      await hide(env, { from: 'pending' }, 'c_2')
+      const response = await remove(env)
+      expect(response.status).toBe(200)
+      expect(await response.json()).toEqual({ success: true, card_id: 'c_1' })
+      expect(rowsOf(t)).toEqual({ card: 0, judgment: 0, history: 0 })
+      expect(rowsOf(t, 'c_2')).toEqual({ card: 1, judgment: 1, history: 1 })
+      expect(deletions(t)).toEqual([{ card_id: 'c_1', actor: 'reviewer' }])
+    })
+  }
+
+  it('the deletion record holds no card text: which card, who and when', async () => {
+    const { t, env } = setup()
+    await hide(env, { from: 'pending' })
+    await remove(env)
+    const [row] = t.query('SELECT * FROM card_deletions')
+    expect(Object.keys(row ?? {})).toEqual(['id', 'card_id', 'actor', 'deleted_at'])
+    expect(String(row?.deleted_at)).toMatch(/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/)
+  })
+
+  it('a card that is not hidden gets 409 with its status now; nothing is deleted or recorded', async () => {
+    const { t, env } = setup()
+    judge(t, 'c_1')
+    const pending = await remove(env)
+    expect(pending.status).toBe(409)
+    expect(await errorOf(pending)).toEqual({ code: 'CARD_STATUS_CHANGED', message: 'The card was changed by someone else', current_status: 'pending' })
+    // A loaded the hidden list; B published the card again before A deleted it.
+    await hide(env, { from: 'pending' })
+    await setStatus(env, { status: 'approved', from: 'hidden' })
+    const approved = await remove(env)
+    expect(approved.status).toBe(409)
+    expect((await errorOf(approved)).current_status).toBe('approved')
+    expect(statusOf(t)).toBe('approved')
+    expect(rowsOf(t)).toEqual({ card: 1, judgment: 1, history: 2 })
+    expect(deletions(t)).toEqual([])
+  })
+
+  it('an unknown card is 404, and so is a second delete; the deletion is recorded once', async () => {
+    const { t, env } = setup()
+    expect((await remove(env, 'c_x')).status).toBe(404)
+    await hide(env, { from: 'pending' })
+    expect((await remove(env)).status).toBe(200)
+    const again = await remove(env)
+    expect(again.status).toBe(404)
+    expect((await errorOf(again)).code).toBe('NOT_FOUND')
+    expect(deletions(t)).toEqual([{ card_id: 'c_1', actor: 'reviewer' }])
+  })
+
+  it('needs the admin token and a valid card id', async () => {
+    const { t, env } = setup()
+    await hide(env, { from: 'pending' })
+    expect((await remove(env, 'c_1', 'x'.repeat(32))).status).toBe(401)
+    expect((await remove(env, 'bad id!')).status).toBe(400)
+    expect(statusOf(t)).toBe('hidden')
+    expect(deletions(t)).toEqual([])
+  })
+
+  it('leaves the published count alone: the card left it when it was hidden', async () => {
+    const { t, env } = setup()
+    const count = () => t.query("SELECT count FROM forward_card_counts WHERE status = 'approved'")[0]?.count
+    await setStatus(env, { status: 'approved', from: 'pending' })
+    expect(count()).toBe(1)
+    await hide(env, { from: 'approved' })
+    expect(count()).toBe(0)
+    await remove(env)
+    expect(count()).toBe(0)
+  })
+
+  it('a deleted card is no longer in the admin list', async () => {
+    const { env } = setup()
+    await hide(env, { from: 'pending' })
+    await remove(env)
+    const request = new Request('https://example.test/api/admin/cards?status=hidden', { headers: { Authorization: `Bearer ${TOKEN}` } })
+    expect(((await (await listCards({ request, env })).json()) as { items: unknown[] }).items).toEqual([])
+  })
+
+  it('deletes nothing when the deletion cannot be recorded: one transaction', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const { t, env } = setup()
+    judge(t, 'c_1')
+    await hide(env, { from: 'pending' })
+    t.query('DROP TABLE card_deletions')
+    expect((await remove(env)).status).toBe(500)
+    expect(rowsOf(t)).toEqual({ card: 1, judgment: 1, history: 1 })
+    error.mockRestore()
   })
 })

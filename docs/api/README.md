@@ -1,6 +1,6 @@
 # FORWARD 2026 · Forward Card API 契約（給後端）
 
-> 版本 v0.3（2026-10-30，兩題改用加權字數、body 上限改為 8 KiB，見 #16）｜v0.2（2026-10-13，新增 Client Token，見 #5）｜v0.1（2026-09-22）｜對應規格表 ⑦ US-07／US-10／US-13／US-17、⑧ DATA-01～24
+> 版本 v0.4（2026-11-03，新增後台刪除，見 #35）｜v0.3（2026-10-30，兩題改用加權字數、body 上限改為 8 KiB，見 #16）｜v0.2（2026-10-13，新增 Client Token，見 #5）｜v0.1（2026-09-22）｜對應規格表 ⑦ US-07／US-10／US-13／US-17、⑧ DATA-01～24
 > 前端目前以瀏覽器內的 mock server（`src/api/mock/server.ts`）實作**完全相同**的契約，後端照本文件實作後，只要把 `VITE_API_MODE=live`、`VITE_API_BASE_URL` 指向後端即可切換。
 > 機器可讀版本：[`openapi.yaml`](./openapi.yaml)（可直接匯入 Postman）。TypeScript 型別：`src/api/types.ts`。三者須保持一致。
 
@@ -42,7 +42,7 @@
 | 401 | `UNAUTHORIZED` | admin token 缺少或錯誤 | 驗證失敗，請重新輸入管理金鑰。 |
 | 404 | `NOT_FOUND` | 卡片不存在／路徑不存在 | — |
 | 405 | `METHOD_NOT_ALLOWED` | 方法不支援 | — |
-| 409 | `CARD_STATUS_CHANGED` | 審核者載入後，卡片已被其他人改變狀態（見 3.2） | 這張卡已被其他人處理，請重新整理後再操作。 |
+| 409 | `CARD_STATUS_CHANGED` | 審核者載入後，卡片已被其他人改變狀態（見 3.2、3.4） | 這張卡已被其他人處理，請重新整理後再操作。 |
 | 413 | `PAYLOAD_TOO_LARGE` | body > 8 KiB（8,192 bytes） | 格式錯誤… |
 | 429 | `RATE_LIMITED` | 超過限流 | 發送太頻繁，請稍後再試。 |
 | 500 | `INTERNAL_ERROR` | 未預期錯誤 | 系統暫時發生問題，請稍後再試。 |
@@ -228,7 +228,21 @@ Cookie：`__Host-fwd_ct=v1.<隨機 ID>.<到期時間（Unix 秒）>.<HMAC-SHA256
 { "from": "approved" }
 ```
 
-等同把狀態設為 `hidden`，回應同 3.2（`"status": "hidden"`）。`hidden` 是下架，**不是刪除**。`from` 必填，規則與 3.2 相同：卡片已被其他人改變就回 409；沒帶或 body 不是 JSON 物件回 400。
+等同把狀態設為 `hidden`，回應同 3.2（`"status": "hidden"`）。`hidden` 是下架，**不是刪除**（刪除見 3.4）。`from` 必填，規則與 3.2 相同：卡片已被其他人改變就回 409；沒帶或 body 不是 JSON 物件回 400。
+
+### 3.4 刪除 `DELETE /api/admin/cards/:id`（#35）
+
+不帶 body。**只能刪除「已隱藏」的卡**：公開中的卡要先隱藏，所以刪除時卡片已經不在公開牆上。`:id` 的規則與 3.2 相同：格式不對回 400，找不到回 404。
+
+卡片不是「已隱藏」時（例如審核者載入列表後，被其他人重新公開），回 **409 `CARD_STATUS_CHANGED`**，附上 `current_status`，不刪除。
+
+刪除時，卡片連同它的模型判斷紀錄與狀態變更紀錄一起刪除；另外保留一筆不含卡片內文的刪除紀錄（卡片編號、時間、`actor` 為 `reviewer`）。刪除後無法單獨復原。
+
+**Response `200`**
+
+```json
+{ "success": true, "card_id": "c_…" }
+```
 
 ---
 
@@ -283,12 +297,19 @@ CREATE TABLE card_status_changes (               -- migration 0004：狀態變�
   actor       TEXT NOT NULL,                     -- model（自動公開）| reviewer（持有管理金鑰者，無法區分是哪一位）
   changed_at  TEXT NOT NULL
 );
+
+CREATE TABLE card_deletions (                    -- migration 0005：刪除紀錄（見 3.4），不含卡片內文
+  id          INTEGER PRIMARY KEY,
+  card_id     TEXT NOT NULL,                     -- 被刪除的卡片編號；卡片已不存在，所以不設外鍵
+  actor       TEXT NOT NULL,                     -- reviewer（持有管理金鑰者，無法區分是哪一位）
+  deleted_at  TEXT NOT NULL
+);
 ```
 
 ## 尚未定案、本契約刻意不包含的部分
 
 - 退件、改寫，以及記錄「哪位審核者做了什麼」的個別稽核紀錄（US-17）。模型的判斷紀錄（見 3.1）與不區分審核者的狀態變更紀錄（見「資料表建議」）已在 M1.6 加入
-- 保存期限、刪除與跨年度取回（Q-32，US-15）
+- 到期後的清除方式、刪除紀錄的保存期限與跨年度取回（Q-32，US-15）。卡片保存到 2027/12/31 已確認（公開的卡 Ian 11/01、待審核與已隱藏的卡 Ian 11/05），判斷紀錄與狀態變更紀錄隨卡片刪除；後台刪除已在 #35 確認，見 3.4
 
 這些拍板後會以**新增欄位／新端點**的方式擴充，不改動上面既有的欄位與回應形狀。
 

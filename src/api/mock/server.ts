@@ -202,6 +202,18 @@ export function createMockServer(options: MockServerOptions = {}) {
     return { status: 200, body: { success: true, card_id: card.id, status: card.status }, headers: { 'Cache-Control': 'no-store' } };
   }
 
+  // Only hidden cards can be deleted (#35): one that is no longer hidden gets 409 and stays.
+  function deleteCard(id: string): MockResponse {
+    const index = cards.findIndex((c) => c.id === id);
+    const card = cards[index];
+    if (!card) return error(404, 'NOT_FOUND', 'Card not found');
+    if (card.status !== 'hidden') {
+      return error(409, 'CARD_STATUS_CHANGED', 'The card was changed by someone else', { current_status: card.status });
+    }
+    cards.splice(index, 1);
+    return { status: 200, body: { success: true, card_id: id }, headers: { 'Cache-Control': 'no-store' } };
+  }
+
   async function handle(
     method: string,
     rawUrl: string,
@@ -246,6 +258,13 @@ export function createMockServer(options: MockServerOptions = {}) {
           return error(400, 'VALIDATION_ERROR', 'status must be approved or hidden', { fields: { status: 'invalid' } });
         }
         return updateStatus(id, next, body.from);
+      }
+
+      const single = /^\/api\/admin\/cards\/([^/]+)$/.exec(path);
+      if (single && method === 'DELETE') {
+        const id = decodeURIComponent(single[1] ?? '');
+        if (!ID_PATTERN.test(id)) return error(400, 'VALIDATION_ERROR', 'Invalid card id');
+        return deleteCard(id);
       }
     }
 

@@ -6,6 +6,7 @@ import { weightedLength } from '../../src/lib/text'
 import { WEIGHTED_CASES } from '../../src/lib/text.cases'
 import type { Env } from '../_lib/cards'
 import { createTestDb, sqliteAvailable } from '../_test/d1'
+import { onRequestDelete as deleteHandler } from './admin/cards/[id]'
 import { onRequestPatch as hideHandler } from './admin/cards/[id]/hide'
 import { onRequestPatch as statusHandler } from './admin/cards/[id]/status'
 import { onRequestPost as submitCardHandler } from './cards'
@@ -323,19 +324,21 @@ describe.skipIf(!sqliteAvailable)('two reviewers on one card — mock and real b
     const env: Env = { FORWARD_DB: db, ADMIN_API_TOKEN: ADMIN }
     return async (input, init = {}) => {
       const request = new Request(`https://${HOST}${input}`, { method: init.method, headers: init.headers, body: init.body as string | undefined })
-      const [, id = '', action] = /^\/api\/admin\/cards\/([^/]+)\/(status|hide)$/.exec(input) ?? []
-      return (action === 'hide' ? hideHandler : statusHandler)({ request, env, params: { id: decodeURIComponent(id) } })
+      // /status and /hide take PATCH; the card itself takes DELETE.
+      const [, id = '', action] = /^\/api\/admin\/cards\/([^/]+)(?:\/(status|hide))?$/.exec(input) ?? []
+      const handler = action === 'hide' ? hideHandler : action === 'status' ? statusHandler : deleteHandler
+      return handler({ request, env, params: { id: decodeURIComponent(id) } })
     }
   }
   const mock = () => createMockFetch({ latency: [0, 0], seed: [{ id: ID, nickname: 'n', text_gratitude: 'g', text_anticipate: 'a', status: 'pending', created_at: '2026-11-14T12:00:00.000Z' }] })
+  const outcome = (promise: Promise<unknown>) => promise.then(
+    (value) => ({ ok: value }),
+    (error: ApiError) => ({ status: error.status, code: error.code, currentStatus: error.currentStatus, fields: error.fields }),
+  )
 
   // A hides the card, then B acts on the stale list, then B again after refreshing, then bad requests.
   async function review(fetch: FetchLike) {
     const api = createApiClient({ baseUrl: '', fetch })
-    const outcome = (promise: Promise<unknown>) => promise.then(
-      (value) => ({ ok: value }),
-      (error: ApiError) => ({ status: error.status, code: error.code, currentStatus: error.currentStatus, fields: error.fields }),
-    )
     return [
       await outcome(api.adminHide(ADMIN, ID, 'pending')),
       await outcome(api.adminSetStatus(ADMIN, ID, 'approved', 'pending')),
@@ -367,5 +370,30 @@ describe.skipIf(!sqliteAvailable)('two reviewers on one card — mock and real b
     const fromMock = await send(mock())
     expect(await send(backend())).toEqual(fromMock)
     expect(fromMock).toEqual({ status: 400, error: { code: 'VALIDATION_ERROR', message: 'from must be pending, approved or hidden', fields: { from: 'required' } } })
+  })
+
+  // Only a hidden card can be deleted (#35): a pending card, then one published again after A hid it,
+  // then the hidden card, then the same card again, then bad requests.
+  it('deleting: same status, code and current status for every step', async () => {
+    const steps = async (fetch: FetchLike) => {
+      const api = createApiClient({ baseUrl: '', fetch })
+      return [
+        await outcome(api.adminDeleteCard(ADMIN, ID)),
+        await outcome(api.adminHide(ADMIN, ID, 'pending')),
+        await outcome(api.adminSetStatus(ADMIN, ID, 'approved', 'hidden')),
+        await outcome(api.adminDeleteCard(ADMIN, ID)),
+        await outcome(api.adminHide(ADMIN, ID, 'approved')),
+        await outcome(api.adminDeleteCard(ADMIN, ID)),
+        await outcome(api.adminDeleteCard(ADMIN, ID)),
+        await outcome(api.adminDeleteCard(ADMIN, 'bad id!')),
+        await outcome(api.adminDeleteCard('short', ID)),
+      ]
+    }
+    const fromMock = await steps(mock())
+    expect(await steps(backend())).toEqual(fromMock)
+    expect(fromMock[0]).toEqual({ status: 409, code: 'CARD_STATUS_CHANGED', currentStatus: 'pending', fields: undefined })
+    expect(fromMock[3]).toEqual({ status: 409, code: 'CARD_STATUS_CHANGED', currentStatus: 'approved', fields: undefined })
+    expect(fromMock[5]).toEqual({ ok: { success: true, card_id: ID } })
+    expect(fromMock.slice(6).map(step => ('status' in step ? step.status : 200))).toEqual([404, 400, 401])
   })
 })
