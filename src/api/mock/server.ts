@@ -19,7 +19,7 @@ import {
   type PublicCard,
 } from '../types';
 import { LIMITS, normalizeNewlines, validateField, type CardField } from '../../lib/text';
-import { createSeedCards, type StoredCard } from './seed';
+import { createSeedCards, createSeedJudgments, type StoredCard } from './seed';
 
 export interface MockResponse {
   status: number;
@@ -74,6 +74,8 @@ function parseIntParam(value: string | null, fallback: number): number | null {
 export function createMockServer(options: MockServerOptions = {}) {
   const now = options.now ?? (() => Date.now());
   const cards: StoredCard[] = options.seed ?? createSeedCards(now());
+  // The mock never runs the model: a few seed cards carry synthetic judgments (seed.ts).
+  const judgments = createSeedJudgments(cards);
   // Stands in for the one simulated browser's Client Token cookie and its quota. Like the real
   // cookie it is set by POST /api/client-token and only travels with requests made with
   // credentials 'same-origin'; a new token starts a new quota, as on the server.
@@ -183,8 +185,9 @@ export function createMockServer(options: MockServerOptions = {}) {
       return error(400, 'VALIDATION_ERROR', 'status must be pending, approved or hidden');
     }
     const matching = cards.filter((c) => c.status === status).sort(newestFirst);
-    // The mock never runs the model, so no card carries a judgment.
-    const items: AdminCard[] = matching.slice(0, ADMIN_LIST_LIMIT).map((c) => ({ ...toPublic(c), status: c.status, moderation: null }));
+    const items: AdminCard[] = matching
+      .slice(0, ADMIN_LIST_LIMIT)
+      .map((c) => ({ ...toPublic(c), status: c.status, moderation: judgments.get(c.id) ?? null }));
     return { status: 200, body: { items, has_more: matching.length > ADMIN_LIST_LIMIT }, headers: { 'Cache-Control': 'no-store' } };
   }
 
@@ -211,6 +214,7 @@ export function createMockServer(options: MockServerOptions = {}) {
       return error(409, 'CARD_STATUS_CHANGED', 'The card was changed by someone else', { current_status: card.status });
     }
     cards.splice(index, 1);
+    judgments.delete(id);
     return { status: 200, body: { success: true, card_id: id }, headers: { 'Cache-Control': 'no-store' } };
   }
 
