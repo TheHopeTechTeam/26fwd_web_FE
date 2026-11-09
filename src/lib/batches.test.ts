@@ -47,6 +47,20 @@ describe('testimony batches', () => {
     expect(seen.size).toBe(20);
   });
 
+  it('keeps bringing everyone back after the first round', () => {
+    const random = seeded(11);
+    let state = firstBatch(ids, 8, random);
+    for (let i = 0; i < 10; i += 1) state = nextBatch(state, 8, random);
+    // Later clicks: within a few rounds every testimony shows up again, nobody drops out.
+    const later = new Set<string>();
+    for (let i = 0; i < 6; i += 1) {
+      state = nextBatch(state, 8, random);
+      expect(new Set(state.shown).size).toBe(8);
+      state.shown.forEach((id) => later.add(id));
+    }
+    expect(later.size).toBe(20);
+  });
+
   it('keeps the wall when the screen size changes', () => {
     const state = firstBatch(ids, 10, seeded(2));
     const smaller = resizeBatch(state, 8);
