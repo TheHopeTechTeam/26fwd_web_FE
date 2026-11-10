@@ -491,8 +491,9 @@ function firstPart(): RespondPart {
  */
 function RespondActions() {
   const [part, setPart] = useState<RespondPart>(firstPart);
-  // The 填寫 FORWARD 卡 links (header nav, rail) open the card; the rail's 我要參與奉獻 the Give
-  // side. (Not on focus: iPhone Safari focuses this block when the consent box is tapped.)
+  // The header's 填寫 FORWARD 卡 links (menu, 寫 FORWARD 卡 button) open the card; the rail's 回應
+  // and 我要參與奉獻 the Give side. (Not on focus: iPhone Safari focuses this block when the
+  // consent box is tapped.)
   useEffect(() => {
     const showGive = () => setPart('give');
     const showCard = () => setPart('card');

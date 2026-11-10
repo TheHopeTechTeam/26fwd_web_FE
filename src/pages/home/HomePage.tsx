@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { JourneyRail } from '../../components/JourneyRail';
 import { SiteFooter } from '../../components/SiteFooter';
 import { SiteHeader } from '../../components/SiteHeader';
+import { landingFor } from '../../lib/scroll';
 import { Anticipate } from '../../sections/Anticipate';
 import { Appreciate } from '../../sections/Appreciate';
 import { Hero } from '../../sections/Hero';
@@ -22,7 +23,7 @@ function useLandOnHash(): void {
       touched = true;
     };
     const go = () => {
-      if (!touched) document.getElementById(id)?.scrollIntoView({ block: 'start' });
+      if (!touched) landingFor(id)?.scrollIntoView({ block: 'start' });
     };
     const events = ['wheel', 'touchstart', 'keydown'] as const;
     events.forEach((e) => window.addEventListener(e, stop, { once: true, passive: true }));

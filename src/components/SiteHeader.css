@@ -120,6 +120,11 @@
   box-shadow: 0 0 0 4px rgb(var(--rgb-accent) / 0.22);
 }
 
+/* 寫 FORWARD 卡: phones only (below). */
+.site-header__write {
+  display: none;
+}
+
 .site-header__give[aria-disabled='true'] {
   opacity: 1;
   box-shadow: 0 0 0 4px rgb(var(--rgb-accent) / 0.22);
@@ -231,21 +236,94 @@
   }
 }
 
-/* Phones need the room for the buttons: the THE HOPE logo stays, the wordmark goes (11/04). */
-@media (max-width: 479px) {
+/* Phones need the room for the buttons: the THE HOPE logo stays, the wordmark goes (11/04; up to
+   599px since 寫 FORWARD 卡 joined 參與奉獻, 11/10). */
+@media (max-width: 599px) {
   .site-header__wordmark {
     display: none;
   }
 }
 
-@media (max-width: 420px) {
+@media (max-width: 439px) {
   .site-header__brand img {
     height: 17px;
   }
   .site-header__wordmark {
     font-size: 1rem;
   }
+}
+
+/* Phones (11/10, the team's pick A+B): the chapter links are folded into the menu, so 寫 FORWARD 卡
+   sits beside 參與奉獻 — outlined, so 奉獻 stays the filled one. To keep the whole THE HOPE logo
+   on the row, both buttons are smaller and drop the ↗ here (the giving page still opens in a new
+   tab). They look 36px tall but are still 44px to tap. */
+@media (max-width: 699px) {
+  .site-header__inner {
+    gap: 8px;
+  }
+  .site-header__actions {
+    gap: 6px;
+  }
+  .site-header__write,
   .site-header__give {
-    padding-inline: 0.95em;
+    position: relative;
+    min-height: 36px;
+    padding: 0 0.65em;
+    font-size: 0.75rem;
+  }
+  .site-header__write {
+    display: inline-flex;
+    align-items: center;
+    border: 1.5px solid var(--accent);
+    border-radius: var(--radius-full);
+    background: rgb(var(--rgb-base-deep) / 0.55);
+    color: var(--accent);
+    font-family: var(--font-heading-zh);
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+    text-decoration: none;
+  }
+  .site-header__give,
+  .site-header__give[aria-disabled='true'] {
+    gap: 3px;
+    box-shadow: none;
+  }
+  .site-header__give-arrow {
+    display: none;
+  }
+  .site-header__menu-btn {
+    position: relative;
+    width: 40px;
+    height: 40px;
+  }
+  .site-header__write::after,
+  .site-header__give::after {
+    content: '';
+    position: absolute;
+    inset: -4px -3px;
+  }
+  .site-header__menu-btn::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+  }
+}
+
+/* iPhone SE and 360px Androids: the logo a little smaller so everything still fits. */
+@media (max-width: 374px) {
+  .site-header__brand img {
+    height: 15px;
+  }
+}
+
+/* Narrower still, the logo and both buttons can't share the row: the header is as before, and
+   the card is in the menu (3. 填寫 FORWARD 卡). */
+@media (max-width: 349px) {
+  .site-header__write {
+    display: none;
+  }
+  .site-header__give-arrow {
+    display: inline;
   }
 }

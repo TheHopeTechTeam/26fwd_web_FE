@@ -36,6 +36,9 @@ export const NAV_LABELS = {
   wall: '2026 回應牆',
 } as const;
 
+/** Phones: a button beside 參與奉獻 in the header that opens the FORWARD 卡 (11/10). */
+export const HEADER_WRITE_LABEL = '寫 FORWARD 卡';
+
 /** The rail's last stop, after the three chapters (11/04): it jumps to the Give finale. */
 export const RAIL_GIVE = { id: 'give', en: 'There is More', zh: '我要參與奉獻', short: '奉獻' } as const;
 
