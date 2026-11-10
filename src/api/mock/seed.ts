@@ -1,5 +1,5 @@
 import { mulberry32 } from '../../lib/random';
-import type { CardStatus } from '../types';
+import type { AdminModeration, CardStatus } from '../types';
 
 /** A row as the mock "database" stores it (mirrors D1 forward_cards minus ip_hash). */
 export interface StoredCard {
@@ -128,4 +128,33 @@ export function createSeedCards(now: number, approvedCount = 50): StoredCard[] {
   });
 
   return cards;
+}
+
+type SeedJudgment = Pick<AdminModeration, 'outcome' | 'reason' | 'reason_probability' | 'needs_attention_probability' | 'auto_published'>;
+
+// Which seed cards the "model" judged, so the admin can show each kind (M1.6). flag_a is a
+// placeholder: the real reason codes are in the questions, which are not in the repo.
+const SEED_JUDGMENTS: Record<string, SeedJudgment> = {
+  seed_001: { outcome: 'clear', reason: 'none', reason_probability: 0.97, needs_attention_probability: 0.04, auto_published: true },
+  seed_002: { outcome: 'clear', reason: 'none', reason_probability: 0.95, needs_attention_probability: 0.06, auto_published: true },
+  seed_003: { outcome: 'clear', reason: 'none', reason_probability: 0.92, needs_attention_probability: 0.08, auto_published: true },
+  seed_p03: { outcome: 'timeout', reason: null, reason_probability: null, needs_attention_probability: null, auto_published: false },
+  seed_p04: { outcome: 'flagged', reason: 'flag_a', reason_probability: 0.88, needs_attention_probability: 0.91, auto_published: false },
+  seed_h01: { outcome: 'flagged', reason: 'flag_a', reason_probability: 0.93, needs_attention_probability: 0.95, auto_published: false },
+};
+
+/** Synthetic judgments for the seed cards above that are present; the others were not judged. */
+export function createSeedJudgments(cards: readonly StoredCard[]): Map<string, AdminModeration> {
+  const judgments = new Map<string, AdminModeration>();
+  for (const card of cards) {
+    const judgment = SEED_JUDGMENTS[card.id];
+    if (!judgment) continue;
+    judgments.set(card.id, {
+      model: '@cf/cloudflare/clef',
+      questions_version: 'abcdef123456',
+      ...judgment,
+      judged_at: new Date(Date.parse(card.created_at) + 2000).toISOString(),
+    });
+  }
+  return judgments;
 }
