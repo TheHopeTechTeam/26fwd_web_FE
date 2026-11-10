@@ -1,7 +1,8 @@
 import { useEffect, useId, useRef, useState, type MouseEvent } from 'react';
+import { flushSync } from 'react-dom';
 import logoUrl from '../assets/brand/the-hope-logo-white.png';
 import { pageUrl } from '../config/env';
-import { CHAPTERS, NAV_LABELS } from '../data/content';
+import { CHAPTERS, HEADER_WRITE_LABEL, NAV_LABELS } from '../data/content';
 import { SHOW_CARD_EVENT, jumpToSection } from '../lib/scroll';
 import { GiveButton } from './GiveButton';
 import './SiteHeader.css';
@@ -74,6 +75,15 @@ export function SiteHeader({ progress = false, backLabel }: SiteHeaderProps) {
     if (onHome) jumpToSection(event, id);
   };
 
+  // 寫 FORWARD 卡 lands on the card itself. Phones show one side of 第三步 at a time, so the card
+  // side is rendered first (flushSync); otherwise the jump would aim at a hidden block.
+  const writeCard = (event: MouseEvent<HTMLAnchorElement>) => {
+    setMenuOpen(false);
+    if (!onHome) return;
+    flushSync(() => window.dispatchEvent(new Event(SHOW_CARD_EVENT)));
+    jumpToSection(event, 'respond-part-card');
+  };
+
   const links = (
     <ul className="site-nav__list">
       {/* Numbered steps (網站文字表 #1): 1.感謝 / 2.期待 / 3.填寫 FORWARD 卡 / 4. 2026 回應牆 ↗ */}
@@ -122,11 +132,23 @@ export function SiteHeader({ progress = false, backLabel }: SiteHeaderProps) {
           {links}
         </nav>
         <div className="site-header__actions">
+          {/* Phones only (11/10): the chapter links are folded into the menu there, so the card
+              gets its own way in next to 參與奉獻. */}
+          <a
+            className="site-header__write"
+            href={onHome ? '#respond-part-card' : pageUrl('#respond-part-card')}
+            onClick={writeCard}
+          >
+            {HEADER_WRITE_LABEL}
+          </a>
           <GiveButton
             placement="header"
             label={
               <>
-                參與奉獻<span aria-hidden="true">↗</span>
+                參與奉獻
+                <span className="site-header__give-arrow" aria-hidden="true">
+                  ↗
+                </span>
               </>
             }
             className="btn btn--gold site-header__give"

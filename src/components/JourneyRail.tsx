@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { CHAPTERS, RAIL_GIVE, type ChapterId } from '../data/content';
-import { SHOW_CARD_EVENT, SHOW_GIVE_EVENT, jumpToSection } from '../lib/scroll';
+import { ONE_SIDE_QUERY, SHOW_GIVE_EVENT, jumpToSection } from '../lib/scroll';
 import './JourneyRail.css';
 
 /**
@@ -44,10 +44,16 @@ export function JourneyRail() {
             <li key={chapter.id}>
               <a
                 href={`#${chapter.id}`}
-                className={`journey-rail__item ${isActive ? 'is-active' : ''}`}
+                className={`journey-rail__item ${chapter.id === 'respond' ? 'journey-rail__item--respond' : ''} ${isActive ? 'is-active' : ''}`}
                 aria-current={isActive ? 'step' : undefined}
                 onClick={(e) => {
-                  if (chapter.id === 'respond') window.dispatchEvent(new Event(SHOW_CARD_EVENT));
+                  // Phones show one side of 第三步 at a time: 回應 opens it on 奉獻, as scrolling
+                  // there does, and lands on the two buttons so 我要填寫線上 FORWARD 卡 is in
+                  // view; the header's 寫 FORWARD 卡 opens the card (11/10).
+                  if (chapter.id === 'respond') {
+                    window.dispatchEvent(new Event(SHOW_GIVE_EVENT));
+                    if (window.matchMedia?.(ONE_SIDE_QUERY).matches) return jumpToSection(e, RAIL_GIVE.id);
+                  }
                   jumpToSection(e, chapter.id);
                 }}
               >

@@ -79,6 +79,25 @@
   box-shadow: 0 0 0 4px rgb(var(--rgb-accent) / 0.18);
 }
 
+/* 回應 stays 金黃 at every width (11/10, the team): on phones the header's chapter links are in
+   the menu, so the rail is the visible way to the FORWARD 卡. Its own 'you are here' is the dot. */
+.journey-rail__item--respond {
+  width: 34px;
+  margin: 2px 3px;
+  border-radius: var(--radius-full);
+  background: var(--accent);
+}
+
+.journey-rail__item--respond,
+.journey-rail__item--respond:hover,
+.journey-rail__item--respond.is-active {
+  color: var(--ink);
+}
+
+.journey-rail__item--respond.is-active .journey-rail__dot {
+  box-shadow: 0 0 0 4px rgb(var(--rgb-base) / 0.2);
+}
+
 @media (max-height: 560px) and (max-width: 1099px) {
   .journey-rail__label {
     display: none;
@@ -142,6 +161,13 @@
   }
   .journey-rail__dot {
     order: 0;
+  }
+  /* The highlight is inset in the panel; the padding keeps its text and dot in line with the rest. */
+  .journey-rail__item--respond {
+    width: auto;
+    margin: 2px 6px;
+    padding: 8px 10px 8px 12px;
+    border-radius: var(--radius-sm);
   }
   /* No index on the Give stop, so its English name takes the whole first row. */
   .journey-rail__item--give .journey-rail__en {
