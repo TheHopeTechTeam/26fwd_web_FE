@@ -99,6 +99,12 @@ export function createSeedCards(now: number, approvedCount = 50): StoredCard[] {
     ['測試帳號', '感謝神！有需要一起禱告的可以加我 LINE：fwd_demo_000', '期待更多人認識祢。'],
     ['阿光', '感謝神讓我今年學會了感恩。', '期待明年繼續成長。'],
     ['Nora', '謝謝祢讓我在 Online 聚會認識了一群好朋友。', '期待年底一起去實體聚會。'],
+    // Over 100 characters, so the review console shows its 長文 mark in mock mode (11/11).
+    [
+      '小夏',
+      '謝謝祢這一年一直陪著我。年初搬到新的城市，一個人也不認識，下班回到租屋處常常只想躺著滑手機。是同事邀我參加週五的小組，大家沒有追問我的過去，只是每週都留一個位子給我。夏天換工作的那段時間，小組的朋友輪流幫我改履歷，也陪我一起禱告。我還是常常懷疑、常常軟弱，但回頭看，每一個轉角都有祢預備的人。（合成長文範例）',
+      '期待明年換我留一個位子給新來的人。',
+    ],
   ];
   pending.forEach(([nickname, text_gratitude, text_anticipate], i) => {
     cards.push({

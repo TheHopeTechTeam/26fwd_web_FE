@@ -5,6 +5,7 @@ import { PROMPTS } from '../../lib/canvasCard';
 import { formatDateTime, relativeTime } from '../../lib/format';
 import { DELETE_WORD, deleteConfirmed } from './confirm';
 import { describeJudgment, percent } from './judgment';
+import { longTextNote } from './longText';
 import './AdminPage.css';
 
 const TABS: Array<{ status: CardStatus; label: string }> = [
@@ -171,6 +172,9 @@ function ReviewConsole({ token, onUnauthorized }: { token: string; onUnauthorize
     return items.filter((c) => [c.nickname, c.text_gratitude, c.text_anticipate, c.id].some((v) => v.toLowerCase().includes(q)));
   }, [items, query]);
 
+  // 長文 marks, counted once per loaded batch rather than again on every keystroke in the search box.
+  const longNotes = useMemo(() => new Map(items.map((c) => [c.id, longTextNote(c)])), [items]);
+
   const run = async (action: Action) => {
     if (busyId || (action.next === 'deleted' && !deleteConfirmed(typed))) return;
     setBusyId(action.id);
@@ -253,6 +257,7 @@ function ReviewConsole({ token, onUnauthorized }: { token: string; onUnauthorize
           {filtered.map((card) => (
             <li key={card.id} className="review__item">
               <div className="review__content">
+                <LongTextMark note={longNotes.get(card.id)} />
                 <p className="review__prompt">{PROMPTS.gratitude}</p>
                 <p className="review__text">{card.text_gratitude}</p>
                 <p className="review__prompt">{PROMPTS.anticipate}</p>
@@ -320,6 +325,12 @@ function ReviewConsole({ token, onUnauthorized }: { token: string; onUnauthorize
       </p>
     </div>
   );
+}
+
+// Above the answers, so a reviewer scrolling the list sees it first (Ian, 11/11): which answer is over
+// 100 and how long it is. Nothing for a card that is not long.
+function LongTextMark({ note }: { note: string | null | undefined }) {
+  return note ? <p className="review__long">{note}</p> : null;
 }
 
 // The card's AI judgment (M1.6): one line for scanning the list, the full record on demand.
