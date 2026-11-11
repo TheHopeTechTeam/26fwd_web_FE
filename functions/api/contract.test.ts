@@ -114,12 +114,12 @@ describe.skipIf(!sqliteAvailable)('POST /api/cards — mock and real backend giv
     { name: 'blank nickname', body: card({ nickname: '   ' }) },
     { name: 'nickname over 20 characters', body: card({ nickname: 'x'.repeat(21) }) },
     { name: 'nickname of 20 emoji (code points, not UTF-16 units)', body: card({ nickname: '😀'.repeat(20) }) },
-    { name: 'gratitude over 140 characters', body: card({ text_gratitude: '感'.repeat(141) }) },
+    { name: 'gratitude over 250 characters', body: card({ text_gratitude: '感'.repeat(251) }) },
     { name: 'tab and Windows newline in a multi-line field', body: card({ text_anticipate: '第一行\t\r\n第二行' }) },
     { name: 'control character in nickname', body: card({ nickname: 'a\u0007b' }) },
     { name: 'bidi override in gratitude', body: card({ text_gratitude: '感謝‮神' }) },
     { name: 'C1 control character in anticipate', body: card({ text_anticipate: '期待\u0085更多' }) },
-    { name: 'several invalid fields at once', body: card({ nickname: '', text_gratitude: '感'.repeat(141), agreed_to_publish: false }) },
+    { name: 'several invalid fields at once', body: card({ nickname: '', text_gratitude: '感'.repeat(251), agreed_to_publish: false }) },
     { name: 'consent not given', body: card({ agreed_to_publish: false }) },
     { name: 'consent sent as the string "true"', body: card({ agreed_to_publish: 'true' }) },
     { name: 'honeypot that is not a string', body: card({ honeypot: 1 }) },
@@ -176,8 +176,8 @@ describe.skipIf(!sqliteAvailable)('POST /api/cards — the weighted count: mock 
   it('the largest card the form can send is over 4 KiB but within 8 KiB, and is accepted', async () => {
     const largest = card({
       nickname: '😀'.repeat(20),
-      text_gratitude: '🇹🇼'.repeat(140),
-      text_anticipate: '🇹🇼'.repeat(140),
+      text_gratitude: '🇹🇼'.repeat(250),
+      text_anticipate: '🇹🇼'.repeat(250),
       turnstile_token: 'x'.repeat(2048),
     })
     const bytes = new TextEncoder().encode(largest).byteLength
@@ -255,7 +255,7 @@ describe.skipIf(!sqliteAvailable)('POST /api/cards — visitor-facing result thr
 
   it('field errors come back per field with the format message', async () => {
     stubSiteverify()
-    const error = await failure(makeEnv(), { ...valid, nickname: '', text_gratitude: '感'.repeat(141) })
+    const error = await failure(makeEnv(), { ...valid, nickname: '', text_gratitude: '感'.repeat(251) })
     expect(error.code).toBe('VALIDATION_ERROR')
     expect(error.fields).toEqual({ nickname: 'required', text_gratitude: 'too_long' })
     expect(describeError(error)).toBe('格式錯誤，請檢查欄位內容後再送出。')

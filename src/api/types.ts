@@ -10,9 +10,9 @@ export type CardStatus = 'pending' | 'approved' | 'hidden';
 export interface SubmitCardRequest {
   /** trim → 1–20 code points, no control characters */
   nickname: string;
-  /** trim → weighted 1–140, ≤ 280 code points, ≤ 10 line breaks (#16, src/lib/text.ts); tab/newline allowed */
+  /** trim → weighted 1–250, ≤ 500 code points, ≤ 2 line breaks (#16, src/lib/text.ts); tab/newline allowed */
   text_gratitude: string;
-  /** trim → weighted 1–140, ≤ 280 code points, ≤ 10 line breaks (#16, src/lib/text.ts); tab/newline allowed */
+  /** trim → weighted 1–250, ≤ 500 code points, ≤ 2 line breaks (#16, src/lib/text.ts); tab/newline allowed */
   text_anticipate: string;
   /** Must be literally true. */
   agreed_to_publish: true;

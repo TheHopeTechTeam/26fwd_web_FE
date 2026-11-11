@@ -261,10 +261,10 @@ components:
         text_gratitude:
           type: string
           description: |
-            Trimmed, 1–140 by the weighted count (#16, src/lib/text.ts): per grapheme, half-width
+            Trimmed, 1–250 by the weighted count (#16, src/lib/text.ts): per grapheme, half-width
             characters (U+0020–007E) and tab count 0.5, anything else 1 (CJK, full-width
-            characters, a newline, a whole emoji such as 👨‍👩‍👧). Also at most 280 code points and
-            10 line breaks. Over any limit: 400 with fields.<field> = too_long. Tab and newline allowed.
+            characters, a newline, a whole emoji such as 👨‍👩‍👧). Also at most 500 code points and
+            2 line breaks. Over any limit: 400 with fields.<field> = too_long. Tab and newline allowed.
           example: 感謝神這一年的帶領
         text_anticipate:
           type: string
