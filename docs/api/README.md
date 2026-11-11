@@ -164,7 +164,7 @@ Cookie：`__Host-fwd_ct=v1.<隨機 ID>.<到期時間（Unix 秒）>.<HMAC-SHA256
 
 ## 3. 審核後台（Bearer token）
 
-所有 `/api/admin/*` 需要 `Authorization: Bearer <ADMIN_SECRET>`（≥ 32 字元，存在伺服器 secret，前端只放記憶體）。token 錯誤或缺少回 401。回應一律 `Cache-Control: no-store`，且不要在 log 記錄完整 header。
+所有 `/api/admin/*` 需要 `Authorization: Bearer <ADMIN_SECRET>`（≥ 32 字元，存在伺服器 secret；前端只放在該分頁的 sessionStorage，登出、401、離開後台、關閉分頁或登入滿 12 小時即清除，見 #67）。token 錯誤或缺少回 401。回應一律 `Cache-Control: no-store`，且不要在 log 記錄完整 header。
 
 ### 3.1 列表 `GET /api/admin/cards?status=pending`
 

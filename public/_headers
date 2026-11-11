@@ -7,3 +7,10 @@
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
   X-Robots-Tag: noindex, nofollow, noarchive
+
+# The review console keeps its key in sessionStorage, which every script on the page can read (#67),
+# so it allows no third-party script, frame or connection: the policy above without its https
+# sources. The detach line drops the policy above first; without it the two would be joined.
+/admin/*
+  ! Content-Security-Policy
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; media-src 'self'; frame-src 'none'; connect-src 'self'; upgrade-insecure-requests

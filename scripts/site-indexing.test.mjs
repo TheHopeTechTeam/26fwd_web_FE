@@ -29,10 +29,11 @@ describe('site indexing (#36)', () => {
     expect(all.lines).not.toContain(NOINDEX)
     // Every other header of the catch-all rule is untouched.
     expect(all.lines).toEqual(rules(headers).find((r) => r.pattern === '/*').lines.filter((l) => l !== NOINDEX))
-    expect(launch.filter((r) => r.lines.includes(NOINDEX)).map((r) => r.pattern)).toEqual([
+    // /admin/* already has a rule (its CSP, #67), so the header goes into that rule.
+    expect(launch.filter((r) => r.lines.includes(NOINDEX)).map((r) => r.pattern).sort()).toEqual([
+      '/admin/*',
       'https://:project.pages.dev/*',
       'https://:version.:project.pages.dev/*',
-      '/admin/*',
     ])
   })
 

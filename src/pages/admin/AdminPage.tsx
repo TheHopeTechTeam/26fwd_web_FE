@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { ADMIN_TOKEN_MIN_LENGTH, api, ApiError, describeError, type AdminCard, type CardStatus } from '../../api';
 import { config, pageUrl } from '../../config/env';
+import { forgetAdminSession, restoreAdminSession, saveAdminSession, sessionExpiresAt, type AdminSession } from '../../lib/adminSession';
 import { PROMPTS } from '../../lib/canvasCard';
 import { formatDateTime, relativeTime } from '../../lib/format';
 import { DELETE_WORD, deleteConfirmed } from './confirm';
@@ -23,16 +24,53 @@ const ACTION_LABEL: Record<Action['next'], { verb: string; confirm: string; done
   deleted: { verb: '永久刪除', confirm: '確認永久刪除這張 FORWARD 卡？刪除後無法復原，它的 AI 判斷紀錄也會一起刪除。', done: '已永久刪除。' },
 };
 
+const SESSION_EXPIRED = '登入已滿 12 小時，請重新輸入管理金鑰。';
+const KEY_REJECTED = '管理金鑰無效或已過期，請重新輸入。';
+
 /**
  * Review console (US-17 scope for this round): switch pending / approved / hidden, approve or hide,
  * and delete a hidden card for good (#35), each with an explicit confirm step. Every card shows its
- * AI judgment (M1.6). The token lives only in React state — never in storage, the URL or logs — and
- * is gone on reload. No edits or rejections are shown because no backend exists for them yet
- * (Q-29～Q-32).
+ * AI judgment (M1.6). The token stays in this tab's sessionStorage for at most 12 hours from
+ * sign-in (#67, src/lib/adminSession.ts), so a reload keeps the reviewer signed in; 登出, a 401,
+ * leaving for another page of the site, closing the tab or 12 hours clear it. It is never in
+ * localStorage, the URL or logs. No edits or rejections are shown because no backend exists for
+ * them yet (Q-29～Q-32).
  */
 export function AdminPage() {
-  const [token, setToken] = useState<string | null>(null);
-  const [lockError, setLockError] = useState<string | null>(null);
+  const [restored] = useState(() => restoreAdminSession());
+  const [session, setSession] = useState<AdminSession | null>(restored.session);
+  const [lockError, setLockError] = useState<string | null>(restored.expired ? SESSION_EXPIRED : null);
+
+  const signOut = useCallback((reason: string | null) => {
+    forgetAdminSession();
+    setSession(null);
+    setLockError(reason);
+  }, []);
+
+  // 12 hours from sign-in even while the page stays open: a timer, and a check each time the page
+  // is shown again, because phones pause timers in the background.
+  useEffect(() => {
+    if (!session) return;
+    const expiresAt = sessionExpiresAt(session);
+    const timer = window.setTimeout(() => signOut(SESSION_EXPIRED), Math.max(0, expiresAt - Date.now()));
+    const onVisible = () => {
+      if (document.visibilityState === 'visible' && Date.now() >= expiresAt) signOut(SESSION_EXPIRED);
+    };
+    // Back here through the back/forward cache from another page of the site, which dropped the
+    // stored key: store it again so a reload still keeps the reviewer signed in.
+    const onShow = (event: PageTransitionEvent) => {
+      if (Date.now() >= expiresAt) signOut(SESSION_EXPIRED);
+      else if (event.persisted) saveAdminSession(session);
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('pageshow', onShow);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('pageshow', onShow);
+    };
+  }, [session, signOut]);
+
   return (
     <div className="admin">
       <header className="admin__header">
@@ -41,28 +79,24 @@ export function AdminPage() {
         </div>
         <div className="admin__header-side">
           {config.apiMode === 'mock' && <span className="admin__mode">MOCK API</span>}
-          {token && (
-            <button type="button" className="btn btn--outline btn--sm" onClick={() => setToken(null)}>
+          {session && (
+            <button type="button" className="btn btn--outline btn--sm" onClick={() => signOut(null)}>
               登出
             </button>
           )}
         </div>
       </header>
       <main className="admin__main">
-        {token ? (
-          <ReviewConsole
-            token={token}
-            onUnauthorized={() => {
-              setToken(null);
-              setLockError('管理金鑰無效或已過期，請重新輸入。');
-            }}
-          />
+        {session ? (
+          <ReviewConsole token={session.token} onUnauthorized={() => signOut(KEY_REJECTED)} />
         ) : (
           <LockScreen
             error={lockError}
-            onUnlock={(t) => {
+            onUnlock={(token) => {
+              const signedIn = { token, signedInAt: Date.now() };
+              saveAdminSession(signedIn);
               setLockError(null);
-              setToken(t);
+              setSession(signedIn);
             }}
           />
         )}
@@ -87,7 +121,9 @@ function LockScreen({ onUnlock, error }: { onUnlock: (token: string) => void; er
   return (
     <form className="admin__lock" onSubmit={submit}>
       <h1>輸入管理金鑰</h1>
-      <p className="admin__muted">金鑰只保存在這個分頁的記憶體中，重新整理或關閉頁面後即清除。</p>
+      <p className="admin__muted">
+        金鑰只保存在這個分頁：重新整理後仍保持登入；按「登出」、離開後台、關閉分頁或登入滿 12 小時後清除。處理完請按「登出」。
+      </p>
       <label htmlFor="admin-token">管理金鑰（Bearer token）</label>
       <input
         id="admin-token"
