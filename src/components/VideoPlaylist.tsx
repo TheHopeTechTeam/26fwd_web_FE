@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type SyntheticEvent } from 'react';
+import { useCallback, useEffect, useId, useRef, useState, type SyntheticEvent } from 'react';
 import { prefersReducedMotion } from '../lib/hooks';
 import {
   fetchVideoTitle,
@@ -9,6 +9,7 @@ import {
   YT_PLAYING,
   type YTPlayer,
 } from '../lib/youtube';
+import { Modal } from './Modal';
 import './VideoPlaylist.css';
 
 interface Video {
@@ -33,7 +34,8 @@ interface VideoPlaylistProps {
  * (below on phones), like the 混合版 mockup. Everything comes from Comms' YouTube playlist, so
  * a video they add there shows up here without a deploy. YouTube's player only loads when the
  * block comes near the screen (on it, on phones); until then (and until play) the cover is the
- * site's own.
+ * site's own. Below 900px the list is one sideways row; 「看全部」 opens every video in a dialog
+ * (11/10: the playlist grew to 19).
  * Without the player script (blocked or offline) the cover opens a plain playlist embed.
  */
 export function VideoPlaylist({ playlistId, title, hint, listLabel, note }: VideoPlaylistProps) {
@@ -52,6 +54,8 @@ export function VideoPlaylist({ playlistId, title, hint, listLabel, note }: Vide
   const listRef = useRef<HTMLUListElement>(null);
   /** The list scrolls (a long playlist) and has more past the edge: fade that edge. */
   const [moreHidden, setMoreHidden] = useState(false);
+  const [allOpen, setAllOpen] = useState(false);
+  const allTitleId = useId();
 
   const checkMore = useCallback(() => {
     const el = listRef.current;
@@ -191,6 +195,15 @@ export function VideoPlaylist({ playlistId, title, hint, listLabel, note }: Vide
     if (!fallback) startAt(index);
   };
 
+  // A video picked in 「看全部」 plays in the big player, which comes back into view.
+  const pickFromAll = (index: number) => {
+    play(index);
+    setAllOpen(false);
+    requestAnimationFrame(() =>
+      rootRef.current?.scrollIntoView({ block: 'center', behavior: prefersReducedMotion() ? 'auto' : 'smooth' }),
+    );
+  };
+
   const shown = videos[current];
   const hasList = videos.length > 1;
   // Until the playlist arrives, blank cards hold the list's place (11/06): the list appearing
@@ -258,6 +271,9 @@ export function VideoPlaylist({ playlistId, title, hint, listLabel, note }: Vide
             <p className="video-playlist__list-head">
               {listLabel}
               <span>共 {videos.length} 支</span>
+              <button type="button" className="video-playlist__all" aria-haspopup="dialog" onClick={() => setAllOpen(true)}>
+                看全部 <span aria-hidden="true">→</span>
+              </button>
             </p>
             <ul
               ref={listRef}
@@ -265,34 +281,62 @@ export function VideoPlaylist({ playlistId, title, hint, listLabel, note }: Vide
               aria-label={listLabel}
               onScroll={checkMore}
             >
-              {videos.map((v, i) => {
-                const isCurrent = i === current;
-                return (
-                  <li key={v.id}>
-                    <button
-                      type="button"
-                      className={`video-playlist__item${isCurrent ? ' is-current' : ''}`}
-                      onClick={() => play(i)}
-                      aria-current={isCurrent ? 'true' : undefined}
-                    >
-                      <span className="video-playlist__thumb">
-                        <img src={thumbnailUrl(v.id)} alt="" loading="lazy" decoding="async" />
-                        <span className="video-playlist__play video-playlist__play--sm" aria-hidden="true" />
-                      </span>
-                      <span className="video-playlist__item-text">
-                        <span className="video-playlist__item-title">{label(v, i)}</span>
-                        {isCurrent && playing && <span className="video-playlist__now">播放中</span>}
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
+              {videos.map((v, i) => (
+                <li key={v.id}>
+                  <VideoItem title={label(v, i)} videoId={v.id} current={i === current} playing={playing} onPick={() => play(i)} />
+                </li>
+              ))}
             </ul>
           </div>
         )}
       </div>
       {note && <p className="note video-playlist__note">{note}</p>}
+
+      <Modal open={allOpen} onClose={() => setAllOpen(false)} labelledBy={allTitleId} className="video-all-modal">
+        <div className="video-all tone-light">
+          <p id={allTitleId} className="video-all__title">
+            {listLabel}
+            <span>共 {videos.length} 支</span>
+          </p>
+          <ul className="video-all__grid">
+            {videos.map((v, i) => (
+              <li key={v.id}>
+                <VideoItem title={label(v, i)} videoId={v.id} current={i === current} playing={playing} onPick={() => pickFromAll(i)} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      </Modal>
     </div>
+  );
+}
+
+interface VideoItemProps {
+  title: string;
+  videoId: string;
+  current: boolean;
+  playing: boolean;
+  onPick: () => void;
+}
+
+/** One video in the list or in 「看全部」: its still, and its title. */
+function VideoItem({ title, videoId, current, playing, onPick }: VideoItemProps) {
+  return (
+    <button
+      type="button"
+      className={`video-playlist__item${current ? ' is-current' : ''}`}
+      onClick={onPick}
+      aria-current={current ? 'true' : undefined}
+    >
+      <span className="video-playlist__thumb">
+        <img src={thumbnailUrl(videoId)} alt="" loading="lazy" decoding="async" />
+        <span className="video-playlist__play video-playlist__play--sm" aria-hidden="true" />
+      </span>
+      <span className="video-playlist__item-text">
+        <span className="video-playlist__item-title">{title}</span>
+        {current && playing && <span className="video-playlist__now">播放中</span>}
+      </span>
+    </button>
   );
 }
 
