@@ -138,10 +138,83 @@
   letter-spacing: 0.06em;
 }
 
-.video-playlist__list-head span {
+.video-playlist__list-head > span {
+  margin-left: auto;
   font-family: var(--font-info);
   font-size: 0.875rem;
   color: var(--text-3);
+}
+
+/* 看全部 (11/10): where the list is one sideways row, every video in a dialog. Underlined 金黃
+   text; 44px tall to tap without making the heading taller. */
+.video-playlist__all {
+  margin: -12px 0;
+  padding: 12px 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.9375rem;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  color: var(--accent-text);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.video-all-modal .modal__panel {
+  width: min(720px, 100%);
+  /* 米白, like the card result (11/06); the content inside uses the light tone. */
+  background: var(--paper);
+}
+
+.video-all {
+  padding: 22px clamp(16px, 4vw, 32px) 32px;
+  background: transparent;
+}
+
+/* Level with the close button, clear of it on the right. */
+.video-all__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  margin: 0 56px 14px 0;
+  font-family: var(--font-heading-zh);
+  font-weight: 700;
+  font-size: 1.25rem;
+  letter-spacing: 0.04em;
+}
+
+.video-all__title span {
+  font-family: var(--font-info);
+  font-size: 0.9375rem;
+  color: var(--text-3);
+}
+
+.video-all__grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 10px;
+}
+
+.video-all .video-playlist__item {
+  align-content: start;
+  padding: 6px;
+}
+
+/* Rows as tall as their titles: no two-line room held under a one-line title. */
+.video-all .video-playlist__item-title {
+  min-height: 0;
+}
+
+@media (min-width: 600px) {
+  .video-all__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 /* Phones and tablets: one row that scrolls sideways; the next card peeks in at the edge. */
@@ -302,6 +375,11 @@
 
   .video-playlist__list > li {
     flex: none;
+  }
+
+  /* The whole list is in view beside the player. */
+  .video-playlist__all {
+    display: none;
   }
 
   .video-playlist__list.has-more {
