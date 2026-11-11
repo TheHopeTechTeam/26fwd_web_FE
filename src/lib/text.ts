@@ -6,22 +6,23 @@
  * The two prompts use the weighted count Ian approved in #16 (10/23), per grapheme (what a
  * reader sees as one character): half-width letters, digits, symbols and spaces 0.5;
  * everything else 1 (CJK, full-width characters and punctuation, a whole emoji such as 👨‍👩‍👧
- * or 🇹🇼, accented letters, a newline). At most 140 weighted, at most 280 code points so
- * long runs of half-width characters cannot flood the card, and at most 10 line breaks so one
- * answer cannot become a 70-line card on the wall (Jessie, per Alvis's #16 proposal, point 3).
+ * or 🇹🇼, accented letters, a newline). At most 250 weighted, at most 500 code points so long runs
+ * of half-width characters cannot flood the card, and at most 2 line breaks. Until 11/10 it was
+ * 140 / 280 / 10 breaks (#16; the breaks per Alvis's proposal point 3); the downloaded card then
+ * became 4:5, and more breaks than its boxes hold were being dropped from the image.
  * The nickname stays 1–20 code points.
  */
 export const LIMITS = {
   nickname: 20,
-  text_gratitude: 140,
-  text_anticipate: 140,
+  text_gratitude: 250,
+  text_anticipate: 250,
 } as const;
 
 /** Hard cap on the prompts' raw length, in code points (#16). */
-export const PROMPT_MAX_CODE_POINTS = 280;
+export const PROMPT_MAX_CODE_POINTS = 500;
 
 /** Most line breaks one prompt may contain (#16). */
-export const PROMPT_MAX_LINE_BREAKS = 10;
+export const PROMPT_MAX_LINE_BREAKS = 2;
 
 export type CardField = keyof typeof LIMITS;
 
@@ -57,7 +58,7 @@ export function fieldLength(field: CardField, value: string): number {
   return isPrompt(field) ? weightedLength(value) : codePointLength(value);
 }
 
-/** What the counter shows: whole numbers, rounded up (#16), so "140.5" never reads as fitting. */
+/** What the counter shows: whole numbers, rounded up (#16), so "250.5" never reads as fitting. */
 export function displayLength(field: CardField, value: string): number {
   return Math.ceil(fieldLength(field, normalizeNewlines(value).trim()));
 }

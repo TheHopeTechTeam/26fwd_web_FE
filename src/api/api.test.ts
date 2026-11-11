@@ -84,7 +84,7 @@ describe('POST /api/cards', () => {
   it('returns field errors for bad input', async () => {
     const { client } = setup();
     const error = await expectError(
-      client.submitCard({ ...valid, nickname: '', text_gratitude: '謝'.repeat(141), agreed_to_publish: false as true }),
+      client.submitCard({ ...valid, nickname: '', text_gratitude: '謝'.repeat(251), agreed_to_publish: false as true }),
       400,
       'VALIDATION_ERROR',
     );

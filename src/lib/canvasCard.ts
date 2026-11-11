@@ -4,14 +4,15 @@ import paperBgUrl from '../assets/card/forward-card-bg.webp';
 import type { Declaration } from '../data/content';
 
 /**
- * Personal FORWARD 卡 image (US-09): native Canvas 2D, no html2canvas. Since 11/06 one design,
- * 1:1: the printed FORWARD 卡's look with the declaration of faith the visitor picks (#23) closing
- * the card, on that declaration's ground (11/08). The 9:16 size is kept in the drawing code but
- * no longer offered.
+ * Personal FORWARD 卡 image (US-09): native Canvas 2D, no html2canvas. Since 11/06 one design:
+ * the printed FORWARD 卡's look with the declaration of faith the visitor picks (#23) closing the
+ * card, on that declaration's ground (11/08). 4:5 since 11/10, so answers of up to 250 characters
+ * stay readable (1:1 before); the 1:1 and 9:16 sizes are kept in the drawing code but not offered.
  */
-export type CardFormat = 'square' | 'story';
+export type CardFormat = 'portrait' | 'square' | 'story';
 
 export const CARD_FORMATS: Record<CardFormat, { width: number; height: number; label: string }> = {
+  portrait: { width: 1080, height: 1350, label: '貼文 4:5' },
   square: { width: 1080, height: 1080, label: '貼文 1:1' },
   story: { width: 1080, height: 1920, label: '限時動態 9:16' },
 };
@@ -47,8 +48,14 @@ export const PROMPTS_EN = { gratitude: 'I APPRECIATE GOD FOR…', anticipate: "I
 
 const BODY = '"Noto Serif TC", "Songti TC", "PMingLiU", serif';
 const HEADING = '"FWD Heading TC", "Noto Serif TC", "Songti TC", "PingFang TC", "Microsoft JhengHei", serif';
-/** Smallest body size on the image (px at 1080 wide). */
+/** Largest and smallest body size on the image (px at 1080 wide): short answers grow up to the
+ *  first, long ones shrink to the second. */
+const MAX_SIZE = 34;
 const MIN_SIZE = 20;
+/** Answers with line breaks may go one step smaller before the breaks are given up (11/10). With at
+ *  most 2 per answer the 4:5 card kept them at 20px or more in every 250-character test, so this is
+ *  a floor for breaks that fall badly, not a size anyone is expected to see. */
+const MIN_SIZE_WITH_BREAKS = 18;
 const DISPLAY = '"Recia Serif Display", "Noto Serif TC", serif';
 
 /** Canvas can't wait for web fonts by itself, so load the ones (and the slices) it uses first. */
@@ -122,6 +129,20 @@ function roundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: num
   ctx.closePath();
 }
 
+/** Vertical spacing around the answers; see `roomy` and `tight` in drawPaperCard. */
+interface Spacing {
+  title: number;
+  afterTitle: number;
+  /** Below each prompt's English line, above its box. */
+  afterPrompt: number;
+  /** Space above the declaration, × the answers' size. */
+  beforeDecl: number;
+  /** Room for the signature under the declaration, × the signature's size. */
+  signRoom: number;
+  /** Clear space above the sign-off. */
+  clear: number;
+}
+
 /**
  * The paper style (11/04): the printed FORWARD 卡 — brown with its line drawing, a large FORWARD
  * CARD title, each prompt with its English line over a white answer box, then the signature.
@@ -174,19 +195,10 @@ function drawPaperCard(
   const maxWidth = w - pad * 2;
   const measure = (s: string) => ctx.measureText(s).width;
 
-  let y = pad;
   const kicker = story ? 28 : trial ? 18 : 22;
   const footer = story ? 26 : trial ? 18 : 22;
-
   // Title, stacked on the story like the paper card.
-  const titleSize = story ? 150 : trial && declaration ? 72 : 96;
-  ctx.fillStyle = gold;
-  ctx.font = `800 ${titleSize}px ${DISPLAY}`;
-  for (const line of story ? ['FORWARD', 'CARD'] : ['FORWARD CARD']) {
-    ctx.fillText(line, pad, y);
-    y += titleSize * 0.9;
-  }
-  y += story ? 80 : 44;
+  const titleLines = story ? ['FORWARD', 'CARD'] : ['FORWARD CARD'];
 
   // The declaration, measured now and drawn last: its English title as a small label right above
   // the sentence (28px since 11/08), behind one 金黃 rule, near the bottom of the card.
@@ -207,9 +219,25 @@ function drawPaperCard(
   const labelGap = story ? 18 : 12;
   const declHeight = declaration ? kicker + labelGap + declLines.length * heroLine : 0;
 
-  const top = y;
+  // The card's spacing. The tighter one (11/10) gives long answers on the 4:5 card more room: a
+  // smaller title and less air around the prompts and the declaration. It is used only when it
+  // buys the answers a larger size; short answers keep the full title.
+  const roomy: Spacing = {
+    title: story ? 150 : trial && declaration ? 72 : 96,
+    afterTitle: story ? 80 : 44,
+    afterPrompt: 14,
+    beforeDecl: 1.6,
+    signRoom: 1.6,
+    clear: 18,
+  };
+  const tight: Spacing = { title: 76, afterTitle: 30, afterPrompt: 8, beforeDecl: 1.2, signRoom: 1.2, clear: 10 };
+  const spacings = story || trial ? [roomy] : [roomy, tight];
   const bottom = h - pad;
-  const layoutAt = (size: number, gratitude: string, anticipate: string) => {
+  const topOf = (s: Spacing) => pad + titleLines.length * s.title * 0.9 + s.afterTitle;
+  // The visitor's name: one size whatever the answers' size (11/10).
+  const sign = story ? 48 : 40;
+
+  const layoutAt = (size: number, gratitude: string, anticipate: string, s: Spacing) => {
     const boxPad = Math.round(size * 0.85);
     ctx.font = `400 ${size}px ${BODY}`;
     const a = wrapText(gratitude, maxWidth - boxPad * 2, measure);
@@ -224,30 +252,56 @@ function drawPaperCard(
     const boxB = boxPad * 2 + Math.max(b.length, minLines) * line;
     // A little more room between each prompt and its English line (11/08).
     const promptGap = Math.round(prompt * 0.3);
-    const head = prompt * 1.3 + promptGap + en * 1.4 + 14;
+    const head = prompt * 1.3 + promptGap + en * 1.4 + s.afterPrompt;
     const gap = Math.round(size * 1.2);
-    // The signature a little larger (11/06), never below 30px even when the answers are long.
-    const sign = Math.max(Math.round(size * 1.2), story ? 36 : 30);
     // Under the boxes: the declaration, the signature under it, then clear space above the
     // sign-off (11/08); without a declaration, just the signature.
     // At least size × 1.6 between the last box and the declaration (11/08: it sat too close).
-    const tail = declaration ? Math.round(size * 1.6) + declHeight + sign * 1.6 + footer + 18 : sign * 2;
+    const tail = declaration
+      ? Math.round(size * s.beforeDecl) + declHeight + sign * s.signRoom + footer + s.clear
+      : sign * 2;
     const total = head * 2 + boxA + boxB + gap + tail;
-    return { size, a, b, boxPad, prompt, promptGap, en, line, boxA, boxB, head, gap, sign, total };
+    return { size, s, a, b, boxPad, prompt, promptGap, en, line, boxA, boxB, head, gap, total };
   };
-  // Shrink until both boxes fit; very long answers lose their line breaks before overflowing.
-  const fit = (gratitude: string, anticipate: string) => {
-    for (let size = story ? 44 : 34; size >= MIN_SIZE; size -= 2) {
-      const candidate = layoutAt(size, gratitude, anticipate);
-      if (candidate.total <= bottom - top) return candidate;
+  // Shrink until both boxes fit, trying the roomy spacing first at each size; very long answers
+  // lose their line breaks before overflowing.
+  const fit = (gratitude: string, anticipate: string, min = MIN_SIZE) => {
+    for (let size = story ? 44 : MAX_SIZE; size >= min; size -= 2) {
+      for (const s of spacings) {
+        const candidate = layoutAt(size, gratitude, anticipate, s);
+        if (candidate.total <= bottom - topOf(s)) return candidate;
+      }
     }
     return null;
   };
   const flat = (text: string) => text.replace(/\s*\n\s*/g, ' ');
+  const breaks = /\n/.test(content.text_gratitude + content.text_anticipate);
   const layout =
-    fit(content.text_gratitude, content.text_anticipate) ??
+    fit(content.text_gratitude, content.text_anticipate, breaks ? MIN_SIZE_WITH_BREAKS : MIN_SIZE) ??
     fit(flat(content.text_gratitude), flat(content.text_anticipate)) ??
-    layoutAt(MIN_SIZE, flat(content.text_gratitude), flat(content.text_anticipate));
+    layoutAt(MIN_SIZE, flat(content.text_gratitude), flat(content.text_anticipate), spacings[spacings.length - 1]!);
+  const sp = layout.s;
+
+  // Room left over goes to the white boxes, the shorter one first so both end level (11/10): a
+  // short answer leaves space to write in, as on the paper card, not a gap above the declaration.
+  let spare = Math.floor(bottom - topOf(sp) - layout.total);
+  if (spare > 0) {
+    const level = Math.min(spare, Math.abs(layout.boxA - layout.boxB));
+    if (layout.boxA < layout.boxB) layout.boxA += level;
+    else layout.boxB += level;
+    spare -= level;
+    layout.boxA += Math.floor(spare / 2);
+    layout.boxB += Math.floor(spare / 2);
+  }
+
+  let y = pad;
+  ctx.fillStyle = gold;
+  ctx.font = `800 ${sp.title}px ${DISPLAY}`;
+  for (const line of titleLines) {
+    ctx.fillText(line, pad, y);
+    y += sp.title * 0.9;
+  }
+  y += sp.afterTitle;
 
   const block = (prompt: string, promptEn: string, lines: string[], box: number) => {
     ctx.fillStyle = gold;
@@ -256,7 +310,7 @@ function drawPaperCard(
     y += layout.prompt * 1.3 + layout.promptGap;
     ctx.font = `700 ${layout.en}px ${DISPLAY}`;
     ctx.fillText(promptEn, pad, y);
-    y += layout.en * 1.4 + 14;
+    y += layout.en * 1.4 + sp.afterPrompt;
     ctx.fillStyle = color('white');
     roundedRect(ctx, pad, y, maxWidth, box, story ? 32 : 26);
     ctx.fill();
@@ -275,7 +329,7 @@ function drawPaperCard(
 
   const signature = (top: number) => {
     ctx.fillStyle = gold;
-    ctx.font = `600 ${layout.sign}px ${BODY}`;
+    ctx.font = `600 ${sign}px ${BODY}`;
     ctx.textAlign = 'right';
     ctx.fillText(`— ${content.nickname}`, w - pad, top);
     ctx.textAlign = 'left';
@@ -283,9 +337,12 @@ function drawPaperCard(
 
   // The declaration closes the card, near the bottom (or right under the boxes when the answers
   // are long), and the visitor's name signs it at the bottom right (11/08).
-  if (!declaration) signature(y + layout.sign * 0.8);
+  if (!declaration) signature(y + sign * 0.8);
   if (declaration) {
-    const start = Math.max(y + Math.round(layout.size * 1.6), bottom - footer - 18 - layout.sign * 1.6 - declHeight);
+    const start = Math.max(
+      y + Math.round(layout.size * sp.beforeDecl),
+      bottom - footer - sp.clear - sign * sp.signRoom - declHeight,
+    );
     ctx.fillStyle = gold;
     ctx.font = `700 ${kicker}px ${DISPLAY}`;
     spaced(ctx, declaration.en, pad + indent, start, 5);
@@ -295,7 +352,7 @@ function drawPaperCard(
     declLines.forEach((line, i) => ctx.fillText(line, pad + indent, textTop + i * heroLine + (heroLine - hero) / 2));
     ctx.fillStyle = gold;
     ctx.fillRect(pad, start + 2, 6, declHeight - 6);
-    signature(start + declHeight + layout.sign * 0.5);
+    signature(start + declHeight + sign * 0.5);
   }
 
   // Small sign-off in the bottom corner.
@@ -304,8 +361,8 @@ function drawPaperCard(
   spaced(ctx, 'THE HOPE · FORWARD 2026', pad, h - pad * 0.62 - footer, 4);
 }
 
-/** The downloadable FORWARD 卡 (11/06, team choice): one 1:1 design, the paper card, with the
- *  chosen declaration closing it (the paper style alone has none). */
+/** The downloadable FORWARD 卡 (11/06, team choice): one design, the paper card, with the chosen
+ *  declaration closing it (the paper style alone has none); 4:5 since 11/10 (1:1 before). */
 export function drawCard(
   ctx: CanvasRenderingContext2D,
   content: CardContent,

@@ -277,6 +277,12 @@
   aspect-ratio: 1;
 }
 
+/* 4:5 (11/10): a little narrower than the square so it stands about as tall as before. */
+.card-result__preview--portrait {
+  max-width: 360px;
+  aspect-ratio: 4 / 5;
+}
+
 .card-result__preview--story {
   max-width: 260px;
   aspect-ratio: 9 / 16;

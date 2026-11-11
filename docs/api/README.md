@@ -91,7 +91,7 @@ Cookie：`__Host-fwd_ct=v1.<隨機 ID>.<到期時間（Unix 秒）>.<HMAC-SHA256
 | 欄位 | 型別 | 規則 |
 | --- | --- | --- |
 | `nickname` | string | trim 後 1–20 code points；不可含控制字元（U+0000–001F、U+007F–009F）及 bidi 控制字元（U+202A–202E、U+2066–2069） |
-| `text_gratitude` | string | trim 後加權字數 1–140，且最多 280 code points、最多 10 個換行（見下方）；允許 `\t` `\n`，其餘控制字元與 bidi 控制字元拒絕 |
+| `text_gratitude` | string | trim 後加權字數 1–250，且最多 500 code points、最多 2 個換行（見下方）；允許 `\t` `\n`，其餘控制字元與 bidi 控制字元拒絕 |
 | `text_anticipate` | string | 同上 |
 | `agreed_to_publish` | boolean | 必須為 `true`，否則 400（`fields.agreed_to_publish = "must_be_true"`） |
 | `honeypot` | string | 人類永遠送 `""`。**有值時回 201 假成功，不寫入、不消耗限流**（DATA-10） |
@@ -101,9 +101,9 @@ Cookie：`__Host-fwd_ct=v1.<隨機 ID>.<到期時間（Unix 秒）>.<HMAC-SHA256
 - 半形英數、半形符號、空白與 tab（U+0020–007E、`\t`）各算 **0.5**
 - 其他一律算 **1**：中日韓文字、全形字元與標點、換行、帶重音的字母，以及整個 emoji（👨‍👩‍👧、🇹🇼 都只算 1）
 - 例：`期待 There is more！` 算 10：中文 2 個各算 1，英文字母與空白共 14 個各算 0.5，全形「！」算 1
-- 另外最多 **280 code points**、最多 **10 個換行**。例：57 個 👨‍👩‍👧 加權只算 57，但有 285 個 code points，會被擋下
+- 另外最多 **500 code points**、最多 **2 個換行**。例：101 個 👨‍👩‍👧 加權只算 101，但有 505 個 code points，會被擋下
 - 超過任一上限都回 `400 VALIDATION_ERROR`，`fields.<欄位> = "too_long"`
-- 表單計數器顯示無條件進位的整數：140.5 顯示 141，不能送出
+- 表單計數器顯示無條件進位的整數：250.5 顯示 251，不能送出
 - 規則在 `src/lib/text.ts`；邊界案例在 `src/lib/text.cases.ts`，表單、mock 與後端的測試都使用這份
 
 符合上述規則的卡片，body 都在 8 KiB 以內：表單能送出的最大卡片，加上最長的 Turnstile token（2,048 字元），約 4.4 KiB。
@@ -252,8 +252,8 @@ Cookie：`__Host-fwd_ct=v1.<隨機 ID>.<到期時間（Unix 秒）>.<HMAC-SHA256
 CREATE TABLE forward_cards (
   id                TEXT PRIMARY KEY,               -- c_ + UUID
   nickname          TEXT NOT NULL,                  -- 1–20 code points
-  text_gratitude    TEXT NOT NULL,                  -- 加權 1–140，最多 280 code points（#16）
-  text_anticipate   TEXT NOT NULL,                  -- 加權 1–140，最多 280 code points（#16）
+  text_gratitude    TEXT NOT NULL,                  -- 加權 1–250，最多 500 code points（#16）
+  text_anticipate   TEXT NOT NULL,                  -- 加權 1–250，最多 500 code points（#16）
   agreed_to_publish INTEGER NOT NULL CHECK (agreed_to_publish IN (0, 1)),
   status            TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'hidden')),
   created_at        TEXT NOT NULL                   -- ISO 8601 UTC

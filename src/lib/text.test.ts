@@ -22,7 +22,7 @@ describe('weighted count (#16, shared cases)', () => {
 
   it('counts after trim, like the server', () => {
     expect(displayLength('text_gratitude', '  感謝  \n')).toBe(2);
-    expect(validateField('text_gratitude', `   ${'謝'.repeat(140)}   `)).toBeNull();
+    expect(validateField('text_gratitude', `   ${'謝'.repeat(250)}   `)).toBeNull();
   });
 
   it('leaves the nickname on code points', () => {
@@ -34,25 +34,25 @@ describe('weighted count (#16, shared cases)', () => {
 
 describe('truncateToLimit', () => {
   it('cuts the prompts at the weighted limit', () => {
-    expect(truncateToLimit('text_gratitude', '謝'.repeat(150))).toBe('謝'.repeat(140));
-    expect(truncateToLimit('text_gratitude', `${'謝'.repeat(139)}abc`)).toBe(`${'謝'.repeat(139)}ab`);
+    expect(truncateToLimit('text_gratitude', '謝'.repeat(260))).toBe('謝'.repeat(250));
+    expect(truncateToLimit('text_gratitude', `${'謝'.repeat(249)}abc`)).toBe(`${'謝'.repeat(249)}ab`);
   });
 
-  it('cuts at the 280 code-point cap even under 140 weighted', () => {
-    expect(truncateToLimit('text_gratitude', 'a'.repeat(300))).toBe('a'.repeat(280));
-    expect(truncateToLimit('text_gratitude', '👨‍👩‍👧'.repeat(60))).toBe('👨‍👩‍👧'.repeat(56));
+  it('cuts at the 500 code-point cap even under 250 weighted', () => {
+    expect(truncateToLimit('text_gratitude', 'a'.repeat(600))).toBe('a'.repeat(500));
+    expect(truncateToLimit('text_gratitude', '👨‍👩‍👧'.repeat(110))).toBe('👨‍👩‍👧'.repeat(100));
   });
 
   it('never splits a composed emoji', () => {
-    // 139 CJK leaves room for one more grapheme: the whole family, not half of it.
-    expect(truncateToLimit('text_gratitude', `${'謝'.repeat(139)}👨‍👩‍👧x`)).toBe(`${'謝'.repeat(139)}👨‍👩‍👧`);
+    // 249 CJK leaves room for one more grapheme: the whole family, not half of it.
+    expect(truncateToLimit('text_gratitude', `${'謝'.repeat(249)}👨‍👩‍👧x`)).toBe(`${'謝'.repeat(249)}👨‍👩‍👧`);
     // Nickname: 19 letters + a 5-code-point emoji would be 24, so the emoji goes whole.
     expect(truncateToLimit('nickname', `${'a'.repeat(19)}👨‍👩‍👧`)).toBe('a'.repeat(19));
     expect(truncateToLimit('nickname', 'ab🙏c')).toBe('ab🙏c');
   });
 
-  it('drops line breaks past the tenth but keeps the words after them', () => {
-    expect(truncateToLimit('text_gratitude', `${'a\n'.repeat(15)}end`)).toBe(`${'a\n'.repeat(10)}aaaaaend`);
+  it('drops line breaks past the second but keeps the words after them', () => {
+    expect(truncateToLimit('text_gratitude', `${'a\n'.repeat(15)}end`)).toBe(`${'a\n'.repeat(2)}${'a'.repeat(13)}end`);
     expect(truncateToLimit('nickname', 'ab')).toBe('ab');
   });
 
@@ -65,7 +65,7 @@ describe('truncateToLimit', () => {
     const start = performance.now();
     const kept = truncateToLimit('text_gratitude', 'Wow！好棒 '.repeat(20000));
     expect(performance.now() - start).toBeLessThan(1000);
-    expect(weightedLength(kept)).toBeLessThanOrEqual(140);
+    expect(weightedLength(kept)).toBeLessThanOrEqual(250);
     expect(validateField('text_gratitude', kept)).toBeNull();
   });
 });
@@ -77,9 +77,9 @@ describe('validateField', () => {
     expect(validateField('nickname', 'a'.repeat(21))).toBe('too_long');
   });
 
-  it('enforces 140 weighted characters for both prompts', () => {
-    expect(validateField('text_gratitude', '謝'.repeat(140))).toBeNull();
-    expect(validateField('text_anticipate', '盼'.repeat(141))).toBe('too_long');
+  it('enforces 250 weighted characters for both prompts', () => {
+    expect(validateField('text_gratitude', '謝'.repeat(250))).toBeNull();
+    expect(validateField('text_anticipate', '盼'.repeat(251))).toBe('too_long');
   });
 
   it('allows newline and tab in the prompts but not in the nickname', () => {

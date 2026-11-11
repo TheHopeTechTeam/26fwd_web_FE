@@ -297,8 +297,8 @@ function ForwardCardForm({ cardLabel }: { cardLabel: string }) {
 
 /** Line icons for the two guiding questions: a heart for gratitude, a sunrise for what's ahead. */
 function CardResult({ content }: { content: CardContent }) {
-  // One size only, 1:1 (11/06, team choice): the 貼文／限時動態 choice went.
-  const format: CardFormat = 'square';
+  // One size only (11/06, team choice: the 貼文／限時動態 choice went): 4:5 since 11/10, 1:1 before.
+  const format: CardFormat = 'portrait';
   const [declaration, setDeclaration] = useState(CARD_STYLES[0]!);
   const [image, setImage] = useState<{ url: string; blob: Blob } | null>(null);
   const [rendering, setRendering] = useState(true);
