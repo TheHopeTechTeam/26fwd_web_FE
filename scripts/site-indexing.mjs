@@ -18,6 +18,18 @@ export function siteIndexingHeaders(headers, mode) {
   const index = lines.indexOf(`  ${NOINDEX}`)
   if (index === -1) throw new Error(`public/_headers has no "${NOINDEX}" line to drop; update scripts/site-indexing.mjs`)
   lines.splice(index, 1)
-  const rules = STILL_NOINDEX.map((pattern) => `${pattern}\n  ${NOINDEX}\n`).join('\n')
-  return `${lines.join('\n').trimEnd()}\n\n${rules}`
+  const added = []
+  for (const pattern of STILL_NOINDEX) {
+    // Cloudflare keeps only the last rule for a pattern, so a pattern that already has a rule (the
+    // admin page's own CSP, #67) gets the header inside that rule instead of a second rule.
+    const at = lines.indexOf(pattern)
+    if (at === -1) {
+      added.push(`${pattern}\n  ${NOINDEX}\n`)
+      continue
+    }
+    let end = at + 1
+    while (end < lines.length && /^\s+\S/.test(lines[end])) end++
+    lines.splice(end, 0, `  ${NOINDEX}`)
+  }
+  return `${lines.join('\n').trimEnd()}\n${added.length ? `\n${added.join('\n')}` : ''}`
 }

@@ -132,6 +132,10 @@ CARD_SUBMISSIONS_ENABLED=true
 >   curl -sI https://forward.thehope.co/ | grep -i x-robots-tag      # 沒有輸出：可被收錄
 >   curl -sI https://26fwd-prod.pages.dev/ | grep -i x-robots-tag   # 仍是 noindex
 >   ```
+> - 後台 `/admin/*` 有自己的 CSP（#67）：管理金鑰存在分頁的 sessionStorage，頁面上的任何 script 都讀得到，所以後台不允許任何外部 script、frame 和連線，也不載入 GA4。它等於全站的 CSP 拿掉所有 https 來源（`scripts/headers.test.mjs` 會檢查），所以改全站的 CSP 時（例如字型或 GA4 的來源），後台這條也要一起改。Cloudflare 同一個路徑只保留最後一條規則，`_headers` 和建置後的檔案都不能有重複的路徑（同一個測試會檢查）。部署後確認：
+>   ```bash
+>   curl -sI https://forward.thehope.co/admin/ | grep -i content-security-policy   # script-src 'self'，沒有任何 https://
+>   ```
 
 #### 模型判斷與自動公開（M1.6）
 
