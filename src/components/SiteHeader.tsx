@@ -132,8 +132,8 @@ export function SiteHeader({ progress = false, backLabel }: SiteHeaderProps) {
           {links}
         </nav>
         <div className="site-header__actions">
-          {/* Phones only (11/10): the chapter links are folded into the menu there, so the card
-              gets its own way in next to 參與奉獻. */}
+          {/* Below the desktop nav (11/10; every width under 1180px since 11/13, #73): the chapter
+              links are folded into the menu there, so the card gets its own way in next to 參與奉獻. */}
           <a
             className="site-header__write"
             href={onHome ? '#respond-part-card' : pageUrl('#respond-part-card')}

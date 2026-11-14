@@ -98,9 +98,52 @@
   box-shadow: 0 0 0 4px rgb(var(--rgb-base) / 0.2);
 }
 
+/* A phone or tablet turned sideways (11/13, #73): the names stay, in a tighter capsule, so the
+   rail clears the header. The rail is the same 40px wide either way; only its height changes
+   (about 220px here against 270px upright). */
 @media (max-height: 560px) and (max-width: 1099px) {
+  .journey-rail__item {
+    gap: 4px;
+    padding: 6px 0;
+  }
   .journey-rail__label {
-    display: none;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+  }
+}
+
+/* Shorter still (an iPhone sideways in Safari is about 340px tall under the address bar): centred,
+   the capsule would run into the header, so it hangs below the header instead. */
+@media (max-height: 360px) and (max-width: 1099px) {
+  .journey-rail {
+    top: calc(var(--header-h) + 8px);
+    transform: none;
+  }
+}
+
+/* Below that even the hung capsule would run off the bottom, so it turns sideways: one row of
+   names under the header, still on the right. The names never go (11/13, the team). */
+@media (max-height: 300px) and (max-width: 1099px) {
+  .journey-rail__list {
+    flex-direction: row;
+    align-items: center;
+    padding: 0 4px;
+  }
+  .journey-rail__item {
+    flex-direction: row;
+    gap: 5px;
+    width: auto;
+    min-height: 36px;
+    padding: 0 8px;
+  }
+  .journey-rail__label {
+    writing-mode: horizontal-tb;
+    letter-spacing: 0.1em;
+  }
+  .journey-rail__item--respond {
+    width: auto;
+    margin: 3px 2px;
+    padding: 0 10px;
   }
 }
 
