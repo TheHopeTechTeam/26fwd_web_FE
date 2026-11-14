@@ -120,7 +120,8 @@
   box-shadow: 0 0 0 4px rgb(var(--rgb-accent) / 0.22);
 }
 
-/* 寫 FORWARD 卡: phones only (below). */
+/* 寫 FORWARD 卡: only where the chapter links are folded into the menu (below 1180px, see below);
+   on desktop the card is reached from 3. 填寫 FORWARD 卡 in the nav. */
 .site-header__write {
   display: none;
 }
@@ -253,10 +254,31 @@
   }
 }
 
-/* Phones (11/10, the team's pick A+B): the chapter links are folded into the menu, so 寫 FORWARD 卡
-   sits beside 參與奉獻 — outlined, so 奉獻 stays the filled one. To keep the whole THE HOPE logo
-   on the row, both buttons are smaller and drop the ↗ here (the giving page still opens in a new
-   tab). They look 36px tall but are still 44px to tap. */
+/* Wherever the chapter links are folded into the menu (11/10, the team's pick A+B; widened from
+   phones only to every width below the desktop nav on 11/13, #73: a phone turned sideways is
+   700–950px wide and lost the button), 寫 FORWARD 卡 sits beside 參與奉獻 — outlined, so 奉獻 stays
+   the filled one. Same height as 參與奉獻 here; phones shrink both below. */
+@media (max-width: 1179px) {
+  .site-header__write {
+    display: inline-flex;
+    align-items: center;
+    min-height: 48px;
+    padding: 0.6em 1.1em;
+    border: 1.5px solid var(--accent);
+    border-radius: var(--radius-full);
+    background: rgb(var(--rgb-base-deep) / 0.55);
+    color: var(--accent);
+    font-family: var(--font-heading-zh);
+    font-weight: 700;
+    font-size: 1rem;
+    line-height: 1.2;
+    white-space: nowrap;
+    text-decoration: none;
+  }
+}
+
+/* Phones: to keep the whole THE HOPE logo on the row, both buttons are smaller and drop the ↗
+   here (the giving page still opens in a new tab). They look 36px tall but are still 44px to tap. */
 @media (max-width: 699px) {
   .site-header__inner {
     gap: 8px;
@@ -270,19 +292,6 @@
     min-height: 36px;
     padding: 0 0.65em;
     font-size: 0.75rem;
-  }
-  .site-header__write {
-    display: inline-flex;
-    align-items: center;
-    border: 1.5px solid var(--accent);
-    border-radius: var(--radius-full);
-    background: rgb(var(--rgb-base-deep) / 0.55);
-    color: var(--accent);
-    font-family: var(--font-heading-zh);
-    font-weight: 700;
-    line-height: 1.2;
-    white-space: nowrap;
-    text-decoration: none;
   }
   .site-header__give,
   .site-header__give[aria-disabled='true'] {
