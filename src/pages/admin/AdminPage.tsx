@@ -4,7 +4,9 @@ import { config, pageUrl } from '../../config/env';
 import { forgetAdminSession, restoreAdminSession, saveAdminSession, sessionExpiresAt, type AdminSession } from '../../lib/adminSession';
 import { PROMPTS } from '../../lib/canvasCard';
 import { formatDateTime, relativeTime } from '../../lib/format';
+import { XLSX_MIME } from '../../lib/xlsx';
 import { DELETE_WORD, deleteConfirmed } from './confirm';
+import { cardWorkbook, exportFileName } from './exportCards';
 import { describeJudgment, percent } from './judgment';
 import { longTextNote } from './longText';
 import './AdminPage.css';
@@ -31,7 +33,8 @@ const KEY_REJECTED = '管理金鑰無效或已過期，請重新輸入。';
 /**
  * Review console (US-17 scope for this round): switch pending / approved / hidden, approve or hide,
  * and delete a hidden card for good (#35), each with an explicit confirm step. Every card shows its
- * AI judgment (M1.6). The token stays in this tab's sessionStorage for at most 12 hours from
+ * AI judgment (M1.6). 下載全部卡片 Excel saves every stored card as an .xlsx built in the browser
+ * (#76). The token stays in this tab's sessionStorage for at most 12 hours from
  * sign-in (#67, src/lib/adminSession.ts), so a reload keeps the reviewer signed in; 登出, a 401,
  * leaving for another page of the site, closing the tab or 12 hours clear it. It is never in
  * localStorage, the URL or logs. No edits or rejections are shown because no backend exists for
@@ -160,6 +163,7 @@ function ReviewConsole({ token, onUnauthorized }: { token: string; onUnauthorize
   const [message, setMessage] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null);
   // What the reviewer typed to confirm a delete; it starts empty for every new confirm step.
   const [typed, setTyped] = useState('');
+  const [exporting, setExporting] = useState(false);
   const confirmRef = useRef<HTMLButtonElement>(null);
   const wordRef = useRef<HTMLInputElement>(null);
 
@@ -234,6 +238,24 @@ function ReviewConsole({ token, onUnauthorized }: { token: string; onUnauthorize
     }
   };
 
+  // Every stored card, whatever the tab, as an .xlsx built here in the browser (#76).
+  const downloadAll = async () => {
+    if (exporting) return;
+    setExporting(true);
+    setMessage(null);
+    try {
+      const { items } = await api.adminExportCards(token);
+      const now = new Date();
+      const fileName = exportFileName(now);
+      saveFile(cardWorkbook(items, now), fileName);
+      setMessage({ tone: 'ok', text: `已下載 ${items.length} 張 FORWARD 卡（${fileName}）。` });
+    } catch (error) {
+      setMessage({ tone: 'error', text: `下載失敗：${handleError(error)}` });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const actionsFor = (card: AdminCard): Array<Action['next']> =>
     card.status === 'pending' ? ['approved', 'hidden'] : card.status === 'approved' ? ['hidden'] : ['approved', 'deleted'];
 
@@ -244,6 +266,21 @@ function ReviewConsole({ token, onUnauthorized }: { token: string; onUnauthorize
       <p className="review__scope">
         可以核准公開、隱藏，以及永久刪除已隱藏的卡；每張卡都會顯示 AI 判斷。改寫、退件理由與個別審核者的紀錄尚未實作（待 Q-29～Q-32 拍板）。隱藏的卡可以重新公開，刪除後無法復原。
       </p>
+
+      <div className="review__export">
+        <button type="button" className="btn btn--outline btn--sm" onClick={() => void downloadAll()} disabled={exporting}>
+          {exporting ? (
+            <>
+              <span className="spinner" /> 準備檔案中…
+            </>
+          ) : (
+            '下載全部卡片 Excel'
+          )}
+        </button>
+        <p className="admin__muted">
+          待審核、已公開、已隱藏的 FORWARD 卡都在同一個檔案（永久刪除的不含）。檔案含個人資料：只存放在經授權的裝置，不轉寄、不上傳到公開的地方，用完請刪除。
+        </p>
+      </div>
 
       <div className="review__toolbar">
         <div className="review__tabs" role="tablist" aria-label="FORWARD 卡狀態">
@@ -361,6 +398,19 @@ function ReviewConsole({ token, onUnauthorized }: { token: string; onUnauthorize
       </p>
     </div>
   );
+}
+
+// Hands the bytes to the browser as a download. The object URL never leaves this tab, and it is
+// released once the browser has had time to start saving.
+function saveFile(bytes: Uint8Array<ArrayBuffer>, fileName: string) {
+  const url = URL.createObjectURL(new Blob([bytes], { type: XLSX_MIME }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
 // Above the answers, so a reviewer scrolling the list sees it first (Ian, 11/11): which answer is over

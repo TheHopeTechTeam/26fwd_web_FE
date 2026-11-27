@@ -37,7 +37,7 @@ npm run preview    # 預覽 build 結果
 | 公開卡片牆（獨立頁、Masonry、每批 12 張） | FEAT-11 / US-10 | `src/pages/cards/` |
 | 奉獻 CTA＋UTM＋GA4 `click_give_cta` | FEAT-13 / US-12 | `src/components/GiveButton.tsx`, `src/config/give.ts` |
 | Honeypot、防連點、429 提示 | FEAT-14 / US-13 | `src/sections/Respond.tsx` |
-| 審核後台（待審／已公開／已隱藏、核准／隱藏） | FEAT-16 / US-17 | `src/pages/admin/` |
+| 審核後台（待審／已公開／已隱藏、核准／隱藏、下載全部卡片 Excel #76） | FEAT-16 / US-17 | `src/pages/admin/` |
 | 隱私與資料說明（草稿） | FEAT-18 / US-15 | `src/pages/privacy/` |
 
 ## API（先用假資料）

@@ -110,6 +110,27 @@ export interface AdminDeleteResponse {
   card_id: string;
 }
 
+/**
+ * A card in the export (#76): exactly the file's four columns. No id, status, judgment or anything
+ * else leaves the database this way.
+ */
+export interface AdminExportCard {
+  nickname: string;
+  text_gratitude: string;
+  text_anticipate: string;
+  /** ISO 8601 UTC */
+  created_at: string;
+}
+
+/**
+ * GET /api/admin/cards/export (#76): every card still stored, whatever its status, oldest first.
+ * Cards deleted for good are gone from the database and so from the export. The admin page turns
+ * this into the .xlsx file in the browser.
+ */
+export interface AdminExportResponse {
+  items: AdminExportCard[];
+}
+
 export type ApiErrorCode =
   | 'VALIDATION_ERROR'
   | 'TURNSTILE_FAILED'
