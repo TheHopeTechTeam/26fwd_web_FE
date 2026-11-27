@@ -115,6 +115,19 @@
   gap: 12px;
 }
 
+/* 下載全部卡片 Excel (#76): the button, with what the file holds next to it. */
+.review__export {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.review__export p {
+  flex: 1 1 280px;
+  margin: 0;
+}
+
 .review__tabs {
   display: flex;
   gap: 4px;

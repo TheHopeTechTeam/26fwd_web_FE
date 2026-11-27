@@ -1,5 +1,6 @@
 import type {
   AdminDeleteResponse,
+  AdminExportResponse,
   AdminListResponse,
   AdminStatusResponse,
   ApiErrorBody,
@@ -170,6 +171,12 @@ export function createApiClient({ baseUrl, fetch: fetchImpl, timeoutMs = 15000 }
     },
     adminListCards(token: string, status: CardStatus, signal?: AbortSignal) {
       return request<AdminListResponse>('GET', '/api/admin/cards', { query: { status }, token, signal });
+    },
+    /** Every stored card, whatever its status, oldest first, for the Excel download (#76). */
+    async adminExportCards(token: string, signal?: AbortSignal) {
+      const data = await request<AdminExportResponse>('GET', '/api/admin/cards/export', { token, signal });
+      if (!Array.isArray(data.items)) throw new ApiError(200, 'BAD_RESPONSE', 'Unexpected export shape');
+      return data;
     },
     /**
      * `from`: the status the reviewer saw. The change applies only if no one else changed the card

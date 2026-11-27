@@ -224,6 +224,27 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/StatusChanged'
+  /api/admin/cards/export:
+    get:
+      tags: [admin]
+      summary: Every stored card for the Excel download (#76)
+      description: |
+        All cards still in the database, whatever their status, oldest first (cards sent at the same
+        moment by id), with no limit. Cards deleted for good are gone from the database and so not
+        included. Each card has only the four columns of the file: no id, status, judgment or
+        connection data. The admin page builds the .xlsx in the browser from this list, writing
+        every cell as text so that no answer can run as a formula.
+      operationId: adminExportCards
+      security: [{ adminToken: [] }]
+      responses:
+        '200':
+          description: Every stored card, oldest first
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminExportResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 components:
   securitySchemes:
     adminToken:
@@ -390,6 +411,25 @@ components:
           type: boolean
           enum: [true]
         card_id: { type: string }
+    AdminExportCard:
+      type: object
+      additionalProperties: false
+      required: [nickname, text_gratitude, text_anticipate, created_at]
+      properties:
+        nickname: { type: string }
+        text_gratitude: { type: string }
+        text_anticipate: { type: string }
+        created_at:
+          type: string
+          format: date-time
+    AdminExportResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminExportCard'
     ApiError:
       type: object
       required: [success, error]

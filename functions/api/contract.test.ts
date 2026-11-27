@@ -9,6 +9,7 @@ import { createTestDb, sqliteAvailable } from '../_test/d1'
 import { onRequestDelete as deleteHandler } from './admin/cards/[id]'
 import { onRequestPatch as hideHandler } from './admin/cards/[id]/hide'
 import { onRequestPatch as statusHandler } from './admin/cards/[id]/status'
+import { onRequestGet as exportHandler } from './admin/cards/export'
 import { onRequestPost as submitCardHandler } from './cards'
 import { onRequestPost as clientTokenHandler } from './client-token'
 
@@ -395,5 +396,51 @@ describe.skipIf(!sqliteAvailable)('two reviewers on one card — mock and real b
     expect(fromMock[3]).toEqual({ status: 409, code: 'CARD_STATUS_CHANGED', currentStatus: 'approved', fields: undefined })
     expect(fromMock[5]).toEqual({ ok: { success: true, card_id: ID } })
     expect(fromMock.slice(6).map(step => ('status' in step ? step.status : 200))).toEqual([404, 400, 401])
+  })
+})
+
+// #76: the Excel download reads every card through GET /api/admin/cards/export. The same cards in
+// the mock and in the real database must come back as the same list, so the file built against the
+// mock is the file the live site builds.
+describe.skipIf(!sqliteAvailable)('GET /api/admin/cards/export — mock and real backend give the same list (#76)', () => {
+  const ADMIN = 'a'.repeat(32)
+  const CARDS = [
+    { id: 'c_contract_b', nickname: '已公開', text_gratitude: '第一行\n第二行', text_anticipate: '=1+1', status: 'approved', created_at: '2026-11-15T04:58:00.000Z' },
+    { id: 'c_contract_a', nickname: '待審核', text_gratitude: '感謝 🙏🏻', text_anticipate: '@期待', status: 'pending', created_at: '2026-11-11T13:46:50.555Z' },
+    { id: 'c_contract_c', nickname: '已隱藏', text_gratitude: '<g> & "g"', text_anticipate: '-a', status: 'hidden', created_at: '2026-11-15T04:58:00.000Z' },
+  ] as const
+
+  function backend(): FetchLike {
+    const { db, query } = createTestDb()
+    for (const c of CARDS) {
+      query('INSERT INTO forward_cards VALUES (?, ?, ?, ?, ?, 1, ?)', c.id, c.nickname, c.text_gratitude, c.text_anticipate, c.status, c.created_at)
+    }
+    const env: Env = { FORWARD_DB: db, ADMIN_API_TOKEN: ADMIN }
+    return async (input, init = {}) => exportHandler({ request: new Request(`https://${HOST}${input}`, { method: init.method, headers: init.headers }), env })
+  }
+  const mock = () => createMockFetch({ latency: [0, 0], seed: CARDS.map((c) => ({ ...c })) })
+  const download = (fetch: FetchLike, token = ADMIN) => createApiClient({ baseUrl: '', fetch }).adminExportCards(token).then(
+    (value) => ({ ok: value }),
+    (error: ApiError) => ({ status: error.status, code: error.code }),
+  )
+
+  it('every card, oldest first, with the same four columns', async () => {
+    const fromMock = await download(mock())
+    expect(await download(backend())).toEqual(fromMock)
+    expect(fromMock).toEqual({
+      ok: {
+        items: [
+          { nickname: '待審核', text_gratitude: '感謝 🙏🏻', text_anticipate: '@期待', created_at: '2026-11-11T13:46:50.555Z' },
+          { nickname: '已公開', text_gratitude: '第一行\n第二行', text_anticipate: '=1+1', created_at: '2026-11-15T04:58:00.000Z' },
+          { nickname: '已隱藏', text_gratitude: '<g> & "g"', text_anticipate: '-a', created_at: '2026-11-15T04:58:00.000Z' },
+        ],
+      },
+    })
+  })
+
+  it('the same 401 for a token that is too short', async () => {
+    const fromMock = await download(mock(), 'short')
+    expect(await download(backend(), 'short')).toEqual(fromMock)
+    expect(fromMock).toEqual({ status: 401, code: 'UNAUTHORIZED' })
   })
 })

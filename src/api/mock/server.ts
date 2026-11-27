@@ -13,6 +13,7 @@ import {
   MAX_BODY_BYTES,
   PUBLIC_PAGE_LIMIT,
   type AdminCard,
+  type AdminExportCard,
   type ApiErrorBody,
   type ApiErrorCode,
   type CardStatus,
@@ -191,6 +192,16 @@ export function createMockServer(options: MockServerOptions = {}) {
     return { status: 200, body: { items, has_more: matching.length > ADMIN_LIST_LIMIT }, headers: { 'Cache-Control': 'no-store' } };
   }
 
+  // Every stored card, whatever its status, oldest first, with only the file's four columns (#76).
+  // Compared code unit by code unit, like SQLite's ORDER BY created_at, id on these ASCII values.
+  function exportAll(): MockResponse {
+    const byText = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
+    const items: AdminExportCard[] = [...cards]
+      .sort((a, b) => byText(a.created_at, b.created_at) || byText(a.id, b.id))
+      .map(({ nickname, text_gratitude, text_anticipate, created_at }) => ({ nickname, text_gratitude, text_anticipate, created_at }));
+    return { status: 200, body: { items }, headers: { 'Cache-Control': 'no-store' } };
+  }
+
   // `from` (required) is the status the reviewer saw: if the card has changed since, 409.
   function updateStatus(id: string, status: CardStatus, from: unknown): MockResponse {
     if (from !== 'pending' && from !== 'approved' && from !== 'hidden') {
@@ -243,6 +254,7 @@ export function createMockServer(options: MockServerOptions = {}) {
       if (!authorized(headers)) return error(401, 'UNAUTHORIZED', 'Missing or invalid admin token');
 
       if (path === '/api/admin/cards' && method === 'GET') return listAdmin(url.searchParams);
+      if (path === '/api/admin/cards/export' && method === 'GET') return exportAll();
 
       const match = /^\/api\/admin\/cards\/([^/]+)\/(status|hide)$/.exec(path);
       if (match && method === 'PATCH') {
